@@ -4,9 +4,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import com.gtnewhorizons.navigator.Utils;
+import javax.annotation.Nullable;
+
 import com.gtnewhorizons.navigator.api.journeymap.buttons.JMLayerButton;
 import com.gtnewhorizons.navigator.api.journeymap.render.JMLayerRenderer;
+import com.gtnewhorizons.navigator.api.journeymap.waypoints.JMWaypointManager;
 import com.gtnewhorizons.navigator.api.model.buttons.ButtonManager;
 import com.gtnewhorizons.navigator.api.model.buttons.LayerButton;
 import com.gtnewhorizons.navigator.api.model.layers.LayerManager;
@@ -14,6 +16,7 @@ import com.gtnewhorizons.navigator.api.model.layers.LayerRenderer;
 import com.gtnewhorizons.navigator.api.model.waypoints.WaypointManager;
 import com.gtnewhorizons.navigator.api.xaero.buttons.XaeroLayerButton;
 import com.gtnewhorizons.navigator.api.xaero.renderers.XaeroLayerRenderer;
+import com.gtnewhorizons.navigator.api.xaero.waypoints.XaeroWaypointManager;
 import com.gtnewhorizons.navigator.mixins.late.journeymap.FullscreenAccessor;
 
 import journeymap.client.render.map.GridRenderer;
@@ -26,49 +29,50 @@ public class NavigatorApi {
     public static final List<LayerRenderer> layerRenderers = new ArrayList<>();
     public static final List<WaypointManager> waypointManagers = new ArrayList<>();
 
-    // Register the logical button
-    public static void registerSharedButtonManager(ButtonManager customManager) {
-        buttonManagers.add(customManager);
+    /**
+     * @param buttonManager The {@link ButtonManager} to register
+     *                      Only one needs to be registered regardless of how many mods are supported
+     */
+    public static void registerButtonManager(ButtonManager buttonManager) {
+        buttonManagers.add(buttonManager);
     }
 
-    // Register the logical layer
-    public static void registerSharedLayerManager(LayerManager customLayer) {
-        layerManagers.add(customLayer);
+    /**
+     * @param layerManager The {@link LayerManager} to register
+     *                     Only one needs to be registered regardless of how many mods are supported
+     */
+    public static void registerLayerManager(LayerManager layerManager) {
+        layerManagers.add(layerManager);
     }
 
-    // Register visualization for logical button in JourneyMap
-    public static void registerJourneyMapButton(JMLayerButton customButton) {
-        if (Utils.isJourneyMapInstalled()) {
-            layerButtons.add(customButton);
-        }
+    /**
+     * @param layerButton The LayerButton to register
+     *                    Should be an instance of {@link JMLayerButton} or {@link XaeroLayerButton}
+     *                    Both mods can be registered at the same time and will be handled accordingly
+     */
+    public static void registerLayerButton(LayerButton layerButton) {
+        layerButtons.add(layerButton);
     }
 
-    // Add the JourneyMap renderer for a layer
-    public static void registerJourneyMapRenderer(JMLayerRenderer customRenderer) {
-        if (Utils.isJourneyMapInstalled()) {
-            layerRenderers.add(customRenderer);
-        }
+    /**
+     * @param layerRenderer The LayerRenderer to register
+     *                      Should be an instance of {@link JMLayerRenderer} or {@link XaeroLayerRenderer}
+     *                      Both mods can be registered at the same time and will be handled accordingly
+     */
+    public static void registerLayerRenderer(LayerRenderer layerRenderer) {
+        layerRenderers.add(layerRenderer);
     }
 
+    /**
+     * @param waypointManager The {@link WaypointManager} to register
+     *                        Should be an instance of {@link JMWaypointManager} or {@link XaeroWaypointManager}
+     *                        Both mods can be registered at the same time and will be handled accordingly
+     */
     public static void registerWaypointManager(WaypointManager waypointManager) {
         waypointManagers.add(waypointManager);
     }
 
-    // Register visualization for logical button in Xaero's World Map
-    public static void registerXaeroMapButton(XaeroLayerButton customButton) {
-        if (Utils.isXaerosWorldMapInstalled()) {
-            layerButtons.add(customButton);
-        }
-    }
-
-    // Add the Xaero's World Map renderer for a layer
-    public static void registerXaeroMapRenderer(XaeroLayerRenderer customRenderer) {
-        if (Utils.isXaerosWorldMapInstalled()) {
-            layerRenderers.add(customRenderer);
-        }
-    }
-
-    public static LayerRenderer getActiveLayer() {
+    public static @Nullable LayerRenderer getActiveLayer() {
         return layerRenderers.stream()
             .filter(LayerRenderer::isLayerActive)
             .findFirst()

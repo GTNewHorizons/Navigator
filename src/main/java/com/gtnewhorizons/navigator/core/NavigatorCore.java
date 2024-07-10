@@ -4,12 +4,25 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.gtnewhorizon.gtnhlib.config.ConfigException;
+import com.gtnewhorizon.gtnhlib.config.ConfigurationManager;
 import com.gtnewhorizon.gtnhmixins.IEarlyMixinLoader;
+import com.gtnewhorizons.navigator.config.GeneralConfig;
+import com.gtnewhorizons.navigator.config.ModuleConfig;
 import com.gtnewhorizons.navigator.mixins.Mixins;
 
 import cpw.mods.fml.relauncher.IFMLLoadingPlugin;
 
 public class NavigatorCore implements IFMLLoadingPlugin, IEarlyMixinLoader {
+
+    static {
+        try {
+            ConfigurationManager.registerConfig(GeneralConfig.class);
+            ConfigurationManager.registerConfig(ModuleConfig.class);
+        } catch (ConfigException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     @Override
     public String[] getASMTransformerClass() {

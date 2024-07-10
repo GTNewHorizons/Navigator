@@ -4,27 +4,38 @@ import cpw.mods.fml.common.Loader;
 
 public class Utils {
 
+    private static boolean isJourneyMapLoaded;
+    private static boolean isXaeroWorldMapLoaded;
+    private static boolean isXaeroMinimapLoaded;
+    private static boolean isVoxelMapLoaded;
+
+    static {
+        isJourneyMapLoaded = Loader.isModLoaded("journeymap");
+        isXaeroWorldMapLoaded = Loader.isModLoaded("XaeroWorldMap");
+        isXaeroMinimapLoaded = Loader.isModLoaded("XaeroMinimap");
+        isVoxelMapLoaded = false;
+        try {
+            Class.forName("com.thevoxelbox.voxelmap.litemod.LiteModVoxelMap");
+            isVoxelMapLoaded = true;
+        } catch (Exception e) {
+            // Ignore
+        }
+    }
+
     public static boolean isJourneyMapInstalled() {
-        return Loader.isModLoaded("journeymap");
+        return isJourneyMapLoaded;
     }
 
     public static boolean isXaerosWorldMapInstalled() {
-        return Loader.isModLoaded("XaeroWorldMap");
+        return isXaeroWorldMapLoaded;
     }
 
     public static boolean isXaerosMinimapInstalled() {
-        return Loader.isModLoaded("XaeroMinimap");
+        return isXaeroMinimapLoaded;
     }
 
     public static boolean isVoxelMapInstalled() {
-        try {
-            // If a LiteLoader mod is present cannot be checked by calling Loader#isModLoaded.
-            // Instead, we check if the VoxelMap main class is present.
-            Class.forName("com.thevoxelbox.voxelmap.litemod.LiteModVoxelMap");
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
+        return isVoxelMapLoaded;
     }
 
     public static int coordBlockToChunk(int blockCoord) {

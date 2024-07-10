@@ -10,7 +10,7 @@ import cpw.mods.fml.common.event.FMLPostInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import cpw.mods.fml.common.event.FMLServerStartingEvent;
 
-@Mod(modid = Navigator.MODID, version = Tags.VERSION, name = "Navigator", acceptedMinecraftVersions = "[1.7.10]")
+@Mod(modid = Navigator.MODID, version = Tags.VERSION, name = "Navigator", dependencies = "required-after:gtnhlib;")
 public class Navigator {
 
     public static final String MODID = "navigator";

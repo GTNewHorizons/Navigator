@@ -5,6 +5,7 @@ import net.minecraft.client.settings.KeyBinding;
 import org.lwjgl.input.Keyboard;
 
 import com.gtnewhorizons.navigator.api.NavigatorApi;
+import com.gtnewhorizons.navigator.config.GeneralConfig;
 import com.gtnewhorizons.navigator.impl.DirtyChunkButtonManager;
 import com.gtnewhorizons.navigator.impl.DirtyChunkLayerManager;
 import com.gtnewhorizons.navigator.impl.journeymap.DirtyChunkButton;
@@ -28,16 +29,20 @@ public class ClientProxy extends CommonProxy {
     @Override
     public void preInit(FMLPreInitializationEvent event) {
         super.preInit(event);
-        Config.init(event);
         ClientRegistry.registerKeyBinding(ACTION_KEY);
-        if (Config.enableDebugLayers) {
+        if (GeneralConfig.enableDebugLayers) {
             Navigator.LOG.info("Debug layers enabled");
-            NavigatorApi.registerSharedButtonManager(DirtyChunkButtonManager.instance);
-            NavigatorApi.registerJourneyMapButton(DirtyChunkButton.instance);
-            NavigatorApi.registerSharedLayerManager(DirtyChunkLayerManager.instance);
-            NavigatorApi.registerJourneyMapRenderer(DirtyChunkRenderer.instance);
-            NavigatorApi.registerXaeroMapRenderer(com.gtnewhorizons.navigator.impl.xaero.DirtyChunkRenderer.instance);
-            NavigatorApi.registerXaeroMapButton(com.gtnewhorizons.navigator.impl.xaero.DirtyChunkButton.instance);
+            // Shared
+            NavigatorApi.registerLayerManager(DirtyChunkLayerManager.instance);
+            NavigatorApi.registerButtonManager(DirtyChunkButtonManager.instance);
+
+            // Journeymap
+            NavigatorApi.registerLayerButton(DirtyChunkButton.instance);
+            NavigatorApi.registerLayerRenderer(DirtyChunkRenderer.instance);
+
+            // Xaero's maps
+            NavigatorApi.registerLayerRenderer(com.gtnewhorizons.navigator.impl.xaero.DirtyChunkRenderer.instance);
+            NavigatorApi.registerLayerButton(com.gtnewhorizons.navigator.impl.xaero.DirtyChunkButton.instance);
         }
     }
 

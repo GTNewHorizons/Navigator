@@ -13,6 +13,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import com.gtnewhorizons.navigator.Navigator;
+import com.gtnewhorizons.navigator.config.ModuleConfig;
 
 import cpw.mods.fml.relauncher.FMLLaunchHandler;
 
@@ -22,32 +23,34 @@ public enum Mixins {
         .addTargetedMod(XAEROWORLDMAP)
         .setSide(Side.CLIENT)
         .setPhase(Phase.EARLY)
+        .setApplyIf(() -> ModuleConfig.enableXaeroMinimapModule)
         .addMixinClasses("minecraft.ForgeHooksClientMixin")),
-
-    JOURNEYMAP_API(new Builder("JourneyMap").addTargetedMod(JOURNEYMAP)
+    JOURNEYMAP_API(new Builder("JourneyMap integration").addTargetedMod(JOURNEYMAP)
         .setSide(Side.CLIENT)
         .setPhase(Phase.LATE)
+        .setApplyIf(() -> ModuleConfig.enableJourneyMapModule)
         .addMixinClasses(
             "journeymap.DisplayVarsAccessor",
             "journeymap.FullscreenAccessor",
             "journeymap.FullscreenMixin",
-            "journeymap.FullscreenActionsMixin",
             "journeymap.MiniMapMixin",
             "journeymap.RenderWaypointBeaconMixin",
             "journeymap.WaypointManagerMixin")),
-
-    GuiMapMixin(new Builder("GuiMap").addTargetedMod(XAEROWORLDMAP)
+    XAEROS_GUI(new Builder("Xaero Worldmap integration").addTargetedMod(XAEROWORLDMAP)
         .setSide(Side.CLIENT)
         .setPhase(Phase.LATE)
+        .setApplyIf(() -> ModuleConfig.enableXaeroWorldMapModule)
         .addMixinClasses("xaerosworldmap.GuiMapMixin")),
-    WaypointsIngameRendererMixin(new Builder("WaypointsIngameRender").addTargetedMod(XAEROMINIMAP)
+    XAEROS_MINIMAP_WAYPOINT(new Builder("Xaero Waypoints").addTargetedMod(XAEROMINIMAP)
         .setSide(Side.CLIENT)
         .setPhase(Phase.LATE)
+        .setApplyIf(() -> ModuleConfig.enableXaeroMinimapModule)
         .addMixinClasses("xaerosminimap.WaypointsIngameRendererMixin")),
-    MinimapRendererMixin(new Builder("MinimapRenderer").addTargetedMod(XAEROMINIMAP)
+    XAEROS_MINIMAP_RENDERER(new Builder("Xaero Minimap integration").addTargetedMod(XAEROMINIMAP)
         .addTargetedMod(XAEROWORLDMAP)
         .setSide(Side.CLIENT)
         .setPhase(Phase.LATE)
+        .setApplyIf(() -> ModuleConfig.enableXaeroMinimapModule)
         .addMixinClasses("xaerosminimap.MinimapRendererMixin"));
 
     private final List<String> mixinClasses;

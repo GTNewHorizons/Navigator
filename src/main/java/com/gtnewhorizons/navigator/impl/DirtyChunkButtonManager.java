@@ -7,6 +7,6 @@ public class DirtyChunkButtonManager extends ButtonManager {
     public static final DirtyChunkButtonManager instance = new DirtyChunkButtonManager();
 
     public DirtyChunkButtonManager() {
-        super("visualprospecting.button.dirtychunk", "nodes");
+        super("navigator.button.dirtychunk", "nodes");
     }
 }

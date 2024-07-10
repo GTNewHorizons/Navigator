@@ -23,8 +23,9 @@ public class ButtonManager {
         this.iconName = iconName;
     }
 
-    public void registerButton(SupportedMods map, LayerButton layerButton) {
-        buttons.put(map, layerButton);
+    public void registerButton(SupportedMods mod, LayerButton layerButton) {
+        if (!mod.isEnabled()) return;
+        buttons.put(mod, layerButton);
     }
 
     public void updateState(boolean active) {
