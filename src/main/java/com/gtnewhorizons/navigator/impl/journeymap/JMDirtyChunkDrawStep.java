@@ -1,18 +1,27 @@
 package com.gtnewhorizons.navigator.impl.journeymap;
 
-import java.awt.geom.Point2D;
+import static com.gtnewhorizons.navigator.api.NavigatorApi.CHUNK_WIDTH;
 
-import com.gtnewhorizons.navigator.api.journeymap.drawsteps.JMDrawStep;
+import java.awt.geom.Point2D;
+import java.util.Collections;
+import java.util.List;
+
+import net.minecraft.client.gui.FontRenderer;
+
+import com.gtnewhorizons.navigator.api.journeymap.drawsteps.JMClickableDrawStep;
+import com.gtnewhorizons.navigator.api.model.locations.IWaypointAndLocationProvider;
 import com.gtnewhorizons.navigator.impl.DirtyChunkLocation;
 
 import journeymap.client.render.draw.DrawUtil;
 import journeymap.client.render.map.GridRenderer;
 
-public class DirtyChunkDrawStep implements JMDrawStep {
+public class JMDirtyChunkDrawStep implements JMClickableDrawStep {
 
     private final DirtyChunkLocation dirtyChunkLocation;
 
-    public DirtyChunkDrawStep(DirtyChunkLocation dirtyChunkLocation) {
+    private double topX, topY, chunkSize;
+
+    public JMDirtyChunkDrawStep(DirtyChunkLocation dirtyChunkLocation) {
         this.dirtyChunkLocation = dirtyChunkLocation;
     }
 
@@ -26,10 +35,15 @@ public class DirtyChunkDrawStep implements JMDrawStep {
         final Point2D.Double pixel = new Point2D.Double(
             blockAsPixel.getX() + draggedPixelX,
             blockAsPixel.getY() + draggedPixelY);
+
+        chunkSize = blockSize * CHUNK_WIDTH;
+        topX = pixel.getX();
+        topY = pixel.getY();
         float alpha = 0.5f;
         alpha *= alpha * 204;
         int color = dirtyChunkLocation.isDirty() ? 0xFF0000 : 0x00FFAA;
-        DrawUtil.drawRectangle(pixel.getX(), pixel.getY(), 16 * blockSize, 16 * blockSize, color, (int) alpha);
+
+        DrawUtil.drawRectangle(pixel.getX(), pixel.getY(), chunkSize, chunkSize, color, (int) alpha);
 
         if (dirtyChunkLocation.isDirty()) {
             final int borderColor = 0xFFD700;
@@ -61,7 +75,7 @@ public class DirtyChunkDrawStep implements JMDrawStep {
                 "D",
                 pixel.getX() + 13 * blockSize,
                 pixel.getY() + 13 * blockSize,
-                DrawUtil.HAlign.Left,
+                DrawUtil.HAlign.Center,
                 DrawUtil.VAlign.Above,
                 0,
                 180,
@@ -71,5 +85,29 @@ public class DirtyChunkDrawStep implements JMDrawStep {
                 false,
                 rotation);
         }
+    }
+
+    @Override
+    public List<String> getTooltip() {
+        String tooltip = dirtyChunkLocation.isDirty() ? "Dirty Chunk" : "Clean Chunk";
+        return Collections.singletonList(tooltip);
+    }
+
+    @Override
+    public void drawTooltip(FontRenderer fontRenderer, int mouseX, int mouseY, int displayWidth, int displayHeight) {}
+
+    @Override
+    public boolean isMouseOver(int mouseX, int mouseY) {
+        return mouseX >= topX && mouseX <= topX + chunkSize && mouseY >= topY && mouseY <= topY + chunkSize;
+    }
+
+    @Override
+    public void onActionKeyPressed() {
+        dirtyChunkLocation.onWaypointCleared();
+    }
+
+    @Override
+    public IWaypointAndLocationProvider getLocationProvider() {
+        return dirtyChunkLocation;
     }
 }

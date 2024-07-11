@@ -1,13 +1,10 @@
 package com.gtnewhorizons.navigator.api.xaero.renderers;
 
-import java.util.List;
-
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.settings.KeyBinding;
 
 import com.gtnewhorizons.navigator.ClientProxy;
 import com.gtnewhorizons.navigator.api.model.layers.WaypointProviderManager;
-import com.gtnewhorizons.navigator.api.model.locations.ILocationProvider;
 import com.gtnewhorizons.navigator.api.xaero.rendersteps.InteractableRenderStep;
 import com.gtnewhorizons.navigator.api.xaero.rendersteps.XaeroRenderStep;
 
@@ -23,10 +20,6 @@ public abstract class InteractableLayerRenderer extends XaeroLayerRenderer {
         this.manager = manager;
         hovered = null;
     }
-
-    @Override
-    protected abstract List<? extends InteractableRenderStep> generateRenderSteps(
-        List<? extends ILocationProvider> visibleElements);
 
     public void updateHovered(double mouseX, double mouseY, double scale) {
         this.mouseX = mouseX;
@@ -54,18 +47,25 @@ public abstract class InteractableLayerRenderer extends XaeroLayerRenderer {
         }
     }
 
-    public void doDoubleClick() {
+    public void onClick(boolean isDoubleClick, int mouseX, int mouseY, int mouseBlockX, int mouseBlockZ) {
         if (hovered != null) {
-            if (hovered.getLocationProvider()
-                .isActiveAsWaypoint()) {
-                manager.clearActiveWaypoint();
-            } else {
-                manager.setActiveWaypoint(
-                    hovered.getLocationProvider()
-                        .toWaypoint());
+            if (isDoubleClick) {
+                if (hovered.getLocationProvider()
+                    .isActiveAsWaypoint()) {
+                    manager.clearActiveWaypoint();
+                } else {
+                    manager.setActiveWaypoint(
+                        hovered.getLocationProvider()
+                            .toWaypoint());
+                }
             }
+        } else {
+            onClickOutsideRenderStep(isDoubleClick, mouseX, mouseY, mouseBlockX, mouseBlockZ);
         }
     }
+
+    public void onClickOutsideRenderStep(boolean isDoubleClick, int mouseX, int mouseY, int mouseBlockX,
+        int mouseBlockZ) {}
 
     public KeyBinding getActionKey() {
         return ClientProxy.ACTION_KEY;

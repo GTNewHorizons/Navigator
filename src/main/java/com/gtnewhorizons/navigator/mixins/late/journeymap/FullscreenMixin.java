@@ -95,7 +95,7 @@ public abstract class FullscreenMixin extends JmUI {
     }
 
     @Inject(method = "<init>*", at = @At("RETURN"), require = 1)
-    private void visualprospecting$init(CallbackInfo ci) {
+    private void navigator$init(CallbackInfo ci) {
         NavigatorApi.layerManagers.forEach(LayerManager::forceRefresh);
     }
 
@@ -111,7 +111,7 @@ public abstract class FullscreenMixin extends JmUI {
     public abstract void drawBackground(int layer);
 
     @Inject(method = "<init>*", at = @At("RETURN"), require = 1)
-    private void visualprospecting$onConstructed(CallbackInfo ci) {
+    private void navigator$onConstructed(CallbackInfo ci) {
         NavigatorApi.layerManagers.forEach(LayerManager::onOpenMap);
     }
 
@@ -121,8 +121,8 @@ public abstract class FullscreenMixin extends JmUI {
         remap = false,
         require = 1,
         locals = LocalCapture.CAPTURE_FAILEXCEPTION)
-    private void visualprospecting$onBeforeDrawJourneyMapWaypoints(CallbackInfo ci, boolean refreshReady,
-        StatTimer timer, int xOffset, int yOffset, float drawScale) {
+    private void navigator$onBeforeDrawJourneyMapWaypoints(CallbackInfo ci, boolean refreshReady, StatTimer timer,
+        int xOffset, int yOffset, float drawScale) {
         final int fontScale = getMapFontScale();
         final Minecraft minecraft = Minecraft.getMinecraft();
         final int centerBlockX = (int) Math.round(gridRenderer.getCenterBlockX());
@@ -149,7 +149,7 @@ public abstract class FullscreenMixin extends JmUI {
             target = "Ljourneymap/client/ui/fullscreen/Fullscreen;mapTypeToolbar:Ljourneymap/client/ui/theme/ThemeToolbar;",
             opcode = Opcodes.PUTFIELD),
         require = 1)
-    private void visualprospecting$OnCreateMapTypeToolbar(Fullscreen owner, ThemeToolbar value) {
+    private void navigator$OnCreateMapTypeToolbar(Fullscreen owner, ThemeToolbar value) {
         final Theme theme = ThemeFileHandler.getCurrentTheme();
         final ButtonList buttonList = new ButtonList();
 
@@ -235,7 +235,7 @@ public abstract class FullscreenMixin extends JmUI {
     }
 
     @Inject(method = "keyTyped", at = @At(value = "HEAD"), remap = true, require = 1, cancellable = true)
-    private void visualprospecting$onKeyPress(CallbackInfo ci) {
+    private void navigator$onKeyPress(CallbackInfo ci) {
         if ((chat == null || chat.isHidden())) {
             LayerRenderer layer = NavigatorApi.getActiveLayer();
             if (layer instanceof WaypointProviderLayerRenderer waypointProvider) {
@@ -286,7 +286,7 @@ public abstract class FullscreenMixin extends JmUI {
         LayerRenderer layer = NavigatorApi.getActiveLayer();
         if (layer instanceof WaypointProviderLayerRenderer wpLayerRender) {
             wpLayerRender.onMouseMove(mouseX, mouseY);
-            return wpLayerRender.onClick(isDoubleClick, blockCoord.x, blockCoord.z);
+            return wpLayerRender.onClick(isDoubleClick, mouseX, mouseY, blockCoord.x, blockCoord.z);
         }
         return false;
     }

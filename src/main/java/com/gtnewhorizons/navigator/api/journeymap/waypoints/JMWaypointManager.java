@@ -7,7 +7,7 @@ import com.gtnewhorizons.navigator.api.model.layers.WaypointProviderManager;
 import com.gtnewhorizons.navigator.api.model.waypoints.Waypoint;
 import com.gtnewhorizons.navigator.api.model.waypoints.WaypointManager;
 
-public class JMWaypointManager extends WaypointManager {
+public abstract class JMWaypointManager extends WaypointManager {
 
     private journeymap.client.model.Waypoint jmWaypoint;
 

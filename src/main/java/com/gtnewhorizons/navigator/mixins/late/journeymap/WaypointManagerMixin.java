@@ -15,7 +15,7 @@ import journeymap.client.ui.waypoint.WaypointManager;
 public abstract class WaypointManagerMixin {
 
     @Inject(method = "toggleItems", at = @At("HEAD"), remap = false, require = 1)
-    private void visualprospecting$onToggleAllWaypoints(boolean enable, CallbackInfoReturnable<Boolean> cir) {
+    private void navigator$onToggleAllWaypoints(boolean enable, CallbackInfoReturnable<Boolean> cir) {
         if (!enable) {
             for (LayerManager layer : NavigatorApi.layerManagers) {
                 if (layer instanceof WaypointProviderManager waypointProvider) {

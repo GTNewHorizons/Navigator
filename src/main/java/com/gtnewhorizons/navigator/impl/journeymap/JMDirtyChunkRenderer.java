@@ -4,17 +4,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.gtnewhorizons.navigator.api.journeymap.drawsteps.JMDrawStep;
-import com.gtnewhorizons.navigator.api.journeymap.render.JMLayerRenderer;
+import com.gtnewhorizons.navigator.api.journeymap.render.WaypointProviderLayerRenderer;
 import com.gtnewhorizons.navigator.api.model.locations.ILocationProvider;
 import com.gtnewhorizons.navigator.api.model.steps.RenderStep;
 import com.gtnewhorizons.navigator.impl.DirtyChunkLayerManager;
 import com.gtnewhorizons.navigator.impl.DirtyChunkLocation;
 
-public class DirtyChunkRenderer extends JMLayerRenderer {
+public class JMDirtyChunkRenderer extends WaypointProviderLayerRenderer {
 
-    public static final DirtyChunkRenderer instance = new DirtyChunkRenderer();
+    public static final JMDirtyChunkRenderer instance = new JMDirtyChunkRenderer();
 
-    public DirtyChunkRenderer() {
+    public JMDirtyChunkRenderer() {
         super(DirtyChunkLayerManager.instance);
     }
 
@@ -23,7 +23,7 @@ public class DirtyChunkRenderer extends JMLayerRenderer {
         final List<JMDrawStep> drawSteps = new ArrayList<>();
         visibleElements.stream()
             .map(element -> (DirtyChunkLocation) element)
-            .forEach(location -> drawSteps.add(new DirtyChunkDrawStep(location)));
+            .forEach(location -> drawSteps.add(new JMDirtyChunkDrawStep(location)));
         return drawSteps;
     }
 }

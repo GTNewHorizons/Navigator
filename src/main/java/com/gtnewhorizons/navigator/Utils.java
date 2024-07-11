@@ -4,9 +4,9 @@ import cpw.mods.fml.common.Loader;
 
 public class Utils {
 
-    private static boolean isJourneyMapLoaded;
-    private static boolean isXaeroWorldMapLoaded;
-    private static boolean isXaeroMinimapLoaded;
+    private static final boolean isJourneyMapLoaded;
+    private static final boolean isXaeroWorldMapLoaded;
+    private static final boolean isXaeroMinimapLoaded;
     private static boolean isVoxelMapLoaded;
 
     static {

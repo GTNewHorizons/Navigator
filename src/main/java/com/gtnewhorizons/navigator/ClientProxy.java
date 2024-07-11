@@ -8,8 +8,12 @@ import com.gtnewhorizons.navigator.api.NavigatorApi;
 import com.gtnewhorizons.navigator.config.GeneralConfig;
 import com.gtnewhorizons.navigator.impl.DirtyChunkButtonManager;
 import com.gtnewhorizons.navigator.impl.DirtyChunkLayerManager;
-import com.gtnewhorizons.navigator.impl.journeymap.DirtyChunkButton;
-import com.gtnewhorizons.navigator.impl.journeymap.DirtyChunkRenderer;
+import com.gtnewhorizons.navigator.impl.journeymap.JMDirtyChunkButton;
+import com.gtnewhorizons.navigator.impl.journeymap.JMDirtyChunkRenderer;
+import com.gtnewhorizons.navigator.impl.journeymap.JMDirtyChunkWaypointManager;
+import com.gtnewhorizons.navigator.impl.xaero.XaeroDirtyChunkButton;
+import com.gtnewhorizons.navigator.impl.xaero.XaeroDirtyChunkRenderer;
+import com.gtnewhorizons.navigator.impl.xaero.XaeroDirtyChunkWaypointManager;
 
 import cpw.mods.fml.client.registry.ClientRegistry;
 import cpw.mods.fml.common.event.FMLInitializationEvent;
@@ -19,30 +23,28 @@ import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 public class ClientProxy extends CommonProxy {
 
     public static final KeyBinding ACTION_KEY = new KeyBinding(
-        "key.navigator.action",
+        "navigator.key.action",
         Keyboard.KEY_DELETE,
-        "key.categories.navigator");
-
-    // Override CommonProxy methods here, if you want a different behaviour on the client (e.g. registering renders).
-    // Don't forget to call the super methods as well.
+        Navigator.MODNAME);
 
     @Override
     public void preInit(FMLPreInitializationEvent event) {
         super.preInit(event);
         ClientRegistry.registerKeyBinding(ACTION_KEY);
         if (GeneralConfig.enableDebugLayers) {
-            Navigator.LOG.info("Debug layers enabled");
             // Shared
             NavigatorApi.registerLayerManager(DirtyChunkLayerManager.instance);
             NavigatorApi.registerButtonManager(DirtyChunkButtonManager.instance);
 
             // Journeymap
-            NavigatorApi.registerLayerButton(DirtyChunkButton.instance);
-            NavigatorApi.registerLayerRenderer(DirtyChunkRenderer.instance);
+            NavigatorApi.registerLayerButton(JMDirtyChunkButton.instance);
+            NavigatorApi.registerLayerRenderer(JMDirtyChunkRenderer.instance);
+            NavigatorApi.registerWaypointManager(JMDirtyChunkWaypointManager.instance);
 
             // Xaero's maps
-            NavigatorApi.registerLayerRenderer(com.gtnewhorizons.navigator.impl.xaero.DirtyChunkRenderer.instance);
-            NavigatorApi.registerLayerButton(com.gtnewhorizons.navigator.impl.xaero.DirtyChunkButton.instance);
+            NavigatorApi.registerLayerButton(XaeroDirtyChunkButton.instance);
+            NavigatorApi.registerLayerRenderer(XaeroDirtyChunkRenderer.instance);
+            NavigatorApi.registerWaypointManager(XaeroDirtyChunkWaypointManager.instance);
         }
     }
 

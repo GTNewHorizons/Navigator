@@ -24,5 +24,4 @@ public abstract class JMLayerRenderer extends LayerRenderer {
     public void updateVisibleElements(List<? extends ILocationProvider> visibleElements) {
         renderSteps = generateRenderSteps(visibleElements);
     }
-
 }

@@ -35,7 +35,7 @@ public abstract class MiniMapMixin {
     private DisplayVars dv;
 
     @Inject(method = "drawOnMapWaypoints", at = @At(value = "HEAD"), remap = false, require = 1)
-    private void visualprospecting$onBeforeDrawWaypoints(double rotation, CallbackInfo ci) {
+    private void navigator$onBeforeDrawWaypoints(double rotation, CallbackInfo ci) {
         for (LayerManager layerManager : NavigatorApi.layerManagers) {
             if (layerManager.isLayerActive()) {
                 if (((DisplayVarsAccessor) dv).getShape() == Shape.Circle) {
@@ -54,6 +54,8 @@ public abstract class MiniMapMixin {
         }
 
         LayerRenderer layerRenderer = NavigatorApi.getActiveLayer();
+        if (layerRenderer == null) return;
+
         for (RenderStep renderStep : layerRenderer.getRenderSteps()) {
             if (renderStep instanceof DrawStep drawStep) {
                 drawStep.draw(

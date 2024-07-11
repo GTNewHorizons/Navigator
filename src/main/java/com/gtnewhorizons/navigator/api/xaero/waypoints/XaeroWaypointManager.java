@@ -1,21 +1,30 @@
 package com.gtnewhorizons.navigator.api.xaero.waypoints;
 
+import java.util.Map;
+
+import com.gtnewhorizons.navigator.Navigator;
 import com.gtnewhorizons.navigator.api.model.SupportedMods;
 import com.gtnewhorizons.navigator.api.model.layers.WaypointProviderManager;
 import com.gtnewhorizons.navigator.api.model.waypoints.Waypoint;
 import com.gtnewhorizons.navigator.api.model.waypoints.WaypointManager;
 
-public class XaeroWaypointManager extends WaypointManager {
+import xaero.common.minimap.waypoints.WaypointsManager;
 
+public abstract class XaeroWaypointManager extends WaypointManager {
+
+    public static int lastId;
+    protected final int waypointId;
     private WaypointWithDimension xWaypoint;
 
     public XaeroWaypointManager(WaypointProviderManager layerManager) {
         super(layerManager, SupportedMods.XaeroMiniMap);
+        waypointId = lastId++;
     }
 
     @Override
     public void clearActiveWaypoint() {
         xWaypoint = null;
+        getCustomWaypoints().remove(waypointId);
     }
 
     @Override
@@ -41,7 +50,12 @@ public class XaeroWaypointManager extends WaypointManager {
                 getSymbol(waypoint),
                 15,
                 waypoint.dimensionId);
+            getCustomWaypoints().put(waypointId, xWaypoint);
         }
+    }
+
+    protected Map<Integer, xaero.common.minimap.waypoints.Waypoint> getCustomWaypoints() {
+        return WaypointsManager.getCustomWaypoints(Navigator.MODID);
     }
 
     protected String getSymbol(Waypoint waypoint) {

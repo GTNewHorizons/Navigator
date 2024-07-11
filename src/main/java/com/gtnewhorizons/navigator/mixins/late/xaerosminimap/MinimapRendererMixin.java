@@ -35,23 +35,13 @@ public abstract class MinimapRendererMixin {
     @Shadow
     protected double zoom;
 
-    /*
-     * XaeroMinimapSession minimapSession, MinimapProcessor minimap, int x,
-     * int y, int width, int height, int scale, int size, float partial, CallbackInfo ci, ModSettings settings,
-     * ArrayList<String> underText, int mapSize, int bufferSize, float minimapScale, float mapScale, float sizeFix,
-     * int shape, boolean lockedNorth, double angle, double ps, double pc, boolean useWorldMap, int lightLevel,
-     * boolean cave, boolean circleShape, int scaledX, int scaledY, int minimapFrameSize, int circleSides,
-     * int frameType, boolean renderFrame, int frameTextureX, int halfFrame, int rightCornerStartX, int specH,
-     * boolean safeMode, double playerX, double playerZ
-     */
-
     @Inject(
         method = "renderMinimap",
         at = @At(
             value = "INVOKE",
             target = "Lxaero/common/minimap/waypoints/render/WaypointsGuiRenderer;render(Lxaero/common/XaeroMinimapSession;Lxaero/common/minimap/render/MinimapRendererHelper;DDIIDDFDZFZ)V"))
-    private void visualprospecting$injectDraw(XaeroMinimapSession minimapSession, MinimapProcessor minimap, int x,
-        int y, int width, int height, int scale, int size, float partial, CallbackInfo ci,
+    private void navigator$injectDraw(XaeroMinimapSession minimapSession, MinimapProcessor minimap, int x, int y,
+        int width, int height, int scale, int size, float partial, CallbackInfo ci,
         @Local(name = "circleShape") boolean circleShape, @Local(name = "minimapFrameSize") int minimapFrameSize,
         @Local(name = "angle") double angle) {
         for (LayerManager layerManager : NavigatorApi.layerManagers) {
@@ -93,8 +83,8 @@ public abstract class MinimapRendererMixin {
             to = @At(
                 value = "INVOKE",
                 target = "Lxaero/common/minimap/render/MinimapRendererHelper;drawTexturedElipseInsideRectangle(IFFIIFF)V")))
-    private void visualprospecting$injectBeginStencil(XaeroMinimapSession minimapSession, MinimapProcessor minimap,
-        int x, int y, int width, int height, int scale, int size, float partial, CallbackInfo ci) {
+    private void navigator$injectBeginStencil(XaeroMinimapSession minimapSession, MinimapProcessor minimap, int x,
+        int y, int width, int height, int scale, int size, float partial, CallbackInfo ci) {
         if (navigator$stencilEnabled && MinecraftForgeClient.getStencilBits() == 0) {
             navigator$stencilEnabled = false;
             Navigator.LOG.warn("Could not enable stencils! Xaero's minimap overlays will not render");
@@ -114,8 +104,8 @@ public abstract class MinimapRendererMixin {
             from = @At(
                 value = "INVOKE",
                 target = "Lxaero/common/minimap/render/MinimapRendererHelper;drawTexturedElipseInsideRectangle(IFFIIFF)V")))
-    private void visualprospecting$injectEndStencil(XaeroMinimapSession minimapSession, MinimapProcessor minimap, int x,
-        int y, int width, int height, int scale, int size, float partial, CallbackInfo ci) {
+    private void navigator$injectEndStencil(XaeroMinimapSession minimapSession, MinimapProcessor minimap, int x, int y,
+        int width, int height, int scale, int size, float partial, CallbackInfo ci) {
         GL11.glStencilOp(GL11.GL_KEEP, GL11.GL_KEEP, GL11.GL_KEEP);
         GL11.glStencilMask(0x00);
         GL11.glDisable(GL11.GL_STENCIL_TEST);

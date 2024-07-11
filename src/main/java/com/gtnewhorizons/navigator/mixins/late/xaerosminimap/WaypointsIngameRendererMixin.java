@@ -29,7 +29,7 @@ public abstract class WaypointsIngameRendererMixin {
                 value = "FIELD",
                 target = "Lxaero/common/minimap/waypoints/WaypointsManager;customWaypoints:Ljava/util/Hashtable;",
                 opcode = Opcodes.GETSTATIC)))
-    private void visualprospecting$injectPreRenderCustomWaypoints(XaeroMinimapSession sets, float modCustomWaypoints,
+    private void navigator$injectPreRenderCustomWaypoints(XaeroMinimapSession sets, float modCustomWaypoints,
         CallbackInfo ci) {
         for (WaypointManager manager : NavigatorApi.waypointManagers) {
             if (manager instanceof XaeroWaypointManager xaeroManager) {

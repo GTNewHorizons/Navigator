@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 
+import com.gtnewhorizons.navigator.Utils;
 import com.gtnewhorizons.navigator.api.journeymap.buttons.JMLayerButton;
 import com.gtnewhorizons.navigator.api.journeymap.render.JMLayerRenderer;
 import com.gtnewhorizons.navigator.api.journeymap.waypoints.JMWaypointManager;
@@ -23,6 +24,8 @@ import journeymap.client.render.map.GridRenderer;
 
 public class NavigatorApi {
 
+    public static final double CHUNK_WIDTH = 16;
+
     public static final List<ButtonManager> buttonManagers = new ArrayList<>();
     public static final List<LayerManager> layerManagers = new ArrayList<>();
     public static final List<LayerButton> layerButtons = new ArrayList<>();
@@ -31,22 +34,23 @@ public class NavigatorApi {
 
     /**
      * @param buttonManager The {@link ButtonManager} to register
-     *                      Only one needs to be registered regardless of how many mods are supported
+     *                      Only one needs to be registered per layer regardless of how many mods are supported
      */
     public static void registerButtonManager(ButtonManager buttonManager) {
         buttonManagers.add(buttonManager);
     }
 
     /**
-     * @param layerManager The {@link LayerManager} to register
-     *                     Only one needs to be registered regardless of how many mods are supported
+     * @param layerManager The {@link LayerManager} to register.
+     *                     Only one needs to be registered per layer regardless of how many mods are supported
      */
     public static void registerLayerManager(LayerManager layerManager) {
         layerManagers.add(layerManager);
     }
 
     /**
-     * @param layerButton The LayerButton to register
+     * @param layerButton The LayerButton to register.
+     *                    <p>
      *                    Should be an instance of {@link JMLayerButton} or {@link XaeroLayerButton}
      *                    Both mods can be registered at the same time and will be handled accordingly
      */
@@ -55,7 +59,8 @@ public class NavigatorApi {
     }
 
     /**
-     * @param layerRenderer The LayerRenderer to register
+     * @param layerRenderer The LayerRenderer to register.
+     *                      <p>
      *                      Should be an instance of {@link JMLayerRenderer} or {@link XaeroLayerRenderer}
      *                      Both mods can be registered at the same time and will be handled accordingly
      */
@@ -64,7 +69,8 @@ public class NavigatorApi {
     }
 
     /**
-     * @param waypointManager The {@link WaypointManager} to register
+     * @param waypointManager The {@link WaypointManager} to register.
+     *                        <p>
      *                        Should be an instance of {@link JMWaypointManager} or {@link XaeroWaypointManager}
      *                        Both mods can be registered at the same time and will be handled accordingly
      */
@@ -80,12 +86,14 @@ public class NavigatorApi {
     }
 
     public void openJourneyMapAt(int blockX, int blockZ, int zoom) {
+        if (!Utils.isJourneyMapInstalled()) return;
         final GridRenderer gridRenderer = FullscreenAccessor.getGridRenderer();
         assert gridRenderer != null;
         gridRenderer.center(gridRenderer.getMapType(), blockX, blockZ, zoom);
     }
 
     public void openJourneyMapAt(int blockX, int blockZ) {
+        if (!Utils.isJourneyMapInstalled()) return;
         final GridRenderer gridRenderer = FullscreenAccessor.getGridRenderer();
         this.openJourneyMapAt(blockX, blockZ, gridRenderer.getZoom());
     }

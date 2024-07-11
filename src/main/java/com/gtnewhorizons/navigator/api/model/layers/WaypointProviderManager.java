@@ -40,8 +40,9 @@ public abstract class WaypointProviderManager extends LayerManager {
         return activeWaypoint != null;
     }
 
-    public void registerWaypointManager(SupportedMods map, WaypointManager waypointManager) {
-        waypointManagers.put(map, waypointManager);
+    public void registerWaypointManager(SupportedMods mod, WaypointManager waypointManager) {
+        if (!mod.isEnabled()) return;
+        waypointManagers.put(mod, waypointManager);
     }
 
     public WaypointManager getWaypointManager(SupportedMods map) {

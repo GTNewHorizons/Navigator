@@ -9,7 +9,6 @@ import com.gtnewhorizons.navigator.ClientProxy;
 import com.gtnewhorizons.navigator.api.journeymap.drawsteps.JMClickableDrawStep;
 import com.gtnewhorizons.navigator.api.journeymap.drawsteps.JMDrawStep;
 import com.gtnewhorizons.navigator.api.model.layers.WaypointProviderManager;
-import com.gtnewhorizons.navigator.api.model.locations.ILocationProvider;
 import com.gtnewhorizons.navigator.api.model.steps.RenderStep;
 
 public abstract class WaypointProviderLayerRenderer extends JMLayerRenderer {
@@ -28,14 +27,6 @@ public abstract class WaypointProviderLayerRenderer extends JMLayerRenderer {
         return (List<JMDrawStep>) getReversedRenderSteps();
     }
 
-    @Override
-    public void updateVisibleElements(List<? extends ILocationProvider> visibleElements) {
-        renderSteps = mapLocationProviderToDrawStep(visibleElements);
-    }
-
-    protected abstract List<JMDrawStep> mapLocationProviderToDrawStep(
-        List<? extends ILocationProvider> visibleElements);
-
     public void onMouseMove(int mouseX, int mouseY) {
         hoveredDrawStep = null;
         for (RenderStep drawStep : getRenderStepsForInteraction()) {
@@ -48,7 +39,7 @@ public abstract class WaypointProviderLayerRenderer extends JMLayerRenderer {
         }
     }
 
-    public boolean onClick(boolean isDoubleClick, int blockX, int blockZ) {
+    public boolean onClick(boolean isDoubleClick, int mouseX, int mouseY, int blockX, int blockZ) {
         if (hoveredDrawStep != null) {
             if (isDoubleClick) {
                 if (hoveredDrawStep.getLocationProvider()
@@ -62,10 +53,10 @@ public abstract class WaypointProviderLayerRenderer extends JMLayerRenderer {
             }
             return true;
         }
-        return onClickOutsideRenderStep(isDoubleClick, blockX, blockZ);
+        return onClickOutsideRenderStep(isDoubleClick, mouseX, mouseY, blockX, blockZ);
     }
 
-    public boolean onClickOutsideRenderStep(boolean isDoubleClick, int blockX, int blockZ) {
+    public boolean onClickOutsideRenderStep(boolean isDoubleClick, int mouseX, int mouseY, int blockX, int blockZ) {
         return false;
     }
 

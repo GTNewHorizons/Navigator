@@ -33,7 +33,7 @@ public abstract class RenderWaypointBeaconMixin {
             target = "Ljourneymap/client/waypoint/WaypointStore;instance()Ljourneymap/client/waypoint/WaypointStore;"),
         remap = false,
         require = 1)
-    private static void visualprospecting$onRenderAll(CallbackInfo ci) {
+    private static void navigator$onRenderAll(CallbackInfo ci) {
         for (WaypointManager waypointManager : NavigatorApi.waypointManagers) {
             if (waypointManager.hasWaypoint() && waypointManager instanceof JMWaypointManager jmWaypointManager) {
                 final Waypoint waypoint = jmWaypointManager.getJmWaypoint();

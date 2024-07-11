@@ -64,9 +64,15 @@ public abstract class GuiMapMixin extends ScreenBase {
     @Shadow
     private int screenScale;
 
+    @Shadow
+    private int mouseBlockPosX;
+
+    @Shadow
+    private int mouseBlockPosZ;
+
     @Inject(method = "<init>", at = @At("RETURN"))
-    private void visualprospecting$injectConstruct(GuiScreen parent, GuiScreen escape, MapProcessor mapProcessor,
-        Entity player, CallbackInfo ci) {
+    private void navigator$injectConstruct(GuiScreen parent, GuiScreen escape, MapProcessor mapProcessor, Entity player,
+        CallbackInfo ci) {
         NavigatorApi.layerManagers.forEach(LayerManager::onOpenMap);
     }
 
@@ -74,8 +80,8 @@ public abstract class GuiMapMixin extends ScreenBase {
         method = "drawScreen",
         at = @At(value = "INVOKE", target = "Lorg/lwjgl/opengl/GL11;glPushMatrix()V", ordinal = 1),
         locals = LocalCapture.CAPTURE_FAILEXCEPTION)
-    private void visualprospecting$injectPreRender(int scaledMouseX, int scaledMouseY, float partialTicks,
-        CallbackInfo ci, Minecraft mc) {
+    private void navigator$injectPreRender(int scaledMouseX, int scaledMouseY, float partialTicks, CallbackInfo ci,
+        Minecraft mc) {
         // snap the camera to whole pixel values. works around a rendering issue but causes another when framerate is
         // uncapped
         if (mc.gameSettings.limitFramerate < 255 || mc.gameSettings.enableVsync) {
@@ -84,8 +90,8 @@ public abstract class GuiMapMixin extends ScreenBase {
         }
 
         // there's some nice local variables for exactly this but the local table for this function is hell
-        double mousePosX = (double) ((int) Misc.getMouseX(mc) - mc.displayWidth / 2) / this.scale;
-        double mousePosZ = (double) ((int) Misc.getMouseY(mc) - mc.displayHeight / 2) / this.scale;
+        double mousePosX = (Misc.getMouseX(mc) - (double) mc.displayWidth / 2) / this.scale;
+        double mousePosZ = (Misc.getMouseY(mc) - (double) mc.displayHeight / 2) / this.scale;
 
         for (LayerRenderer layer : NavigatorApi.layerRenderers) {
             if (layer instanceof InteractableLayerRenderer interactableLayer) {
@@ -103,7 +109,7 @@ public abstract class GuiMapMixin extends ScreenBase {
             to = @At(
                 value = "INVOKE",
                 target = "Lxaero/map/mods/SupportXaeroMinimap;renderWaypoints(Lnet/minecraft/client/gui/GuiScreen;DDIIDDDDLjava/util/regex/Pattern;Ljava/util/regex/Pattern;FLxaero/map/mods/gui/Waypoint;Lnet/minecraft/client/Minecraft;Lnet/minecraft/client/gui/ScaledResolution;)Lxaero/map/mods/gui/Waypoint;")))
-    private void visualprospecting$injectDraw(int scaledMouseX, int scaledMouseY, float partialTicks, CallbackInfo ci) {
+    private void navigator$injectDraw(int scaledMouseX, int scaledMouseY, float partialTicks, CallbackInfo ci) {
         for (LayerManager layerManager : NavigatorApi.layerManagers) {
             if (layerManager.isLayerActive()) {
                 // +20s are to work around precision loss from casting to int and right-shifting
@@ -133,8 +139,7 @@ public abstract class GuiMapMixin extends ScreenBase {
                 target = "Lnet/minecraft/client/Minecraft;currentScreen:Lnet/minecraft/client/gui/GuiScreen;",
                 opcode = Opcodes.GETFIELD),
             to = @At(value = "INVOKE", target = "Lxaero/map/gui/CursorBox;drawBox(IIII)V")))
-    private void visualprospecting$injectDrawTooltip(int scaledMouseX, int scaledMouseY, float partialTicks,
-        CallbackInfo ci) {
+    private void navigator$injectDrawTooltip(int scaledMouseX, int scaledMouseY, float partialTicks, CallbackInfo ci) {
         for (XaeroLayerRenderer layer : NavigatorApi.getXaeroLayerRenderers()) {
             if (layer instanceof InteractableLayerRenderer interactableLayer && layer.isLayerActive()) {
                 interactableLayer.drawTooltip(this, scale, screenScale);
@@ -143,7 +148,7 @@ public abstract class GuiMapMixin extends ScreenBase {
     }
 
     @Inject(method = "initGui", at = @At(value = "INVOKE", target = "Lorg/lwjgl/input/Keyboard;enableRepeatEvents(Z)V"))
-    private void visualprospecting$injectInitButtons(CallbackInfo ci) {
+    private void navigator$injectInitButtons(CallbackInfo ci) {
         List<XaeroLayerButton> buttons = NavigatorApi.getXaeroButtons();
         int numBtns = buttons.size();
         int totalHeight = numBtns * 20;
@@ -163,7 +168,7 @@ public abstract class GuiMapMixin extends ScreenBase {
     }
 
     @Inject(method = "onInputPress", at = @At("TAIL"))
-    private void visualprospecting$injectListenKeypress(boolean mouse, int code, CallbackInfoReturnable<Boolean> cir) {
+    private void navigator$injectListenKeypress(boolean mouse, int code, CallbackInfoReturnable<Boolean> cir) {
         LayerRenderer activeLayer = NavigatorApi.getActiveLayer();
         if (activeLayer instanceof InteractableLayerRenderer interactableLayer
             && Misc.inputMatchesKeyBinding(mouse, code, interactableLayer.getActionKey())) {
@@ -172,7 +177,7 @@ public abstract class GuiMapMixin extends ScreenBase {
     }
 
     @Inject(method = "mapClicked", at = @At("TAIL"))
-    private void visualprospecting$injectListenClick(int button, int x, int y, CallbackInfo ci) {
+    private void navigator$injectListenClick(int button, int x, int y, CallbackInfo ci) {
         if (button == 0) {
             final long timestamp = System.currentTimeMillis();
             final boolean isDoubleClick = x == navigator$oldMouseX && y == navigator$oldMouseY
@@ -181,13 +186,9 @@ public abstract class GuiMapMixin extends ScreenBase {
             navigator$oldMouseY = y;
             navigator$timeLastClick = isDoubleClick ? 0 : timestamp;
 
-            // TODO: onClick
-            if (isDoubleClick) {
-                for (LayerRenderer layer : NavigatorApi.layerRenderers) {
-                    if (layer instanceof InteractableLayerRenderer interactableLayer && layer.isLayerActive()) {
-                        interactableLayer.doDoubleClick();
-                    }
-                }
+            LayerRenderer layer = NavigatorApi.getActiveLayer();
+            if (layer instanceof InteractableLayerRenderer interactableLayer) {
+                interactableLayer.onClick(isDoubleClick, x, y, mouseBlockPosX, mouseBlockPosZ);
             }
         }
     }

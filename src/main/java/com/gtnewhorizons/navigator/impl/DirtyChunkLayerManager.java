@@ -10,10 +10,10 @@ import net.minecraft.world.World;
 import net.minecraft.world.chunk.IChunkProvider;
 
 import com.gtnewhorizons.navigator.Utils;
-import com.gtnewhorizons.navigator.api.model.layers.LayerManager;
-import com.gtnewhorizons.navigator.api.model.locations.ILocationProvider;
+import com.gtnewhorizons.navigator.api.model.layers.WaypointProviderManager;
+import com.gtnewhorizons.navigator.api.model.locations.IWaypointAndLocationProvider;
 
-public class DirtyChunkLayerManager extends LayerManager {
+public class DirtyChunkLayerManager extends WaypointProviderManager {
 
     public static final DirtyChunkLayerManager instance = new DirtyChunkLayerManager();
 
@@ -22,8 +22,8 @@ public class DirtyChunkLayerManager extends LayerManager {
     }
 
     @Override
-    protected List<? extends ILocationProvider> generateVisibleElements(int minBlockX, int minBlockZ, int maxBlockX,
-        int maxBlockZ) {
+    protected List<? extends IWaypointAndLocationProvider> generateVisibleElements(int minBlockX, int minBlockZ,
+        int maxBlockX, int maxBlockZ) {
         final int minX = Utils.coordBlockToChunk(minBlockX);
         final int minZ = Utils.coordBlockToChunk(minBlockZ);
         final int maxX = Utils.coordBlockToChunk(maxBlockX);

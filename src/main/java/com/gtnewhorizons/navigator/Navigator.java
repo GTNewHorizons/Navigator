@@ -8,12 +8,17 @@ import cpw.mods.fml.common.SidedProxy;
 import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.event.FMLPostInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
-import cpw.mods.fml.common.event.FMLServerStartingEvent;
 
-@Mod(modid = Navigator.MODID, version = Tags.VERSION, name = "Navigator", dependencies = "required-after:gtnhlib;")
+@Mod(
+    modid = Navigator.MODID,
+    version = Tags.VERSION,
+    name = Navigator.MODNAME,
+    acceptableRemoteVersions = "*",
+    dependencies = "required-after:gtnhlib;")
 public class Navigator {
 
     public static final String MODID = "navigator";
+    public static final String MODNAME = "Navigator";
     public static final Logger LOG = LogManager.getLogger(MODID);
 
     @SidedProxy(
@@ -36,11 +41,5 @@ public class Navigator {
     // postInit "Handle interaction with other mods, complete your setup based on this." (Remove if not needed)
     public void postInit(FMLPostInitializationEvent event) {
         proxy.postInit(event);
-    }
-
-    @Mod.EventHandler
-    // register server commands in this event handler (Remove if not needed)
-    public void serverStarting(FMLServerStartingEvent event) {
-        proxy.serverStarting(event);
     }
 }
