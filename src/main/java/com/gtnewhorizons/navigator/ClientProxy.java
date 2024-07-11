@@ -22,15 +22,11 @@ import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 
 public class ClientProxy extends CommonProxy {
 
-    public static final KeyBinding ACTION_KEY = new KeyBinding(
-        "navigator.key.action",
-        Keyboard.KEY_DELETE,
-        Navigator.MODNAME);
-
     @Override
     public void preInit(FMLPreInitializationEvent event) {
         super.preInit(event);
-        ClientRegistry.registerKeyBinding(ACTION_KEY);
+        Navigator.actionKey = new KeyBinding("navigator.key.action", Keyboard.KEY_DELETE, Navigator.MODNAME);
+        ClientRegistry.registerKeyBinding(Navigator.actionKey);
         if (GeneralConfig.enableDebugLayers) {
             // Shared
             NavigatorApi.registerLayerManager(DirtyChunkLayerManager.instance);

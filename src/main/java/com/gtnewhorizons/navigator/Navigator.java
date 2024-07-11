@@ -1,5 +1,7 @@
 package com.gtnewhorizons.navigator;
 
+import net.minecraft.client.settings.KeyBinding;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -20,6 +22,8 @@ public class Navigator {
     public static final String MODID = "navigator";
     public static final String MODNAME = "Navigator";
     public static final Logger LOG = LogManager.getLogger(MODID);
+
+    public static KeyBinding actionKey;
 
     @SidedProxy(
         clientSide = "com.gtnewhorizons.navigator.ClientProxy",

@@ -1,14 +1,12 @@
 package com.gtnewhorizons.navigator.api.model;
 
-import com.gtnewhorizons.navigator.Utils;
+import com.gtnewhorizons.navigator.api.util.Util;
 
 public enum SupportedMods {
 
-    JourneyMap(Utils.isJourneyMapInstalled()),
-    XaeroWorldMap(Utils.isXaerosWorldMapInstalled()),
-    XaeroMiniMap(Utils.isXaerosMinimapInstalled());
-
-    // TODO: Open Map at here
+    JourneyMap(Util.isJourneyMapInstalled()),
+    XaeroWorldMap(Util.isXaerosWorldMapInstalled()),
+    XaeroMiniMap(Util.isXaerosMinimapInstalled());
 
     private final boolean enabled;
 

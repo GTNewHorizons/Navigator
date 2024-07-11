@@ -4,7 +4,7 @@ import java.lang.reflect.Method;
 import java.util.TreeSet;
 
 import com.gtnewhorizons.navigator.Navigator;
-import com.gtnewhorizons.navigator.Utils;
+import com.gtnewhorizons.navigator.api.util.Util;
 import com.thevoxelbox.voxelmap.interfaces.AbstractVoxelMap;
 import com.thevoxelbox.voxelmap.interfaces.IWaypointManager;
 import com.thevoxelbox.voxelmap.util.Waypoint;
@@ -14,16 +14,30 @@ public class VoxelMapWaypointManager {
     private static Method getCurrentSubworldDescriptor;
 
     public static void addVoxelMapWaypoint(Waypoint waypoint) {
-        if (!Utils.isVoxelMapInstalled()) return;
+        if (!Util.isVoxelMapInstalled()) return;
         IWaypointManager waypointManager = AbstractVoxelMap.getInstance()
             .getWaypointManager();
         waypointManager.addWaypoint(waypoint);
     }
 
     public static void addVoxelMapWaypoint(String name, int x, int y, int z, boolean enabled, float red, float green,
-        float blue, String icon, String world, TreeSet<Integer> dimension) {
-        if (!Utils.isVoxelMapInstalled()) return;
-        addVoxelMapWaypoint(new Waypoint(name, x, y, z, enabled, red, green, blue, icon, world, dimension));
+        float blue, String icon, TreeSet<Integer> dimension) {
+        if (!Util.isVoxelMapInstalled()) return;
+        IWaypointManager waypointManager = AbstractVoxelMap.getInstance()
+            .getWaypointManager();
+        addVoxelMapWaypoint(
+            new Waypoint(
+                name,
+                x,
+                y,
+                z,
+                enabled,
+                red,
+                green,
+                blue,
+                icon,
+                getCurrentSubworldDescriptor(waypointManager, false),
+                dimension));
     }
 
     public static String getCurrentSubworldDescriptor(IWaypointManager obj, boolean arg) {

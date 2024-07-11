@@ -3,7 +3,7 @@ package com.gtnewhorizons.navigator.api.xaero.renderers;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.settings.KeyBinding;
 
-import com.gtnewhorizons.navigator.ClientProxy;
+import com.gtnewhorizons.navigator.Navigator;
 import com.gtnewhorizons.navigator.api.model.layers.WaypointProviderManager;
 import com.gtnewhorizons.navigator.api.xaero.rendersteps.InteractableRenderStep;
 import com.gtnewhorizons.navigator.api.xaero.rendersteps.XaeroRenderStep;
@@ -68,6 +68,6 @@ public abstract class InteractableLayerRenderer extends XaeroLayerRenderer {
         int mouseBlockZ) {}
 
     public KeyBinding getActionKey() {
-        return ClientProxy.ACTION_KEY;
+        return Navigator.actionKey;
     }
 }

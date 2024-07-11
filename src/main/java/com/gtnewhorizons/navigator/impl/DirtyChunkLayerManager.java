@@ -9,9 +9,9 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.IChunkProvider;
 
-import com.gtnewhorizons.navigator.Utils;
 import com.gtnewhorizons.navigator.api.model.layers.WaypointProviderManager;
 import com.gtnewhorizons.navigator.api.model.locations.IWaypointAndLocationProvider;
+import com.gtnewhorizons.navigator.api.util.Util;
 
 public class DirtyChunkLayerManager extends WaypointProviderManager {
 
@@ -24,10 +24,10 @@ public class DirtyChunkLayerManager extends WaypointProviderManager {
     @Override
     protected List<? extends IWaypointAndLocationProvider> generateVisibleElements(int minBlockX, int minBlockZ,
         int maxBlockX, int maxBlockZ) {
-        final int minX = Utils.coordBlockToChunk(minBlockX);
-        final int minZ = Utils.coordBlockToChunk(minBlockZ);
-        final int maxX = Utils.coordBlockToChunk(maxBlockX);
-        final int maxZ = Utils.coordBlockToChunk(maxBlockZ);
+        final int minX = Util.coordBlockToChunk(minBlockX);
+        final int minZ = Util.coordBlockToChunk(minBlockZ);
+        final int maxX = Util.coordBlockToChunk(maxBlockX);
+        final int maxZ = Util.coordBlockToChunk(maxBlockZ);
         final EntityClientPlayerMP player = Minecraft.getMinecraft().thePlayer;
         final int playerDimensionId = player.dimension;
 

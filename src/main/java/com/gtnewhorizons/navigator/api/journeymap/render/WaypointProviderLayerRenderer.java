@@ -5,7 +5,7 @@ import java.util.List;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.settings.KeyBinding;
 
-import com.gtnewhorizons.navigator.ClientProxy;
+import com.gtnewhorizons.navigator.Navigator;
 import com.gtnewhorizons.navigator.api.journeymap.drawsteps.JMClickableDrawStep;
 import com.gtnewhorizons.navigator.api.journeymap.drawsteps.JMDrawStep;
 import com.gtnewhorizons.navigator.api.model.layers.WaypointProviderManager;
@@ -82,6 +82,6 @@ public abstract class WaypointProviderLayerRenderer extends JMLayerRenderer {
     }
 
     public KeyBinding getActionKey() {
-        return ClientProxy.ACTION_KEY;
+        return Navigator.actionKey;
     }
 }

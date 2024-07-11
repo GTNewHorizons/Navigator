@@ -6,7 +6,6 @@ import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 
-import com.gtnewhorizons.navigator.Utils;
 import com.gtnewhorizons.navigator.api.journeymap.buttons.JMLayerButton;
 import com.gtnewhorizons.navigator.api.journeymap.render.JMLayerRenderer;
 import com.gtnewhorizons.navigator.api.journeymap.waypoints.JMWaypointManager;
@@ -15,6 +14,7 @@ import com.gtnewhorizons.navigator.api.model.buttons.LayerButton;
 import com.gtnewhorizons.navigator.api.model.layers.LayerManager;
 import com.gtnewhorizons.navigator.api.model.layers.LayerRenderer;
 import com.gtnewhorizons.navigator.api.model.waypoints.WaypointManager;
+import com.gtnewhorizons.navigator.api.util.Util;
 import com.gtnewhorizons.navigator.api.xaero.buttons.XaeroLayerButton;
 import com.gtnewhorizons.navigator.api.xaero.renderers.XaeroLayerRenderer;
 import com.gtnewhorizons.navigator.api.xaero.waypoints.XaeroWaypointManager;
@@ -86,14 +86,14 @@ public class NavigatorApi {
     }
 
     public void openJourneyMapAt(int blockX, int blockZ, int zoom) {
-        if (!Utils.isJourneyMapInstalled()) return;
+        if (!Util.isJourneyMapInstalled()) return;
         final GridRenderer gridRenderer = FullscreenAccessor.getGridRenderer();
         assert gridRenderer != null;
         gridRenderer.center(gridRenderer.getMapType(), blockX, blockZ, zoom);
     }
 
     public void openJourneyMapAt(int blockX, int blockZ) {
-        if (!Utils.isJourneyMapInstalled()) return;
+        if (!Util.isJourneyMapInstalled()) return;
         final GridRenderer gridRenderer = FullscreenAccessor.getGridRenderer();
         this.openJourneyMapAt(blockX, blockZ, gridRenderer.getZoom());
     }

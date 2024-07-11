@@ -1,8 +1,8 @@
 package com.gtnewhorizons.navigator.impl;
 
-import com.gtnewhorizons.navigator.Utils;
 import com.gtnewhorizons.navigator.api.model.locations.IWaypointAndLocationProvider;
 import com.gtnewhorizons.navigator.api.model.waypoints.Waypoint;
+import com.gtnewhorizons.navigator.api.util.Util;
 
 public class DirtyChunkLocation implements IWaypointAndLocationProvider {
 
@@ -14,8 +14,8 @@ public class DirtyChunkLocation implements IWaypointAndLocationProvider {
     private boolean isActiveAsWaypoint;
 
     public DirtyChunkLocation(int chunkX, int chunkZ, int dimensionId, boolean dirty) {
-        blockX = Utils.coordChunkToBlock(chunkX);
-        blockZ = Utils.coordChunkToBlock(chunkZ);
+        blockX = Util.coordChunkToBlock(chunkX);
+        blockZ = Util.coordChunkToBlock(chunkZ);
         this.dimensionId = dimensionId;
         this.dirty = dirty;
     }

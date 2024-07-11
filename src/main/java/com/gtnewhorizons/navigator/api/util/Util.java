@@ -1,8 +1,8 @@
-package com.gtnewhorizons.navigator;
+package com.gtnewhorizons.navigator.api.util;
 
 import cpw.mods.fml.common.Loader;
 
-public class Utils {
+public class Util {
 
     private static final boolean isJourneyMapLoaded;
     private static final boolean isXaeroWorldMapLoaded;
