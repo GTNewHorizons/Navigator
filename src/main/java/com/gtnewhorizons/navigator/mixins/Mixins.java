@@ -25,10 +25,6 @@ public enum Mixins {
         .setPhase(Phase.EARLY)
         .setApplyIf(() -> ModuleConfig.enableXaeroMinimapModule)
         .addMixinClasses("minecraft.ForgeHooksClientMixin")),
-    JOURNEYMAP_WORLD_DATA(new Builder("fuckthis").addTargetedMod(JOURNEYMAP)
-        .setSide(Side.CLIENT)
-        .setPhase(Phase.EARLY)
-        .addMixinClasses("journeymap.WorldDataMixin")),
     JOURNEYMAP_API(new Builder("JourneyMap integration").addTargetedMod(JOURNEYMAP)
         .setSide(Side.CLIENT)
         .setPhase(Phase.LATE)
