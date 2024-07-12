@@ -13,8 +13,8 @@ import com.gtnewhorizons.navigator.api.model.steps.RenderStep;
 
 public abstract class JMInteractableLayerRenderer extends JMLayerRenderer {
 
-    private final WaypointProviderManager manager;
-    private JMInteractableStep hoveredDrawStep = null;
+    protected final WaypointProviderManager manager;
+    protected JMInteractableStep hoveredDrawStep = null;
 
     public JMInteractableLayerRenderer(WaypointProviderManager manager) {
         super(manager);
