@@ -4,7 +4,7 @@ import net.minecraft.client.gui.GuiScreen;
 
 import com.gtnewhorizons.navigator.api.model.locations.IWaypointAndLocationProvider;
 
-public interface InteractableRenderStep extends XaeroRenderStep {
+public interface XaeroInteractableStep extends XaeroRenderStep {
 
     boolean isMouseOver(double mouseX, double mouseY, double scale);
 

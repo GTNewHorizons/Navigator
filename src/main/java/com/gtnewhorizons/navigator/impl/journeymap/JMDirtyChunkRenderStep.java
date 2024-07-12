@@ -8,20 +8,20 @@ import java.util.List;
 
 import net.minecraft.client.gui.FontRenderer;
 
-import com.gtnewhorizons.navigator.api.journeymap.drawsteps.JMClickableDrawStep;
+import com.gtnewhorizons.navigator.api.journeymap.drawsteps.JMInteractableStep;
 import com.gtnewhorizons.navigator.api.model.locations.IWaypointAndLocationProvider;
 import com.gtnewhorizons.navigator.impl.DirtyChunkLocation;
 
 import journeymap.client.render.draw.DrawUtil;
 import journeymap.client.render.map.GridRenderer;
 
-public class JMDirtyChunkDrawStep implements JMClickableDrawStep {
+public class JMDirtyChunkRenderStep implements JMInteractableStep {
 
     private final DirtyChunkLocation dirtyChunkLocation;
 
     private double topX, topY, chunkSize;
 
-    public JMDirtyChunkDrawStep(DirtyChunkLocation dirtyChunkLocation) {
+    public JMDirtyChunkRenderStep(DirtyChunkLocation dirtyChunkLocation) {
         this.dirtyChunkLocation = dirtyChunkLocation;
     }
 

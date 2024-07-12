@@ -6,6 +6,11 @@ import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 
+import net.minecraft.client.settings.KeyBinding;
+
+import org.lwjgl.input.Keyboard;
+
+import com.gtnewhorizons.navigator.Navigator;
 import com.gtnewhorizons.navigator.api.journeymap.buttons.JMLayerButton;
 import com.gtnewhorizons.navigator.api.journeymap.render.JMLayerRenderer;
 import com.gtnewhorizons.navigator.api.journeymap.waypoints.JMWaypointManager;
@@ -25,6 +30,10 @@ import journeymap.client.render.map.GridRenderer;
 public class NavigatorApi {
 
     public static final double CHUNK_WIDTH = 16;
+    public static final KeyBinding ACTION_KEY = new KeyBinding(
+        "navigator.key.action",
+        Keyboard.KEY_DELETE,
+        Navigator.MODNAME);
 
     public static final List<ButtonManager> buttonManagers = new ArrayList<>();
     public static final List<LayerManager> layerManagers = new ArrayList<>();

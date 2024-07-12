@@ -3,19 +3,19 @@ package com.gtnewhorizons.navigator.api.xaero.renderers;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.settings.KeyBinding;
 
-import com.gtnewhorizons.navigator.Navigator;
+import com.gtnewhorizons.navigator.api.NavigatorApi;
 import com.gtnewhorizons.navigator.api.model.layers.WaypointProviderManager;
-import com.gtnewhorizons.navigator.api.xaero.rendersteps.InteractableRenderStep;
+import com.gtnewhorizons.navigator.api.xaero.rendersteps.XaeroInteractableStep;
 import com.gtnewhorizons.navigator.api.xaero.rendersteps.XaeroRenderStep;
 
-public abstract class InteractableLayerRenderer extends XaeroLayerRenderer {
+public abstract class XaeroInteractableLayerRenderer extends XaeroLayerRenderer {
 
     private double mouseX;
     private double mouseY;
     protected WaypointProviderManager manager;
-    protected InteractableRenderStep hovered;
+    protected XaeroInteractableStep hovered;
 
-    public InteractableLayerRenderer(WaypointProviderManager manager) {
+    public XaeroInteractableLayerRenderer(WaypointProviderManager manager) {
         super(manager);
         this.manager = manager;
         hovered = null;
@@ -25,7 +25,7 @@ public abstract class InteractableLayerRenderer extends XaeroLayerRenderer {
         this.mouseX = mouseX;
         this.mouseY = mouseY;
         for (XaeroRenderStep step : getReversedRenderSteps()) {
-            if (step instanceof InteractableRenderStep interactableRenderStep
+            if (step instanceof XaeroInteractableStep interactableRenderStep
                 && interactableRenderStep.isMouseOver(mouseX, mouseY, scale)) {
                 hovered = interactableRenderStep;
                 return;
@@ -68,6 +68,6 @@ public abstract class InteractableLayerRenderer extends XaeroLayerRenderer {
         int mouseBlockZ) {}
 
     public KeyBinding getActionKey() {
-        return Navigator.actionKey;
+        return NavigatorApi.ACTION_KEY;
     }
 }

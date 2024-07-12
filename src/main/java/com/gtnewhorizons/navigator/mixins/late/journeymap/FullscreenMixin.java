@@ -21,8 +21,8 @@ import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
 import com.gtnewhorizons.navigator.api.NavigatorApi;
 import com.gtnewhorizons.navigator.api.journeymap.buttons.JMLayerButton;
+import com.gtnewhorizons.navigator.api.journeymap.render.JMInteractableLayerRenderer;
 import com.gtnewhorizons.navigator.api.journeymap.render.JMLayerRenderer;
-import com.gtnewhorizons.navigator.api.journeymap.render.WaypointProviderLayerRenderer;
 import com.gtnewhorizons.navigator.api.model.buttons.LayerButton;
 import com.gtnewhorizons.navigator.api.model.layers.LayerManager;
 import com.gtnewhorizons.navigator.api.model.layers.LayerRenderer;
@@ -196,12 +196,12 @@ public abstract class FullscreenMixin extends JmUI {
             final int scaledMouseX = (mx * mc.displayWidth) / this.width;
             final int scaledMouseY = (my * mc.displayHeight) / this.height;
             LayerRenderer activeLayer = NavigatorApi.getActiveLayer();
-            if (activeLayer instanceof WaypointProviderLayerRenderer waypointProviderLayer) {
+            if (activeLayer instanceof JMInteractableLayerRenderer waypointProviderLayer) {
                 waypointProviderLayer.onMouseMove(scaledMouseX, scaledMouseY);
             }
 
             if (tooltip == null) {
-                if (activeLayer instanceof WaypointProviderLayerRenderer waypointProviderLayer) {
+                if (activeLayer instanceof JMInteractableLayerRenderer waypointProviderLayer) {
                     if (waypointProviderLayer.isLayerActive()) {
                         tooltip = waypointProviderLayer.getTextTooltip();
                     }
@@ -216,7 +216,7 @@ public abstract class FullscreenMixin extends JmUI {
                 drawHoveringText(tooltip, mx, my, getFontRenderer());
                 RenderHelper.disableStandardItemLighting();
             } else {
-                if (activeLayer instanceof WaypointProviderLayerRenderer waypointProviderLayer) {
+                if (activeLayer instanceof JMInteractableLayerRenderer waypointProviderLayer) {
                     if (waypointProviderLayer.isLayerActive()) {
                         waypointProviderLayer.drawCustomTooltip(getFontRenderer(), mx, my, this.width, this.height);
                     }
@@ -238,7 +238,7 @@ public abstract class FullscreenMixin extends JmUI {
     private void navigator$onKeyPress(CallbackInfo ci) {
         if ((chat == null || chat.isHidden())) {
             LayerRenderer layer = NavigatorApi.getActiveLayer();
-            if (layer instanceof WaypointProviderLayerRenderer waypointProvider) {
+            if (layer instanceof JMInteractableLayerRenderer waypointProvider) {
                 if (Constants.isPressed(waypointProvider.getActionKey())) {
                     waypointProvider.onActionKeyPressed();
                     ci.cancel();
@@ -284,7 +284,7 @@ public abstract class FullscreenMixin extends JmUI {
             return false;
         }
         LayerRenderer layer = NavigatorApi.getActiveLayer();
-        if (layer instanceof WaypointProviderLayerRenderer wpLayerRender) {
+        if (layer instanceof JMInteractableLayerRenderer wpLayerRender) {
             wpLayerRender.onMouseMove(mouseX, mouseY);
             return wpLayerRender.onClick(isDoubleClick, mouseX, mouseY, blockCoord.x, blockCoord.z);
         }

@@ -23,7 +23,7 @@ import com.gtnewhorizons.navigator.api.model.layers.LayerManager;
 import com.gtnewhorizons.navigator.api.model.layers.LayerRenderer;
 import com.gtnewhorizons.navigator.api.xaero.buttons.SizedGuiTexturedButton;
 import com.gtnewhorizons.navigator.api.xaero.buttons.XaeroLayerButton;
-import com.gtnewhorizons.navigator.api.xaero.renderers.InteractableLayerRenderer;
+import com.gtnewhorizons.navigator.api.xaero.renderers.XaeroInteractableLayerRenderer;
 import com.gtnewhorizons.navigator.api.xaero.renderers.XaeroLayerRenderer;
 import com.gtnewhorizons.navigator.api.xaero.rendersteps.XaeroRenderStep;
 
@@ -94,7 +94,7 @@ public abstract class GuiMapMixin extends ScreenBase {
         double mousePosZ = (Misc.getMouseY(mc) - (double) mc.displayHeight / 2) / this.scale;
 
         for (LayerRenderer layer : NavigatorApi.layerRenderers) {
-            if (layer instanceof InteractableLayerRenderer interactableLayer) {
+            if (layer instanceof XaeroInteractableLayerRenderer interactableLayer) {
                 interactableLayer.updateHovered(mousePosX, mousePosZ, scale);
             }
         }
@@ -141,7 +141,7 @@ public abstract class GuiMapMixin extends ScreenBase {
             to = @At(value = "INVOKE", target = "Lxaero/map/gui/CursorBox;drawBox(IIII)V")))
     private void navigator$injectDrawTooltip(int scaledMouseX, int scaledMouseY, float partialTicks, CallbackInfo ci) {
         for (XaeroLayerRenderer layer : NavigatorApi.getXaeroLayerRenderers()) {
-            if (layer instanceof InteractableLayerRenderer interactableLayer && layer.isLayerActive()) {
+            if (layer instanceof XaeroInteractableLayerRenderer interactableLayer && layer.isLayerActive()) {
                 interactableLayer.drawTooltip(this, scale, screenScale);
             }
         }
@@ -170,7 +170,7 @@ public abstract class GuiMapMixin extends ScreenBase {
     @Inject(method = "onInputPress", at = @At("TAIL"))
     private void navigator$injectListenKeypress(boolean mouse, int code, CallbackInfoReturnable<Boolean> cir) {
         LayerRenderer activeLayer = NavigatorApi.getActiveLayer();
-        if (activeLayer instanceof InteractableLayerRenderer interactableLayer
+        if (activeLayer instanceof XaeroInteractableLayerRenderer interactableLayer
             && Misc.inputMatchesKeyBinding(mouse, code, interactableLayer.getActionKey())) {
             interactableLayer.doActionKeyPress();
         }
@@ -187,7 +187,7 @@ public abstract class GuiMapMixin extends ScreenBase {
             navigator$timeLastClick = isDoubleClick ? 0 : timestamp;
 
             LayerRenderer layer = NavigatorApi.getActiveLayer();
-            if (layer instanceof InteractableLayerRenderer interactableLayer) {
+            if (layer instanceof XaeroInteractableLayerRenderer interactableLayer) {
                 interactableLayer.onClick(isDoubleClick, x, y, mouseBlockPosX, mouseBlockPosZ);
             }
         }

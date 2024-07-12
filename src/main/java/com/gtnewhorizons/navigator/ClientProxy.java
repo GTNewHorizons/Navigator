@@ -1,9 +1,5 @@
 package com.gtnewhorizons.navigator;
 
-import net.minecraft.client.settings.KeyBinding;
-
-import org.lwjgl.input.Keyboard;
-
 import com.gtnewhorizons.navigator.api.NavigatorApi;
 import com.gtnewhorizons.navigator.config.GeneralConfig;
 import com.gtnewhorizons.navigator.impl.DirtyChunkButtonManager;
@@ -25,8 +21,7 @@ public class ClientProxy extends CommonProxy {
     @Override
     public void preInit(FMLPreInitializationEvent event) {
         super.preInit(event);
-        Navigator.actionKey = new KeyBinding("navigator.key.action", Keyboard.KEY_DELETE, Navigator.MODNAME);
-        ClientRegistry.registerKeyBinding(Navigator.actionKey);
+        ClientRegistry.registerKeyBinding(NavigatorApi.ACTION_KEY);
         if (GeneralConfig.enableDebugLayers) {
             // Shared
             NavigatorApi.registerLayerManager(DirtyChunkLayerManager.instance);

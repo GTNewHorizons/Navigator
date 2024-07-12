@@ -5,32 +5,32 @@ import java.util.List;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.settings.KeyBinding;
 
-import com.gtnewhorizons.navigator.Navigator;
-import com.gtnewhorizons.navigator.api.journeymap.drawsteps.JMClickableDrawStep;
-import com.gtnewhorizons.navigator.api.journeymap.drawsteps.JMDrawStep;
+import com.gtnewhorizons.navigator.api.NavigatorApi;
+import com.gtnewhorizons.navigator.api.journeymap.drawsteps.JMInteractableStep;
+import com.gtnewhorizons.navigator.api.journeymap.drawsteps.JMRenderStep;
 import com.gtnewhorizons.navigator.api.model.layers.WaypointProviderManager;
 import com.gtnewhorizons.navigator.api.model.steps.RenderStep;
 
-public abstract class WaypointProviderLayerRenderer extends JMLayerRenderer {
+public abstract class JMInteractableLayerRenderer extends JMLayerRenderer {
 
     private final WaypointProviderManager manager;
-    private JMClickableDrawStep hoveredDrawStep = null;
+    private JMInteractableStep hoveredDrawStep = null;
 
-    public WaypointProviderLayerRenderer(WaypointProviderManager manager) {
+    public JMInteractableLayerRenderer(WaypointProviderManager manager) {
         super(manager);
         this.manager = manager;
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    public List<JMDrawStep> getRenderSteps() {
-        return (List<JMDrawStep>) getReversedRenderSteps();
+    public List<JMRenderStep> getRenderSteps() {
+        return (List<JMRenderStep>) getReversedRenderSteps();
     }
 
     public void onMouseMove(int mouseX, int mouseY) {
         hoveredDrawStep = null;
         for (RenderStep drawStep : getRenderStepsForInteraction()) {
-            if (drawStep instanceof JMClickableDrawStep clickableDrawStep) {
+            if (drawStep instanceof JMInteractableStep clickableDrawStep) {
                 if (clickableDrawStep.isMouseOver(mouseX, mouseY)) {
                     hoveredDrawStep = clickableDrawStep;
                     return;
@@ -82,6 +82,6 @@ public abstract class WaypointProviderLayerRenderer extends JMLayerRenderer {
     }
 
     public KeyBinding getActionKey() {
-        return Navigator.actionKey;
+        return NavigatorApi.ACTION_KEY;
     }
 }

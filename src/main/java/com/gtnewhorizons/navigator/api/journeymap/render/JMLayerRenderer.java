@@ -2,7 +2,7 @@ package com.gtnewhorizons.navigator.api.journeymap.render;
 
 import java.util.List;
 
-import com.gtnewhorizons.navigator.api.journeymap.drawsteps.JMDrawStep;
+import com.gtnewhorizons.navigator.api.journeymap.drawsteps.JMRenderStep;
 import com.gtnewhorizons.navigator.api.model.SupportedMods;
 import com.gtnewhorizons.navigator.api.model.layers.LayerManager;
 import com.gtnewhorizons.navigator.api.model.layers.LayerRenderer;
@@ -16,8 +16,8 @@ public abstract class JMLayerRenderer extends LayerRenderer {
 
     @Override
     @SuppressWarnings("unchecked")
-    public List<JMDrawStep> getRenderSteps() {
-        return (List<JMDrawStep>) renderSteps;
+    public List<JMRenderStep> getRenderSteps() {
+        return (List<JMRenderStep>) renderSteps;
     }
 
     @Override

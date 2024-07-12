@@ -12,10 +12,10 @@ import org.lwjgl.opengl.GL11;
 
 import com.gtnewhorizons.navigator.api.model.locations.IWaypointAndLocationProvider;
 import com.gtnewhorizons.navigator.api.util.DrawUtils;
-import com.gtnewhorizons.navigator.api.xaero.rendersteps.InteractableRenderStep;
+import com.gtnewhorizons.navigator.api.xaero.rendersteps.XaeroInteractableStep;
 import com.gtnewhorizons.navigator.impl.DirtyChunkLocation;
 
-public class XaeroDirtyChunkRenderSteps implements InteractableRenderStep {
+public class XaeroDirtyChunkRenderSteps implements XaeroInteractableStep {
 
     public final DirtyChunkLocation dirtyChunkLocation;
 

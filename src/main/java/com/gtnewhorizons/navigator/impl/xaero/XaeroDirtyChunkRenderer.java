@@ -4,11 +4,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.gtnewhorizons.navigator.api.model.locations.ILocationProvider;
-import com.gtnewhorizons.navigator.api.xaero.renderers.InteractableLayerRenderer;
+import com.gtnewhorizons.navigator.api.xaero.renderers.XaeroInteractableLayerRenderer;
 import com.gtnewhorizons.navigator.impl.DirtyChunkLayerManager;
 import com.gtnewhorizons.navigator.impl.DirtyChunkLocation;
 
-public class XaeroDirtyChunkRenderer extends InteractableLayerRenderer {
+public class XaeroDirtyChunkRenderer extends XaeroInteractableLayerRenderer {
 
     public static final XaeroDirtyChunkRenderer instance = new XaeroDirtyChunkRenderer();
 

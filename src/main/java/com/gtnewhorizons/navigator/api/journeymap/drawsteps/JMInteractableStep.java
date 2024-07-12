@@ -6,7 +6,7 @@ import net.minecraft.client.gui.FontRenderer;
 
 import com.gtnewhorizons.navigator.api.model.locations.IWaypointAndLocationProvider;
 
-public interface JMClickableDrawStep extends JMDrawStep {
+public interface JMInteractableStep extends JMRenderStep {
 
     List<String> getTooltip();
 
