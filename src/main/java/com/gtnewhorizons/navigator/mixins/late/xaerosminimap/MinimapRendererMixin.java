@@ -66,7 +66,7 @@ public abstract class MinimapRendererMixin {
             GL11.glScaled(mapZoom, mapZoom, 0);
             GL11.glStencilFunc(GL11.GL_EQUAL, 1, 1);
             for (XaeroLayerRenderer renderer : NavigatorApi.getXaeroLayerRenderers()) {
-                if (renderer.isLayerActive()) {
+                if (renderer.isMinimapActive()) {
                     for (XaeroRenderStep renderStep : renderer.getRenderSteps()) {
                         renderStep.draw(null, minimap.mainPlayerX, minimap.mainPlayerZ, mapZoom);
                     }

@@ -53,18 +53,19 @@ public abstract class MiniMapMixin {
             }
         }
 
-        LayerRenderer layerRenderer = NavigatorApi.getActiveLayer();
-        if (layerRenderer == null) return;
-
-        for (RenderStep renderStep : layerRenderer.getRenderSteps()) {
-            if (renderStep instanceof DrawStep drawStep) {
-                drawStep.draw(
-                    0.0D,
-                    0.0D,
-                    gridRenderer,
-                    ((DisplayVarsAccessor) dv).getDrawScale(),
-                    ((DisplayVarsAccessor) dv).getFontScale(),
-                    rotation);
+        for (LayerRenderer layerRenderer : NavigatorApi.getJourneyMapLayerRenderers()) {
+            if (layerRenderer.isMinimapActive()) {
+                for (RenderStep renderStep : layerRenderer.getRenderSteps()) {
+                    if (renderStep instanceof DrawStep drawStep) {
+                        drawStep.draw(
+                            0.0D,
+                            0.0D,
+                            gridRenderer,
+                            ((DisplayVarsAccessor) dv).getDrawScale(),
+                            ((DisplayVarsAccessor) dv).getFontScale(),
+                            rotation);
+                    }
+                }
             }
         }
     }

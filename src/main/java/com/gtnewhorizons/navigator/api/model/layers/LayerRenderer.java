@@ -31,6 +31,10 @@ public abstract class LayerRenderer {
                 .equals(mod);
     }
 
+    public final boolean isMinimapActive() {
+        return manager.isMinimapActive();
+    }
+
     public final SupportedMods getLayerMod() {
         return mod;
     }

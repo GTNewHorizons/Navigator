@@ -248,7 +248,7 @@ public abstract class FullscreenMixin extends JmUI {
         }
     }
 
-    @Inject(method = "onGuiClosed", at = @At("RETURN"))
+    @Inject(method = "onGuiClosed", at = @At("RETURN"), remap = true)
     private void navigator$onGuiClosed(CallbackInfo ci) {
         NavigatorApi.layerManagers.forEach(layerManager -> layerManager.onGuiClosed(SupportedMods.JourneyMap));
     }

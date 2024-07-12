@@ -22,6 +22,7 @@ public abstract class LayerManager {
     private int fullscreenMapWidth = 0;
     private int fullscreenMapHeight = 0;
     private SupportedMods openModGui;
+    private boolean isMinimapActive;
 
     public LayerManager(ButtonManager buttonManager) {
         this.buttonManager = buttonManager;
@@ -35,6 +36,10 @@ public abstract class LayerManager {
 
     public boolean isLayerActive() {
         return buttonManager.isActive();
+    }
+
+    public boolean isMinimapActive() {
+        return isMinimapActive;
     }
 
     public void activateLayer() {
@@ -60,6 +65,7 @@ public abstract class LayerManager {
 
     public final void onGuiClosed(SupportedMods mod) {
         openModGui = SupportedMods.NONE;
+        isMinimapActive = isLayerActive();
         onCloseMap();
     }
 
