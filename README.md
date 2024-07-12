@@ -3,7 +3,7 @@
 Navigator is an api mod that allows for other mods to add integration for
 * [JourneyMap](https://www.curseforge.com/minecraft/mc-mods/journeymap)
 * [Xaeros World](https://www.curseforge.com/minecraft/mc-mods/xaeros-world-map) & [Minimap](https://www.curseforge.com/minecraft/mc-mods/xaeros-minimap)
-* VoxelMap (Limited support)
+* [VoxelMap](https://www.curseforge.com/minecraft/mc-mods/voxelmap) (Limited support)
 
 ## Dependencies
 * [GTNHLib](https://www.curseforge.com/minecraft/mc-mods/gtnhlib)
@@ -27,7 +27,7 @@ This API will keep all maps as optional mod at runtime and not crash you game if
 You may instantiate [`ButtonManager`](https://github.com/GTNewHorizons/Navigator/blob/master/src/main/java/com/gtnewhorizons/navigator/api/model/buttons/ButtonManager.java) to create your own logical button.
 Follow it up with an instance of [`LayerButton`](https://github.com/GTNewHorizons/Navigator/blob/master/src/main/java/com/gtnewhorizons/navigator/api/journeymap/buttons/JMLayerButton.java) and register both in the [`NavigatorApi`](https://github.com/GTNewHorizons/Navigator/blob/master/src/main/java/com/gtnewhorizons/navigator/api/NavigatorApi.java):
 
-```
+```java
 ButtonManager buttonManager = new ButtonManager("translation.key", "iconName");
 LayerButton layerButton = new JMLayerButton(buttonManager);
 
@@ -39,7 +39,7 @@ If you start the game now, you will see a new button in the menu!
 
 First, you will implement [`ILocationProvider`](https://github.com/GTNewHorizons/Navigator/blob/master/src/main/java/com/gtnewhorizons/navigator/api/model/locations/ILocationProvider.java). This class is a container and will provide all information required to display your item on screen. It won't do any rendering.
 
-```
+```java
 class MyLocation implements ILocationProvider {
 
     public int getDimensionId() {
@@ -66,7 +66,7 @@ class MyLocation implements ILocationProvider {
 
 Next up, you'll extend [`LayerManager`](https://github.com/GTNewHorizons/Navigator/blob/master/src/main/java/com/gtnewhorizons/navigator/api/model/layers/LayerManager.java) and implement the abstract function to generate a cached list of your [`ILocationProvider`](https://github.com/GTNewHorizons/Navigator/blob/master/src/main/java/com/gtnewhorizons/navigator/api/model/locations/ILocationProvider.java) implementation. You should only add whatever items are visible to this list. There are more methods to override, that will assist you with that. Take a look!
 
-```
+```java
 class MyLayerManager extends LayerManager {
 
     public static final MyLayerManager instance = new MyLayerManager();
@@ -83,7 +83,7 @@ class MyLayerManager extends LayerManager {
 
 Congratulations, you have finished the logical implementation of your custom map layer! Now it is time for the visual integration. This example is provided for JourneyMap, but you might as well take a look at the other possibilities. Since you already implemented the button as a first step, you will need to follow it up with an implementation of `JMRenderStep`. This class will receive an instance of `MyLocation` and perform the actual rendering.
 
-```
+```java
 class MyDrawStep implements JMRenderStep {
 
     private final MyLocation myLocation;
@@ -105,7 +105,7 @@ class MyDrawStep implements JMRenderStep {
 
 Continue with your own implementation of [`JMLayerRenderer`](https://github.com/GTNewHorizons/Navigator/blob/master/src/main/java/com/gtnewhorizons/navigator/api/journeymap/render/JMLayerRenderer.java). This class will cache all `Renderstep`s and provide it to JourneyMap whenever it is time to render.
 
-```
+```java
 class MyLayerRenderer extends JMLayerRenderer {
 
     public MyLayerRenderer() {
