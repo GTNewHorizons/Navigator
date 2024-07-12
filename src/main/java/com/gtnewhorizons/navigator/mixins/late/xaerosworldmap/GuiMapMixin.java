@@ -195,7 +195,7 @@ public abstract class GuiMapMixin extends ScreenBase {
     }
 
     @Inject(method = "onGuiClosed", at = @At("RETURN"))
-    public void navigator$onGuiClosed(CallbackInfo ci) {
+    private void navigator$onGuiClosed(CallbackInfo ci) {
         NavigatorApi.layerManagers.forEach(layerManager -> layerManager.onGuiClosed(SupportedMods.XaeroWorldMap));
     }
 

@@ -9,7 +9,7 @@ Navigator is an api mod that allows for other mods to add integration for
 * [GTNHLib](https://www.curseforge.com/minecraft/mc-mods/gtnhlib)
 
 
-# Documentation
+## Documentation
 ### Example Layer Implementation
 Navigator provides a debug layer which can also be used as a template for your own layers.
 * [JourneyMap Dirty Chunk Layer](https://github.com/GTNewHorizons/Navigator/tree/master/src/main/java/com/gtnewhorizons/navigator/impl/journeymap)
