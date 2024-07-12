@@ -115,7 +115,7 @@ class MyLayerRenderer extends JMLayerRenderer {
     }
 
     @Override
-    public List<? extends RenderStep> generateRenderStesp(List<? extends ILocationProvider> visibleElements) {
+    public List<? extends RenderStep> generateRenderSteps(List<? extends ILocationProvider> visibleElements) {
         final List<MyDrawStep> drawSteps = new ArrayList<>();
         visibleElements.stream()
                 .map(element -> (MyLocation) element)
