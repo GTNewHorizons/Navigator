@@ -3,6 +3,7 @@ package com.gtnewhorizons.navigator.api.util;
 import java.util.List;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.client.renderer.Tessellator;
@@ -148,6 +149,39 @@ public class DrawUtils {
                 fontColor);
         }
 
+        GL11.glPopMatrix();
+    }
+
+    public static void drawLabel(String text, double textX, double textY, int fontColor, int bgColor, boolean centered,
+        double fontScale) {
+        final FontRenderer fontRenderer = Minecraft.getMinecraft().fontRenderer;
+
+        GL11.glPushMatrix();
+
+        if (fontScale != 1.0) {
+            textX /= fontScale;
+            textY /= fontScale;
+            GL11.glScaled(fontScale, fontScale, 0);
+        }
+        double dTextX = textX - (double) (int) textX;
+        double dTextY = textY - (double) (int) textY;
+        double textWidth = fontRenderer.getStringWidth(text);
+        double xOffsetL = centered ? -textWidth / 2.0 - 2 : -2;
+        double xOffsetR = centered ? textWidth / 2.0 + 2 : textWidth + 2;
+        GL11.glTranslated(dTextX, dTextY, 0.0);
+        drawGradientRect(
+            (int) textX + xOffsetL,
+            (int) textY - 2,
+            (int) textX + xOffsetR,
+            (int) textY + fontRenderer.FONT_HEIGHT + 2,
+            0,
+            bgColor,
+            bgColor);
+        fontRenderer.drawStringWithShadow(
+            text,
+            (centered ? (int) (textX - textWidth / 2.0) : (int) textX),
+            (int) textY,
+            fontColor);
         GL11.glPopMatrix();
     }
 

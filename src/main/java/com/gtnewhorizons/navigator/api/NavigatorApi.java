@@ -85,17 +85,18 @@ public class NavigatorApi {
             .orElse(null);
     }
 
-    public void openJourneyMapAt(int blockX, int blockZ, int zoom) {
+    public void openJourneyMapAt(@Nullable LayerManager layer, int blockX, int blockZ, int zoom) {
         if (!Util.isJourneyMapInstalled()) return;
         final GridRenderer gridRenderer = FullscreenAccessor.getGridRenderer();
-        assert gridRenderer != null;
+        if (gridRenderer == null) return;
+
+        if (layer != null) layer.activateLayer();
+        if (zoom == -1) zoom = gridRenderer.getZoom();
         gridRenderer.center(gridRenderer.getMapType(), blockX, blockZ, zoom);
     }
 
-    public void openJourneyMapAt(int blockX, int blockZ) {
-        if (!Util.isJourneyMapInstalled()) return;
-        final GridRenderer gridRenderer = FullscreenAccessor.getGridRenderer();
-        this.openJourneyMapAt(blockX, blockZ, gridRenderer.getZoom());
+    public void openJourneyMapAt(@Nullable LayerManager layer, int blockX, int blockZ) {
+        this.openJourneyMapAt(layer, blockX, blockZ, -1);
     }
 
     public static List<JMLayerRenderer> getJourneyMapLayerRenderers() {

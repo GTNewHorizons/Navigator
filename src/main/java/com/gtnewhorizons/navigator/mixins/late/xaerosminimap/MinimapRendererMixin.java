@@ -43,7 +43,7 @@ public abstract class MinimapRendererMixin {
     private void navigator$injectDraw(XaeroMinimapSession minimapSession, MinimapProcessor minimap, int x, int y,
         int width, int height, int scale, int size, float partial, CallbackInfo ci,
         @Local(name = "circleShape") boolean circleShape, @Local(name = "minimapFrameSize") int minimapFrameSize,
-        @Local(name = "angle") double angle) {
+        @Local(name = "angle") double angle, @Local(name = "minimapScale") float minimapScale) {
         for (LayerManager layerManager : NavigatorApi.layerManagers) {
             if (layerManager.isLayerActive()) {
                 if (circleShape) {
@@ -59,15 +59,16 @@ public abstract class MinimapRendererMixin {
         }
 
         if (navigator$stencilEnabled) {
+            double mapZoom = zoom * (double) minimapScale / 2.0;
             GL11.glPushMatrix();
             GL11.glEnable(GL11.GL_STENCIL_TEST);
             GL11.glRotated(Math.toDegrees(angle) - 90, 0.0, 0.0, 1.0);
-            GL11.glScaled(zoom, zoom, 0);
+            GL11.glScaled(mapZoom, mapZoom, 0);
             GL11.glStencilFunc(GL11.GL_EQUAL, 1, 1);
             for (XaeroLayerRenderer renderer : NavigatorApi.getXaeroLayerRenderers()) {
                 if (renderer.isLayerActive()) {
                     for (XaeroRenderStep renderStep : renderer.getRenderSteps()) {
-                        renderStep.draw(null, minimap.mainPlayerX, minimap.mainPlayerZ, scale);
+                        renderStep.draw(null, minimap.mainPlayerX, minimap.mainPlayerZ, mapZoom);
                     }
                 }
             }
