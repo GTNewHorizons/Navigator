@@ -14,6 +14,7 @@ import com.gtnewhorizons.navigator.Navigator;
 import com.gtnewhorizons.navigator.api.journeymap.buttons.JMLayerButton;
 import com.gtnewhorizons.navigator.api.journeymap.render.JMLayerRenderer;
 import com.gtnewhorizons.navigator.api.journeymap.waypoints.JMWaypointManager;
+import com.gtnewhorizons.navigator.api.model.SupportedMods;
 import com.gtnewhorizons.navigator.api.model.buttons.ButtonManager;
 import com.gtnewhorizons.navigator.api.model.buttons.LayerButton;
 import com.gtnewhorizons.navigator.api.model.layers.LayerManager;
@@ -87,9 +88,11 @@ public class NavigatorApi {
         waypointManagers.add(waypointManager);
     }
 
-    public static @Nullable LayerRenderer getActiveLayer() {
+    public static @Nullable LayerRenderer getActiveLayerFor(SupportedMods mod) {
         return layerRenderers.stream()
-            .filter(LayerRenderer::isLayerActive)
+            .filter(
+                layerRenderer -> layerRenderer.isLayerActive() && layerRenderer.getLayerMod()
+                    .equals(mod))
             .findFirst()
             .orElse(null);
     }

@@ -1,5 +1,7 @@
 package com.gtnewhorizons.navigator.mixins.late.journeymap;
 
+import static com.gtnewhorizons.navigator.api.model.SupportedMods.JourneyMap;
+
 import net.minecraft.client.Minecraft;
 
 import org.spongepowered.asm.mixin.Final;
@@ -20,21 +22,21 @@ import journeymap.client.ui.minimap.DisplayVars;
 import journeymap.client.ui.minimap.MiniMap;
 import journeymap.client.ui.minimap.Shape;
 
-@Mixin(MiniMap.class)
+@Mixin(value = MiniMap.class, remap = false)
 public abstract class MiniMapMixin {
 
     @Final
-    @Shadow(remap = false)
+    @Shadow
     private static GridRenderer gridRenderer;
 
     @Final
-    @Shadow(remap = false)
+    @Shadow
     private Minecraft mc;
 
-    @Shadow(remap = false)
+    @Shadow
     private DisplayVars dv;
 
-    @Inject(method = "drawOnMapWaypoints", at = @At(value = "HEAD"), remap = false, require = 1)
+    @Inject(method = "drawOnMapWaypoints", at = @At(value = "HEAD"), require = 1)
     private void navigator$onBeforeDrawWaypoints(double rotation, CallbackInfo ci) {
         for (LayerManager layerManager : NavigatorApi.layerManagers) {
             if (layerManager.isLayerActive()) {
@@ -53,19 +55,18 @@ public abstract class MiniMapMixin {
             }
         }
 
-        for (LayerRenderer layerRenderer : NavigatorApi.getJourneyMapLayerRenderers()) {
-            if (layerRenderer.isMinimapActive()) {
-                for (RenderStep renderStep : layerRenderer.getRenderSteps()) {
-                    if (renderStep instanceof DrawStep drawStep) {
-                        drawStep.draw(
-                            0.0D,
-                            0.0D,
-                            gridRenderer,
-                            ((DisplayVarsAccessor) dv).getDrawScale(),
-                            ((DisplayVarsAccessor) dv).getFontScale(),
-                            rotation);
-                    }
-                }
+        LayerRenderer activeLayer = NavigatorApi.getActiveLayerFor(JourneyMap);
+        if (activeLayer == null) return;
+
+        for (RenderStep renderStep : activeLayer.getRenderSteps()) {
+            if (renderStep instanceof DrawStep drawStep) {
+                drawStep.draw(
+                    0.0D,
+                    0.0D,
+                    gridRenderer,
+                    ((DisplayVarsAccessor) dv).getDrawScale(),
+                    ((DisplayVarsAccessor) dv).getFontScale(),
+                    rotation);
             }
         }
     }

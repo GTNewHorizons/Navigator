@@ -38,10 +38,6 @@ public abstract class LayerManager {
         return buttonManager.isActive();
     }
 
-    public boolean isMinimapActive() {
-        return isMinimapActive;
-    }
-
     public void activateLayer() {
         buttonManager.activate();
     }

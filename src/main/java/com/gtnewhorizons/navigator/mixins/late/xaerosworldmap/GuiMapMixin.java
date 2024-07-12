@@ -1,5 +1,7 @@
 package com.gtnewhorizons.navigator.mixins.late.xaerosworldmap;
 
+import static com.gtnewhorizons.navigator.api.model.SupportedMods.XaeroWorldMap;
+
 import java.util.List;
 
 import net.minecraft.client.gui.GuiButton;
@@ -16,7 +18,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import com.gtnewhorizons.navigator.api.NavigatorApi;
-import com.gtnewhorizons.navigator.api.model.SupportedMods;
 import com.gtnewhorizons.navigator.api.model.layers.LayerManager;
 import com.gtnewhorizons.navigator.api.model.layers.LayerRenderer;
 import com.gtnewhorizons.navigator.api.xaero.buttons.SizedGuiTexturedButton;
@@ -71,7 +72,7 @@ public abstract class GuiMapMixin extends ScreenBase {
     @Inject(method = "<init>", at = @At("RETURN"))
     private void navigator$injectConstruct(GuiScreen parent, GuiScreen escape, MapProcessor mapProcessor, Entity player,
         CallbackInfo ci) {
-        NavigatorApi.layerManagers.forEach(layerManager -> layerManager.onGuiOpened(SupportedMods.XaeroWorldMap));
+        NavigatorApi.layerManagers.forEach(layerManager -> layerManager.onGuiOpened(XaeroWorldMap));
     }
 
     @Inject(
@@ -113,11 +114,10 @@ public abstract class GuiMapMixin extends ScreenBase {
             }
         }
 
-        for (XaeroLayerRenderer renderer : NavigatorApi.getXaeroLayerRenderers()) {
-            if (renderer.isLayerActive()) {
-                for (XaeroRenderStep step : renderer.getRenderSteps()) {
-                    step.draw(this, cameraX, cameraZ, scale);
-                }
+        XaeroLayerRenderer renderer = (XaeroLayerRenderer) NavigatorApi.getActiveLayerFor(XaeroWorldMap);
+        if (renderer != null) {
+            for (XaeroRenderStep step : renderer.getRenderSteps()) {
+                step.draw(this, cameraX, cameraZ, scale);
             }
         }
     }
@@ -131,10 +131,9 @@ public abstract class GuiMapMixin extends ScreenBase {
             shift = At.Shift.AFTER),
         remap = true)
     private void navigator$injectDrawTooltip(int scaledMouseX, int scaledMouseY, float partialTicks, CallbackInfo ci) {
-        for (XaeroLayerRenderer layer : NavigatorApi.getXaeroLayerRenderers()) {
-            if (layer instanceof XaeroInteractableLayerRenderer interactableLayer && layer.isLayerActive()) {
-                interactableLayer.drawTooltip(this, scale, screenScale);
-            }
+        LayerRenderer layer = NavigatorApi.getActiveLayerFor(XaeroWorldMap);
+        if (layer instanceof XaeroInteractableLayerRenderer interactableLayer) {
+            interactableLayer.drawTooltip(this, scale, screenScale);
         }
     }
 
@@ -160,7 +159,7 @@ public abstract class GuiMapMixin extends ScreenBase {
 
     @Inject(method = "onInputPress", at = @At("TAIL"))
     private void navigator$injectListenKeypress(boolean mouse, int code, CallbackInfoReturnable<Boolean> cir) {
-        LayerRenderer activeLayer = NavigatorApi.getActiveLayer();
+        LayerRenderer activeLayer = NavigatorApi.getActiveLayerFor(XaeroWorldMap);
         if (activeLayer instanceof XaeroInteractableLayerRenderer interactableLayer
             && Misc.inputMatchesKeyBinding(mouse, code, interactableLayer.getActionKey())) {
             interactableLayer.doActionKeyPress();
@@ -177,7 +176,7 @@ public abstract class GuiMapMixin extends ScreenBase {
             navigator$oldMouseY = y;
             navigator$timeLastClick = isDoubleClick ? 0 : timestamp;
 
-            LayerRenderer layer = NavigatorApi.getActiveLayer();
+            LayerRenderer layer = NavigatorApi.getActiveLayerFor(XaeroWorldMap);
             if (layer instanceof XaeroInteractableLayerRenderer interactableLayer) {
                 interactableLayer.onMapClick(isDoubleClick, x, y, mouseBlockPosX, mouseBlockPosZ);
             }
@@ -186,7 +185,7 @@ public abstract class GuiMapMixin extends ScreenBase {
 
     @Inject(method = "onGuiClosed", at = @At("RETURN"), remap = true)
     private void navigator$onGuiClosed(CallbackInfo ci) {
-        NavigatorApi.layerManagers.forEach(layerManager -> layerManager.onGuiClosed(SupportedMods.XaeroWorldMap));
+        NavigatorApi.layerManagers.forEach(layerManager -> layerManager.onGuiClosed(XaeroWorldMap));
     }
 
     @Override

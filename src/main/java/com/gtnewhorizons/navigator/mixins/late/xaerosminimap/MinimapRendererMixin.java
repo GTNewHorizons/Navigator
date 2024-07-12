@@ -1,5 +1,7 @@
 package com.gtnewhorizons.navigator.mixins.late.xaerosminimap;
 
+import static com.gtnewhorizons.navigator.api.model.SupportedMods.XaeroWorldMap;
+
 import net.minecraft.client.Minecraft;
 import net.minecraftforge.client.MinecraftForgeClient;
 
@@ -65,11 +67,11 @@ public abstract class MinimapRendererMixin {
             GL11.glRotated(Math.toDegrees(angle) - 90, 0.0, 0.0, 1.0);
             GL11.glScaled(mapZoom, mapZoom, 0);
             GL11.glStencilFunc(GL11.GL_EQUAL, 1, 1);
-            for (XaeroLayerRenderer renderer : NavigatorApi.getXaeroLayerRenderers()) {
-                if (renderer.isMinimapActive()) {
-                    for (XaeroRenderStep renderStep : renderer.getRenderSteps()) {
-                        renderStep.draw(null, minimap.mainPlayerX, minimap.mainPlayerZ, mapZoom);
-                    }
+
+            XaeroLayerRenderer activeLayer = (XaeroLayerRenderer) NavigatorApi.getActiveLayerFor(XaeroWorldMap);
+            if (activeLayer != null) {
+                for (XaeroRenderStep renderStep : activeLayer.getRenderSteps()) {
+                    renderStep.draw(null, minimap.mainPlayerX, minimap.mainPlayerZ, mapZoom);
                 }
             }
             GL11.glDisable(GL11.GL_STENCIL_TEST);

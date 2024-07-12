@@ -26,13 +26,7 @@ public abstract class LayerRenderer {
         List<? extends ILocationProvider> visibleElements);
 
     public final boolean isLayerActive() {
-        return manager.isLayerActive() && mod.isEnabled()
-            && manager.getOpenModGui()
-                .equals(mod);
-    }
-
-    public final boolean isMinimapActive() {
-        return manager.isMinimapActive();
+        return manager.isLayerActive() && mod.isEnabled();
     }
 
     public final SupportedMods getLayerMod() {
