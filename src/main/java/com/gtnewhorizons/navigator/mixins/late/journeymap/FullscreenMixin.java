@@ -23,6 +23,7 @@ import com.gtnewhorizons.navigator.api.NavigatorApi;
 import com.gtnewhorizons.navigator.api.journeymap.buttons.JMLayerButton;
 import com.gtnewhorizons.navigator.api.journeymap.render.JMInteractableLayerRenderer;
 import com.gtnewhorizons.navigator.api.journeymap.render.JMLayerRenderer;
+import com.gtnewhorizons.navigator.api.model.SupportedMods;
 import com.gtnewhorizons.navigator.api.model.buttons.LayerButton;
 import com.gtnewhorizons.navigator.api.model.layers.LayerManager;
 import com.gtnewhorizons.navigator.api.model.layers.LayerRenderer;
@@ -112,7 +113,7 @@ public abstract class FullscreenMixin extends JmUI {
 
     @Inject(method = "<init>*", at = @At("RETURN"), require = 1)
     private void navigator$onConstructed(CallbackInfo ci) {
-        NavigatorApi.layerManagers.forEach(LayerManager::onOpenMap);
+        NavigatorApi.layerManagers.forEach(layerManager -> layerManager.onGuiOpened(SupportedMods.JourneyMap));
     }
 
     @Inject(
@@ -247,6 +248,11 @@ public abstract class FullscreenMixin extends JmUI {
         }
     }
 
+    @Inject(method = "onGuiClosed", at = @At("RETURN"))
+    public void navigator$onGuiClosed(CallbackInfo ci) {
+        NavigatorApi.layerManagers.forEach(layerManager -> layerManager.onGuiClosed(SupportedMods.JourneyMap));
+    }
+
     @Override
     protected void mouseClicked(int mouseX, int mouseY, int mouseButton) {
         if (chat != null && !chat.isHidden()) {
@@ -286,7 +292,7 @@ public abstract class FullscreenMixin extends JmUI {
         LayerRenderer layer = NavigatorApi.getActiveLayer();
         if (layer instanceof JMInteractableLayerRenderer wpLayerRender) {
             wpLayerRender.onMouseMove(mouseX, mouseY);
-            return wpLayerRender.onClick(isDoubleClick, mouseX, mouseY, blockCoord.x, blockCoord.z);
+            return wpLayerRender.onMapClick(isDoubleClick, mouseX, mouseY, blockCoord.x, blockCoord.z);
         }
         return false;
     }

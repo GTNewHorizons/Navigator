@@ -26,7 +26,13 @@ public abstract class LayerRenderer {
         List<? extends ILocationProvider> visibleElements);
 
     public final boolean isLayerActive() {
-        return manager.isLayerActive() && mod.isEnabled();
+        return manager.isLayerActive() && mod.isEnabled()
+            && manager.getOpenModGui()
+                .equals(mod);
+    }
+
+    public final SupportedMods getLayerMod() {
+        return mod;
     }
 
     public List<? extends RenderStep> getRenderStepsForInteraction() {

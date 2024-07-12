@@ -7,7 +7,8 @@ public enum SupportedMods {
 
     JourneyMap(Util.isJourneyMapInstalled() && ModuleConfig.enableJourneyMapModule),
     XaeroWorldMap(Util.isXaerosWorldMapInstalled() && ModuleConfig.enableXaeroWorldMapModule),
-    XaeroMiniMap(Util.isXaerosMinimapInstalled() && ModuleConfig.enableXaeroMinimapModule);
+    XaeroMiniMap(Util.isXaerosMinimapInstalled() && ModuleConfig.enableXaeroMinimapModule),
+    NONE(false);
 
     private final boolean enabled;
 

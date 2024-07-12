@@ -19,6 +19,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
 import com.gtnewhorizons.navigator.api.NavigatorApi;
+import com.gtnewhorizons.navigator.api.model.SupportedMods;
 import com.gtnewhorizons.navigator.api.model.layers.LayerManager;
 import com.gtnewhorizons.navigator.api.model.layers.LayerRenderer;
 import com.gtnewhorizons.navigator.api.xaero.buttons.SizedGuiTexturedButton;
@@ -73,7 +74,7 @@ public abstract class GuiMapMixin extends ScreenBase {
     @Inject(method = "<init>", at = @At("RETURN"))
     private void navigator$injectConstruct(GuiScreen parent, GuiScreen escape, MapProcessor mapProcessor, Entity player,
         CallbackInfo ci) {
-        NavigatorApi.layerManagers.forEach(LayerManager::onOpenMap);
+        NavigatorApi.layerManagers.forEach(layerManager -> layerManager.onGuiOpened(SupportedMods.XaeroWorldMap));
     }
 
     @Inject(
@@ -188,9 +189,14 @@ public abstract class GuiMapMixin extends ScreenBase {
 
             LayerRenderer layer = NavigatorApi.getActiveLayer();
             if (layer instanceof XaeroInteractableLayerRenderer interactableLayer) {
-                interactableLayer.onClick(isDoubleClick, x, y, mouseBlockPosX, mouseBlockPosZ);
+                interactableLayer.onMapClick(isDoubleClick, x, y, mouseBlockPosX, mouseBlockPosZ);
             }
         }
+    }
+
+    @Inject(method = "onGuiClosed", at = @At("RETURN"))
+    public void navigator$onGuiClosed(CallbackInfo ci) {
+        NavigatorApi.layerManagers.forEach(layerManager -> layerManager.onGuiClosed(SupportedMods.XaeroWorldMap));
     }
 
     @Override

@@ -21,6 +21,7 @@ public abstract class LayerManager {
     private int miniMapHeight = 0;
     private int fullscreenMapWidth = 0;
     private int fullscreenMapHeight = 0;
+    private SupportedMods openModGui;
 
     public LayerManager(ButtonManager buttonManager) {
         this.buttonManager = buttonManager;
@@ -52,7 +53,23 @@ public abstract class LayerManager {
         forceRefresh = true;
     }
 
+    public final void onGuiOpened(SupportedMods mod) {
+        openModGui = mod;
+        onOpenMap();
+    }
+
+    public final void onGuiClosed(SupportedMods mod) {
+        openModGui = SupportedMods.NONE;
+        onCloseMap();
+    }
+
     public void onOpenMap() {}
+
+    public void onCloseMap() {}
+
+    public final SupportedMods getOpenModGui() {
+        return openModGui;
+    }
 
     protected abstract List<? extends ILocationProvider> generateVisibleElements(int minBlockX, int minBlockZ,
         int maxBlockX, int maxBlockZ);

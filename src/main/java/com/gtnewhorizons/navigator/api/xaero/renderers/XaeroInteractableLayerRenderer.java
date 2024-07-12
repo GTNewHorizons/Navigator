@@ -47,6 +47,13 @@ public abstract class XaeroInteractableLayerRenderer extends XaeroLayerRenderer 
         }
     }
 
+    public final void onMapClick(boolean isDoubleClick, int mouseX, int mouseY, int mouseBlockX, int mouseBlockZ) {
+        if (manager.getOpenModGui()
+            .equals(getLayerMod())) {
+            onClick(isDoubleClick, mouseX, mouseY, mouseBlockX, mouseBlockZ);
+        }
+    }
+
     public void onClick(boolean isDoubleClick, int mouseX, int mouseY, int mouseBlockX, int mouseBlockZ) {
         if (hovered != null) {
             if (isDoubleClick) {

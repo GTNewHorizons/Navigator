@@ -39,6 +39,14 @@ public abstract class JMInteractableLayerRenderer extends JMLayerRenderer {
         }
     }
 
+    public final boolean onMapClick(boolean isDoubleClick, int mouseX, int mouseY, int blockX, int blockZ) {
+        if (manager.getOpenModGui()
+            .equals(getLayerMod())) {
+            return onClick(isDoubleClick, mouseX, mouseY, blockX, blockZ);
+        }
+        return false;
+    }
+
     public boolean onClick(boolean isDoubleClick, int mouseX, int mouseY, int blockX, int blockZ) {
         if (hoveredDrawStep != null) {
             if (isDoubleClick) {
