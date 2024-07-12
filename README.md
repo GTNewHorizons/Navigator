@@ -17,7 +17,7 @@ Navigator provides a debug layer which can also be used as a template for your o
 * [The ButtonManger, LayerManager and the ILocationProvider](https://github.com/GTNewHorizons/Navigator/tree/master/src/main/java/com/gtnewhorizons/navigator/impl) are always shared between the two mods.
 
 ### Button Texture Location
-* The texture for JourneyMap buttons need to be placed in `assets/journeymap/icon/theme/Vault/icon/<iconName>.png` and `assets/journeymap/icon/theme/Victorian/icon/<iconName>.png` for JourneyMap. These can be the same texture.
+* The texture for JourneyMap buttons need to be placed in `assets/journeymap/icon/theme/Vault/icon/<iconName>.png` and `assets/journeymap/icon/theme/Victorian/icon/<iconName>.png`. These can be the same texture.
 * The texture for Xaero buttons need to be placed in `assets/xaeroworldmap/textures/<iconName>.png`.
 
 ### Example JourneyMap Layer
