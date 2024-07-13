@@ -1,48 +1,28 @@
 package com.gtnewhorizons.navigator.api.model.buttons;
 
-import java.util.EnumMap;
-import java.util.Map;
+import net.minecraft.util.ResourceLocation;
 
 import com.gtnewhorizons.navigator.api.NavigatorApi;
 import com.gtnewhorizons.navigator.api.model.SupportedMods;
 
-public class ButtonManager {
+import it.unimi.dsi.fastutil.booleans.BooleanConsumer;
 
-    private final String buttonTextKey;
-    private final String iconName;
-    private final Map<SupportedMods, LayerButton> buttons = new EnumMap<>(SupportedMods.class);
-    private boolean isActive = false;
+public abstract class ButtonManager {
 
-    /*
-     * Provide textures in assets/journeymap/icon/theme/Vault/icon/<iconName>.png and
-     * assets/journeymap/icon/theme/Victorian/icon/<iconName>.png for JourneyMap and provide a texture in
-     * assets/xaeroworldmap/textures/<iconName>.png for XaeroWorldMap.
+    protected boolean isActive = false;
+    protected BooleanConsumer onToggle;
+
+    /**
+     * @param mod   the mod requesting the icon
+     * @param theme the theme of the icon. "Victorian" or "Vault" for Journeymap, empty string for Xaeros.
+     * @return the {@link ResourceLocation} of the icon to be displayed on the button
      */
-    public ButtonManager(String buttonTextKey, String iconName) {
-        this.buttonTextKey = buttonTextKey;
-        this.iconName = iconName;
-    }
+    public abstract ResourceLocation getIcon(SupportedMods mod, String theme);
 
-    public void registerButton(SupportedMods mod, LayerButton layerButton) {
-        if (!mod.isEnabled()) return;
-        buttons.put(mod, layerButton);
-    }
+    public abstract String getButtonText();
 
-    public void updateState(boolean active) {
-        buttons.values()
-            .forEach(button -> button.updateState(active));
-    }
-
-    public boolean containsButton(LayerButton button) {
-        return buttons.containsValue(button);
-    }
-
-    public String getButtonTextKey() {
-        return buttonTextKey;
-    }
-
-    public String getIconName() {
-        return iconName;
+    public final void setOnToggle(BooleanConsumer onToggle) {
+        this.onToggle = onToggle;
     }
 
     public boolean isActive() {
@@ -52,12 +32,12 @@ public class ButtonManager {
     public void activate() {
         NavigatorApi.buttonManagers.forEach(ButtonManager::deactivate);
         isActive = true;
-        updateState(true);
+        onToggle.accept(true);
     }
 
     public void deactivate() {
         isActive = false;
-        updateState(false);
+        onToggle.accept(false);
     }
 
     public void toggle() {
@@ -66,5 +46,14 @@ public class ButtonManager {
         } else {
             activate();
         }
+    }
+
+    /**
+     * Whether the button should be added to the GUI.
+     *
+     * @return true if the button should be added, false otherwise
+     */
+    public boolean isEnabled(SupportedMods mod) {
+        return true;
     }
 }

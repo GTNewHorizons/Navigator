@@ -18,10 +18,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import com.gtnewhorizons.navigator.api.NavigatorApi;
+import com.gtnewhorizons.navigator.api.model.buttons.ButtonManager;
 import com.gtnewhorizons.navigator.api.model.layers.LayerManager;
 import com.gtnewhorizons.navigator.api.model.layers.LayerRenderer;
 import com.gtnewhorizons.navigator.api.xaero.buttons.SizedGuiTexturedButton;
-import com.gtnewhorizons.navigator.api.xaero.buttons.XaeroLayerButton;
 import com.gtnewhorizons.navigator.api.xaero.renderers.XaeroInteractableLayerRenderer;
 import com.gtnewhorizons.navigator.api.xaero.renderers.XaeroLayerRenderer;
 import com.gtnewhorizons.navigator.api.xaero.rendersteps.XaeroRenderStep;
@@ -139,20 +139,19 @@ public abstract class GuiMapMixin extends ScreenBase {
 
     @Inject(method = "initGui", at = @At(value = "TAIL"), remap = true)
     private void navigator$injectInitButtons(CallbackInfo ci) {
-        List<XaeroLayerButton> buttons = NavigatorApi.getXaeroButtons();
+        List<ButtonManager> buttons = NavigatorApi.buttonManagers;
         int numBtns = buttons.size();
         int totalHeight = numBtns * 20;
         for (int i = 0; i < numBtns; i++) {
-            XaeroLayerButton layerButton = buttons.get(i);
-            if (!layerButton.isEnabled()) continue;
-
+            ButtonManager btnManager = buttons.get(i);
+            if (!btnManager.isEnabled(XaeroWorldMap)) continue;
             SizedGuiTexturedButton button = new SizedGuiTexturedButton(
                 0,
                 (height / 2 + totalHeight / 2) - 20 - 20 * i,
-                layerButton.textureLocation,
-                (btn) -> layerButton.toggle(),
-                new CursorBox(layerButton.getButtonTextKey()));
-            layerButton.setButton(button);
+                btnManager.getIcon(XaeroWorldMap, ""),
+                (btn) -> btnManager.toggle(),
+                new CursorBox(btnManager.getButtonText()));
+            btnManager.setOnToggle(button::setActive);
             addGuiButton(button);
         }
     }

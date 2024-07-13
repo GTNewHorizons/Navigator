@@ -22,10 +22,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
 import com.gtnewhorizons.navigator.api.NavigatorApi;
-import com.gtnewhorizons.navigator.api.journeymap.buttons.JMLayerButton;
 import com.gtnewhorizons.navigator.api.journeymap.render.JMInteractableLayerRenderer;
 import com.gtnewhorizons.navigator.api.journeymap.render.JMLayerRenderer;
-import com.gtnewhorizons.navigator.api.model.buttons.LayerButton;
+import com.gtnewhorizons.navigator.api.model.buttons.ButtonManager;
 import com.gtnewhorizons.navigator.api.model.layers.LayerManager;
 import com.gtnewhorizons.navigator.api.model.layers.LayerRenderer;
 
@@ -155,13 +154,17 @@ public abstract class FullscreenMixin extends JmUI {
         final Theme theme = ThemeFileHandler.getCurrentTheme();
         final ButtonList buttonList = new ButtonList();
 
-        for (LayerButton layerButton : NavigatorApi.layerButtons) {
-            if (!layerButton.isEnabled() || !(layerButton instanceof JMLayerButton jmButton)) continue;
-            final ThemeToggle button = new ThemeToggle(theme, jmButton.getButtonTextKey(), jmButton.getIconName());
-            jmButton.setButton(button);
-            button.setToggled(jmButton.isActive(), false);
+        for (ButtonManager btnManager : NavigatorApi.buttonManagers) {
+            if (!btnManager.isEnabled(JourneyMap)) continue;
+            String icon = btnManager.getIcon(JourneyMap, theme.name)
+                .toString();
+            String trimmedIcon = icon.substring(0, icon.lastIndexOf("."));
+            final ThemeToggle button = new ThemeToggle(theme, "", "", trimmedIcon);
+            btnManager.setOnToggle((toggled) -> button.setToggled(toggled, false));
+            button.setLabels(btnManager.getButtonText(), btnManager.getButtonText());
+            button.setToggled(btnManager.isActive(), false);
             button.addToggleListener((unused, toggled) -> {
-                jmButton.toggle();
+                btnManager.toggle();
                 return true;
             });
             buttonList.add(button);

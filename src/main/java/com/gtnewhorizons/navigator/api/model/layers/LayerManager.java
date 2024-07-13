@@ -7,7 +7,6 @@ import java.util.Map;
 
 import com.gtnewhorizons.navigator.api.model.SupportedMods;
 import com.gtnewhorizons.navigator.api.model.buttons.ButtonManager;
-import com.gtnewhorizons.navigator.api.model.buttons.LayerButton;
 import com.gtnewhorizons.navigator.api.model.locations.ILocationProvider;
 
 public abstract class LayerManager {
@@ -22,16 +21,9 @@ public abstract class LayerManager {
     private int fullscreenMapWidth = 0;
     private int fullscreenMapHeight = 0;
     private SupportedMods openModGui;
-    private boolean isMinimapActive;
 
     public LayerManager(ButtonManager buttonManager) {
         this.buttonManager = buttonManager;
-    }
-
-    public void onButtonClicked(LayerButton button) {
-        if (buttonManager.containsButton(button)) {
-            toggleLayer();
-        }
     }
 
     public boolean isLayerActive() {
@@ -61,7 +53,6 @@ public abstract class LayerManager {
 
     public final void onGuiClosed(SupportedMods mod) {
         openModGui = SupportedMods.NONE;
-        isMinimapActive = isLayerActive();
         onCloseMap();
     }
 

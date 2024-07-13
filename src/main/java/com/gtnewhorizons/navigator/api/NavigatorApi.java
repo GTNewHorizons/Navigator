@@ -11,24 +11,21 @@ import net.minecraft.client.settings.KeyBinding;
 import org.lwjgl.input.Keyboard;
 
 import com.gtnewhorizons.navigator.Navigator;
-import com.gtnewhorizons.navigator.api.journeymap.buttons.JMLayerButton;
 import com.gtnewhorizons.navigator.api.journeymap.render.JMLayerRenderer;
 import com.gtnewhorizons.navigator.api.journeymap.waypoints.JMWaypointManager;
 import com.gtnewhorizons.navigator.api.model.SupportedMods;
 import com.gtnewhorizons.navigator.api.model.buttons.ButtonManager;
-import com.gtnewhorizons.navigator.api.model.buttons.LayerButton;
 import com.gtnewhorizons.navigator.api.model.layers.LayerManager;
 import com.gtnewhorizons.navigator.api.model.layers.LayerRenderer;
 import com.gtnewhorizons.navigator.api.model.waypoints.WaypointManager;
 import com.gtnewhorizons.navigator.api.util.Util;
-import com.gtnewhorizons.navigator.api.xaero.buttons.XaeroLayerButton;
 import com.gtnewhorizons.navigator.api.xaero.renderers.XaeroLayerRenderer;
 import com.gtnewhorizons.navigator.api.xaero.waypoints.XaeroWaypointManager;
 import com.gtnewhorizons.navigator.mixins.late.journeymap.FullscreenAccessor;
 
 import journeymap.client.render.map.GridRenderer;
 
-public class NavigatorApi {
+public final class NavigatorApi {
 
     public static final double CHUNK_WIDTH = 16;
     public static final KeyBinding ACTION_KEY = new KeyBinding(
@@ -38,7 +35,6 @@ public class NavigatorApi {
 
     public static final List<ButtonManager> buttonManagers = new ArrayList<>();
     public static final List<LayerManager> layerManagers = new ArrayList<>();
-    public static final List<LayerButton> layerButtons = new ArrayList<>();
     public static final List<LayerRenderer> layerRenderers = new ArrayList<>();
     public static final List<WaypointManager> waypointManagers = new ArrayList<>();
 
@@ -56,16 +52,6 @@ public class NavigatorApi {
      */
     public static void registerLayerManager(LayerManager layerManager) {
         layerManagers.add(layerManager);
-    }
-
-    /**
-     * @param layerButton The LayerButton to register.
-     *                    <p>
-     *                    Should be an instance of {@link JMLayerButton} or {@link XaeroLayerButton}
-     *                    Both mods can be registered at the same time and will be handled accordingly
-     */
-    public static void registerLayerButton(LayerButton layerButton) {
-        layerButtons.add(layerButton);
     }
 
     /**
@@ -122,13 +108,6 @@ public class NavigatorApi {
         return layerRenderers.stream()
             .filter(XaeroLayerRenderer.class::isInstance)
             .map(XaeroLayerRenderer.class::cast)
-            .collect(Collectors.toList());
-    }
-
-    public static List<XaeroLayerButton> getXaeroButtons() {
-        return layerButtons.stream()
-            .filter(XaeroLayerButton.class::isInstance)
-            .map(XaeroLayerButton.class::cast)
             .collect(Collectors.toList());
     }
 }

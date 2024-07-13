@@ -16,23 +16,27 @@ Navigator provides a debug layer which can also be used as a template for your o
 * [Xaeros Dirty Chunk Layer ](https://github.com/GTNewHorizons/Navigator/tree/master/src/main/java/com/gtnewhorizons/navigator/impl/xaero)
 * [The ButtonManger, LayerManager and the ILocationProvider](https://github.com/GTNewHorizons/Navigator/tree/master/src/main/java/com/gtnewhorizons/navigator/impl) are always shared between the two mods.
 
-### Button Texture Location
-* The texture for JourneyMap buttons need to be placed in `assets/journeymap/icon/theme/Vault/icon/<iconName>.png` and `assets/journeymap/icon/theme/Victorian/icon/<iconName>.png`. These can be the same texture.
-* The texture for Xaero buttons need to be placed in `assets/xaeroworldmap/textures/<iconName>.png`.
-
 ### Example JourneyMap Layer
 
 Navigator provides an API for custom and interactive layers.
 This API will keep all maps as optional mod at runtime and not crash you game if it is missing.
-You may instantiate [`ButtonManager`](https://github.com/GTNewHorizons/Navigator/blob/master/src/main/java/com/gtnewhorizons/navigator/api/model/buttons/ButtonManager.java) to create your own logical button.
-Follow it up with an instance of [`LayerButton`](https://github.com/GTNewHorizons/Navigator/blob/master/src/main/java/com/gtnewhorizons/navigator/api/journeymap/buttons/JMLayerButton.java) and register both in the [`NavigatorApi`](https://github.com/GTNewHorizons/Navigator/blob/master/src/main/java/com/gtnewhorizons/navigator/api/NavigatorApi.java):
 
+Start by extending [`ButtonManager`](https://github.com/GTNewHorizons/Navigator/blob/master/src/main/java/com/gtnewhorizons/navigator/api/model/buttons/ButtonManager.java) to create your own logical button.
 ```java
-ButtonManager buttonManager = new ButtonManager("translation.key", "iconName");
-LayerButton layerButton = new JMLayerButton(buttonManager);
+class MyButtonManager extends ButtonManager {
 
-NavigatorApi.registerButtonManger(buttonManager);
-NavigatorApi.registerLayerButton(layerButton);
+  public static final MyButtonManager INSTANCE = new MyButtonManager();
+
+  @Override
+  public ResourceLocation getIcon(SupportedMods mod, String theme) {
+    return new ResourceLocation(Navigator.MODID, "textures/icon/nodes.png");
+  }
+
+  @Override
+  public String getButtonText() {
+    return EnumChatFormatting.AQUA + StatCollector.translateToLocal("navigator.button.dirty_chunk");
+  }
+}
 ```
 
 If you start the game now, you will see a new button in the menu!
@@ -69,7 +73,7 @@ Next up, you'll extend [`LayerManager`](https://github.com/GTNewHorizons/Navigat
 ```java
 class MyLayerManager extends LayerManager {
 
-    public static final MyLayerManager instance = new MyLayerManager();
+    public static final MyLayerManager INSTANCE = new MyLayerManager();
 
     public MyLayerManager() {
         super(buttonManager);
@@ -108,6 +112,8 @@ Continue with your own implementation of [`JMLayerRenderer`](https://github.com/
 ```java
 class MyLayerRenderer extends JMLayerRenderer {
 
+  public static final MyLayerRenderer INSTANCE = new MyLayerRenderer();
+
     public MyLayerRenderer() {
         // You may skip MyLayerManager and use an existing ButtonManager like "OreVeinLayerManager.instance"
         // Your custom layer will toggle with whatever button you specify here
@@ -124,4 +130,12 @@ class MyLayerRenderer extends JMLayerRenderer {
     }
 
 }
+```
+
+Finally, you will need to register your new layer with Navigator. This is done through the [`NavigatorAPI`](https://github.com/GTNewHorizons/Navigator/blob/master/src/main/java/com/gtnewhorizons/navigator/api/NavigatorApi.java) class during any one of the init phases.
+
+```java
+NavigatorApi.registerButtonManger(MyButtonManager.INSTANCE);
+NavigatorApi.registerLayerManager(MyLayerManager.INSTANCE);
+NavigatorApi.registerLayerRenderer(MyLayerRenderer.INSTANCE);
 ```

@@ -35,7 +35,8 @@ public enum Mixins {
             "journeymap.FullscreenMixin",
             "journeymap.MiniMapMixin",
             "journeymap.RenderWaypointBeaconMixin",
-            "journeymap.WaypointManagerMixin")),
+            "journeymap.WaypointManagerMixin",
+            "journeymap.TextureCacheMixin")),
     XAEROS_GUI(new Builder("Xaero Worldmap integration").addTargetedMod(XAEROWORLDMAP)
         .setSide(Side.CLIENT)
         .setPhase(Phase.LATE)
