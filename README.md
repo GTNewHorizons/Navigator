@@ -29,12 +29,12 @@ class MyButtonManager extends ButtonManager {
 
   @Override
   public ResourceLocation getIcon(SupportedMods mod, String theme) {
-    return new ResourceLocation(Navigator.MODID, "textures/icon/nodes.png");
+    return new ResourceLocation(YOUR_MOD_ID, "textures/icons/example.png");
   }
 
   @Override
   public String getButtonText() {
-    return EnumChatFormatting.AQUA + StatCollector.translateToLocal("navigator.button.dirty_chunk");
+    return "My Button";
   }
 }
 ```
