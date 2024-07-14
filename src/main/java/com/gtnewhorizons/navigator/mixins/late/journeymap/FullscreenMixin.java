@@ -27,8 +27,8 @@ import com.gtnewhorizons.navigator.api.journeymap.render.JMLayerRenderer;
 import com.gtnewhorizons.navigator.api.model.buttons.ButtonManager;
 import com.gtnewhorizons.navigator.api.model.layers.LayerManager;
 import com.gtnewhorizons.navigator.api.model.layers.LayerRenderer;
+import com.llamalad7.mixinextras.sugar.Local;
 
-import journeymap.client.Constants;
 import journeymap.client.io.ThemeFileHandler;
 import journeymap.client.log.LogFormatter;
 import journeymap.client.log.StatTimer;
@@ -233,12 +233,11 @@ public abstract class FullscreenMixin extends JmUI {
     }
 
     @Inject(method = "keyTyped", at = @At(value = "HEAD"), remap = true, require = 1, cancellable = true)
-    private void navigator$onKeyPress(CallbackInfo ci) {
+    private void navigator$onKeyPress(CallbackInfo ci, @Local(argsOnly = true) int keyCode) {
         if ((chat == null || chat.isHidden())) {
             LayerRenderer layer = NavigatorApi.getActiveLayerFor(JourneyMap);
             if (layer instanceof JMInteractableLayerRenderer waypointProvider) {
-                if (Constants.isPressed(waypointProvider.getActionKey())) {
-                    waypointProvider.onActionKeyPressed();
+                if (waypointProvider.onKeyPressed(keyCode)) {
                     ci.cancel();
                 }
             }

@@ -1,5 +1,9 @@
 package com.gtnewhorizons.navigator.api.util;
 
+import net.minecraft.client.settings.KeyBinding;
+
+import org.lwjgl.input.Keyboard;
+
 import cpw.mods.fml.common.Loader;
 
 public class Util {
@@ -48,5 +52,9 @@ public class Util {
 
     public static double journeyMapScaleToLinear(final int jzoom) {
         return Math.pow(2, jzoom);
+    }
+
+    public static boolean isKeyPressed(KeyBinding key) {
+        return key.isPressed() || Keyboard.isKeyDown(key.getKeyCode());
     }
 }

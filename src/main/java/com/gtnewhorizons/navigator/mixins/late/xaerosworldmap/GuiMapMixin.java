@@ -164,12 +164,18 @@ public abstract class GuiMapMixin extends ScreenBase {
         }
     }
 
-    @Inject(method = "onInputPress", at = @At("TAIL"))
+    @Inject(
+        method = "onInputPress",
+        at = @At(
+            value = "INVOKE",
+            target = "Lxaero/map/misc/Misc;inputMatchesKeyBinding(ZILnet/minecraft/client/settings/KeyBinding;)Z",
+            ordinal = 1),
+        cancellable = true)
     private void navigator$injectListenKeypress(boolean mouse, int code, CallbackInfoReturnable<Boolean> cir) {
         LayerRenderer activeLayer = NavigatorApi.getActiveLayerFor(XaeroWorldMap);
         if (activeLayer instanceof XaeroInteractableLayerRenderer interactableLayer
-            && Misc.inputMatchesKeyBinding(mouse, code, interactableLayer.getActionKey())) {
-            interactableLayer.doActionKeyPress();
+            && interactableLayer.onKeyPressed(code)) {
+            cir.setReturnValue(true);
         }
     }
 

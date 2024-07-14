@@ -4,13 +4,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.settings.KeyBinding;
 
 import com.gtnewhorizons.navigator.api.NavigatorApi;
 import com.gtnewhorizons.navigator.api.journeymap.drawsteps.JMInteractableStep;
 import com.gtnewhorizons.navigator.api.journeymap.drawsteps.JMRenderStep;
 import com.gtnewhorizons.navigator.api.model.layers.WaypointProviderManager;
 import com.gtnewhorizons.navigator.api.model.steps.RenderStep;
+import com.gtnewhorizons.navigator.api.util.Util;
 
 public abstract class JMInteractableLayerRenderer extends JMLayerRenderer {
 
@@ -84,14 +84,16 @@ public abstract class JMInteractableLayerRenderer extends JMLayerRenderer {
         }
     }
 
-    public void onActionKeyPressed() {
-        if (hoveredDrawStep != null) {
+    /**
+     * @param keyCode The key code of the key that was pressed
+     * @return true if the key press was handled, false otherwise
+     */
+    public boolean onKeyPressed(int keyCode) {
+        if (Util.isKeyPressed(NavigatorApi.ACTION_KEY) && hoveredDrawStep != null) {
             hoveredDrawStep.onActionKeyPressed();
             manager.forceRefresh();
+            return true;
         }
-    }
-
-    public KeyBinding getActionKey() {
-        return NavigatorApi.ACTION_KEY;
+        return false;
     }
 }

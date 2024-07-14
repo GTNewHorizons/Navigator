@@ -4,10 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.client.settings.KeyBinding;
 
 import com.gtnewhorizons.navigator.api.NavigatorApi;
 import com.gtnewhorizons.navigator.api.model.layers.WaypointProviderManager;
+import com.gtnewhorizons.navigator.api.util.Util;
 import com.gtnewhorizons.navigator.api.xaero.rendersteps.XaeroInteractableStep;
 import com.gtnewhorizons.navigator.api.xaero.rendersteps.XaeroRenderStep;
 
@@ -36,13 +36,6 @@ public abstract class XaeroInteractableLayerRenderer extends XaeroLayerRenderer 
     public void drawCustomTooltip(GuiScreen gui, double mouseX, double mouseY, double scale, int scaleAdj) {
         if (hovered != null) {
             hovered.drawCustomTooltip(gui, mouseX, mouseY, scale, scaleAdj);
-        }
-    }
-
-    public void doActionKeyPress() {
-        if (manager.isLayerActive() && hovered != null) {
-            hovered.onActionButton();
-            manager.forceRefresh();
         }
     }
 
@@ -81,7 +74,16 @@ public abstract class XaeroInteractableLayerRenderer extends XaeroLayerRenderer 
     public void onClickOutsideRenderStep(boolean isDoubleClick, int mouseX, int mouseY, int mouseBlockX,
         int mouseBlockZ) {}
 
-    public KeyBinding getActionKey() {
-        return NavigatorApi.ACTION_KEY;
+    /**
+     * @param keyCode The key code of the key that was pressed
+     * @return true if the key press was handled, false otherwise
+     */
+    public boolean onKeyPressed(int keyCode) {
+        if (Util.isKeyPressed(NavigatorApi.ACTION_KEY) && hovered != null) {
+            hovered.onActionButton();
+            manager.forceRefresh();
+            return true;
+        }
+        return false;
     }
 }
