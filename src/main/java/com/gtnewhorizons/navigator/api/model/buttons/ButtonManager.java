@@ -32,12 +32,16 @@ public abstract class ButtonManager {
     public void activate() {
         NavigatorApi.buttonManagers.forEach(ButtonManager::deactivate);
         isActive = true;
-        onToggle.accept(true);
+        if (onToggle != null) {
+            onToggle.accept(true);
+        }
     }
 
     public void deactivate() {
         isActive = false;
-        onToggle.accept(false);
+        if (onToggle != null) {
+            onToggle.accept(false);
+        }
     }
 
     public void toggle() {
