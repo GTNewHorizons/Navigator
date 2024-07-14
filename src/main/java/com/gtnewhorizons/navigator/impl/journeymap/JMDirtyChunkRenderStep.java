@@ -3,10 +3,10 @@ package com.gtnewhorizons.navigator.impl.journeymap;
 import static com.gtnewhorizons.navigator.api.NavigatorApi.CHUNK_WIDTH;
 
 import java.awt.geom.Point2D;
-import java.util.Collections;
 import java.util.List;
 
 import net.minecraft.client.gui.FontRenderer;
+import net.minecraft.util.EnumChatFormatting;
 
 import com.gtnewhorizons.navigator.api.journeymap.drawsteps.JMInteractableStep;
 import com.gtnewhorizons.navigator.api.model.locations.IWaypointAndLocationProvider;
@@ -88,13 +88,14 @@ public class JMDirtyChunkRenderStep implements JMInteractableStep {
     }
 
     @Override
-    public List<String> getTooltip() {
-        String tooltip = dirtyChunkLocation.isDirty() ? "Dirty Chunk" : "Clean Chunk";
-        return Collections.singletonList(tooltip);
+    public void getTooltip(List<String> list) {
+        list.add(dirtyChunkLocation.isDirty() ? "Dirty Chunk" : "Clean Chunk");
+        list.add(EnumChatFormatting.DARK_GREEN + "Example Second Line");
     }
 
     @Override
-    public void drawTooltip(FontRenderer fontRenderer, int mouseX, int mouseY, int displayWidth, int displayHeight) {}
+    public void drawCustomTooltip(FontRenderer fontRenderer, int mouseX, int mouseY, int displayWidth,
+        int displayHeight) {}
 
     @Override
     public boolean isMouseOver(int mouseX, int mouseY) {

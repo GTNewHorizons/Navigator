@@ -204,7 +204,7 @@ public abstract class FullscreenMixin extends JmUI {
             if (activeLayer instanceof JMInteractableLayerRenderer waypointProviderLayer) {
                 waypointProviderLayer.onMouseMove(scaledMouseX, scaledMouseY);
                 if (tooltip == null) {
-                    tooltip = waypointProviderLayer.getTextTooltip();
+                    tooltip = waypointProviderLayer.getTooltip();
                 }
             }
 

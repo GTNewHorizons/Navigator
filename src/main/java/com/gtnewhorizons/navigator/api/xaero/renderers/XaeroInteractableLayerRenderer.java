@@ -1,5 +1,8 @@
 package com.gtnewhorizons.navigator.api.xaero.renderers;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.settings.KeyBinding;
 
@@ -10,8 +13,6 @@ import com.gtnewhorizons.navigator.api.xaero.rendersteps.XaeroRenderStep;
 
 public abstract class XaeroInteractableLayerRenderer extends XaeroLayerRenderer {
 
-    private double mouseX;
-    private double mouseY;
     protected WaypointProviderManager manager;
     protected XaeroInteractableStep hovered;
 
@@ -22,8 +23,6 @@ public abstract class XaeroInteractableLayerRenderer extends XaeroLayerRenderer 
     }
 
     public void updateHovered(double mouseX, double mouseY, double scale) {
-        this.mouseX = mouseX;
-        this.mouseY = mouseY;
         for (XaeroRenderStep step : getReversedRenderSteps()) {
             if (step instanceof XaeroInteractableStep interactableRenderStep
                 && interactableRenderStep.isMouseOver(mouseX, mouseY, scale)) {
@@ -34,9 +33,9 @@ public abstract class XaeroInteractableLayerRenderer extends XaeroLayerRenderer 
         hovered = null;
     }
 
-    public void drawTooltip(GuiScreen gui, double scale, int scaleAdj) {
+    public void drawCustomTooltip(GuiScreen gui, double mouseX, double mouseY, double scale, int scaleAdj) {
         if (hovered != null) {
-            hovered.drawTooltip(gui, mouseX, mouseY, scale, scaleAdj);
+            hovered.drawCustomTooltip(gui, mouseX, mouseY, scale, scaleAdj);
         }
     }
 
@@ -52,6 +51,14 @@ public abstract class XaeroInteractableLayerRenderer extends XaeroLayerRenderer 
             .equals(getLayerMod())) {
             onClick(isDoubleClick, mouseX, mouseY, mouseBlockX, mouseBlockZ);
         }
+    }
+
+    public List<String> getTooltip() {
+        List<String> tooltip = new ArrayList<>();
+        if (hovered != null) {
+            hovered.getTooltip(tooltip);
+        }
+        return tooltip;
     }
 
     public void onClick(boolean isDoubleClick, int mouseX, int mouseY, int mouseBlockX, int mouseBlockZ) {

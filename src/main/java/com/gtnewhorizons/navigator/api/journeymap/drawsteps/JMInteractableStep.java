@@ -8,9 +8,9 @@ import com.gtnewhorizons.navigator.api.model.locations.IWaypointAndLocationProvi
 
 public interface JMInteractableStep extends JMRenderStep {
 
-    List<String> getTooltip();
+    void getTooltip(List<String> list);
 
-    void drawTooltip(FontRenderer fontRenderer, int mouseX, int mouseY, int displayWidth, int displayHeight);
+    void drawCustomTooltip(FontRenderer fontRenderer, int mouseX, int mouseY, int displayWidth, int displayHeight);
 
     boolean isMouseOver(int mouseX, int mouseY);
 

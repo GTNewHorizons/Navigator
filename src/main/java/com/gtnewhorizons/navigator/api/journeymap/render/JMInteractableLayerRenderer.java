@@ -1,5 +1,6 @@
 package com.gtnewhorizons.navigator.api.journeymap.render;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import net.minecraft.client.gui.FontRenderer;
@@ -68,17 +69,18 @@ public abstract class JMInteractableLayerRenderer extends JMLayerRenderer {
         return false;
     }
 
-    public List<String> getTextTooltip() {
+    public List<String> getTooltip() {
+        List<String> tooltip = new ArrayList<>();
         if (hoveredDrawStep != null) {
-            return hoveredDrawStep.getTooltip();
+            hoveredDrawStep.getTooltip(tooltip);
         }
-        return null;
+        return tooltip;
     }
 
     public void drawCustomTooltip(FontRenderer fontRenderer, int mouseX, int mouseY, int displayWidth,
         int displayHeight) {
         if (hoveredDrawStep != null) {
-            hoveredDrawStep.drawTooltip(fontRenderer, mouseX, mouseY, displayWidth, displayHeight);
+            hoveredDrawStep.drawCustomTooltip(fontRenderer, mouseX, mouseY, displayWidth, displayHeight);
         }
     }
 

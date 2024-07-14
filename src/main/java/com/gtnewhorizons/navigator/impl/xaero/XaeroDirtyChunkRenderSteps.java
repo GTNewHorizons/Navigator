@@ -2,11 +2,12 @@ package com.gtnewhorizons.navigator.impl.xaero;
 
 import static com.gtnewhorizons.navigator.api.NavigatorApi.CHUNK_WIDTH;
 
-import java.util.Collections;
+import java.util.List;
 
 import javax.annotation.Nullable;
 
 import net.minecraft.client.gui.GuiScreen;
+import net.minecraft.util.EnumChatFormatting;
 
 import org.lwjgl.opengl.GL11;
 
@@ -57,21 +58,13 @@ public class XaeroDirtyChunkRenderSteps implements XaeroInteractableStep {
     }
 
     @Override
-    public void drawTooltip(GuiScreen gui, double mouseX, double mouseY, double scale, int scaleAdj) {
-        mouseX = (mouseX * scale + (gui.mc.displayWidth >> 1)) / scaleAdj;
-        mouseY = (mouseY * scale + (gui.mc.displayHeight >> 1)) / scaleAdj;
-
-        String tooltip = dirtyChunkLocation.isDirty() ? "Dirty Chunk" : "Clean Chunk";
-        GL11.glPushMatrix();
-        DrawUtils.drawSimpleTooltip(
-            gui,
-            Collections.singletonList(tooltip),
-            mouseX + 16,
-            mouseY - 12,
-            0xFFFFFFFF,
-            0x86000000);
-        GL11.glPopMatrix();
+    public void getTooltip(List<String> list) {
+        list.add(dirtyChunkLocation.isDirty() ? "Dirty Chunk" : "Clean Chunk");
+        list.add(EnumChatFormatting.DARK_GREEN + "Example Second Line");
     }
+
+    @Override
+    public void drawCustomTooltip(GuiScreen gui, double mouseX, double mouseY, double scale, int scaleAdj) {}
 
     @Override
     public void onActionButton() {

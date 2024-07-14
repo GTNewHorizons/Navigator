@@ -21,6 +21,7 @@ import com.gtnewhorizons.navigator.api.NavigatorApi;
 import com.gtnewhorizons.navigator.api.model.buttons.ButtonManager;
 import com.gtnewhorizons.navigator.api.model.layers.LayerManager;
 import com.gtnewhorizons.navigator.api.model.layers.LayerRenderer;
+import com.gtnewhorizons.navigator.api.util.DrawUtils;
 import com.gtnewhorizons.navigator.api.xaero.buttons.SizedGuiTexturedButton;
 import com.gtnewhorizons.navigator.api.xaero.renderers.XaeroInteractableLayerRenderer;
 import com.gtnewhorizons.navigator.api.xaero.renderers.XaeroLayerRenderer;
@@ -133,7 +134,13 @@ public abstract class GuiMapMixin extends ScreenBase {
     private void navigator$injectDrawTooltip(int scaledMouseX, int scaledMouseY, float partialTicks, CallbackInfo ci) {
         LayerRenderer layer = NavigatorApi.getActiveLayerFor(XaeroWorldMap);
         if (layer instanceof XaeroInteractableLayerRenderer interactableLayer) {
-            interactableLayer.drawTooltip(this, scale, screenScale);
+            List<String> tooltip = interactableLayer.getTooltip();
+            if (!tooltip.isEmpty()) {
+                DrawUtils
+                    .drawSimpleTooltip(this, tooltip, scaledMouseX + 16, scaledMouseY - 12, 0xFFFFFFFF, 0x86000000);
+            } else {
+                interactableLayer.drawCustomTooltip(this, scaledMouseX, scaledMouseY, scale, screenScale);
+            }
         }
     }
 
@@ -152,6 +159,7 @@ public abstract class GuiMapMixin extends ScreenBase {
                 (btn) -> btnManager.toggle(),
                 new CursorBox(btnManager.getButtonText()));
             btnManager.setOnToggle(button::setActive);
+            button.setActive(btnManager.isActive());
             addGuiButton(button);
         }
     }
