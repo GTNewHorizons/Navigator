@@ -8,16 +8,16 @@ import net.minecraft.client.gui.FontRenderer;
 import com.gtnewhorizons.navigator.api.NavigatorApi;
 import com.gtnewhorizons.navigator.api.journeymap.drawsteps.JMInteractableStep;
 import com.gtnewhorizons.navigator.api.journeymap.drawsteps.JMRenderStep;
-import com.gtnewhorizons.navigator.api.model.layers.WaypointProviderManager;
+import com.gtnewhorizons.navigator.api.model.layers.InteractableLayerManager;
 import com.gtnewhorizons.navigator.api.model.steps.RenderStep;
 import com.gtnewhorizons.navigator.api.util.Util;
 
 public abstract class JMInteractableLayerRenderer extends JMLayerRenderer {
 
-    protected final WaypointProviderManager manager;
+    protected InteractableLayerManager manager;
     protected JMInteractableStep hoveredDrawStep = null;
 
-    public JMInteractableLayerRenderer(WaypointProviderManager manager) {
+    public JMInteractableLayerRenderer(InteractableLayerManager manager) {
         super(manager);
         this.manager = manager;
     }

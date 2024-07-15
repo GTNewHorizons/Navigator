@@ -11,16 +11,12 @@ import net.minecraft.client.settings.KeyBinding;
 import org.lwjgl.input.Keyboard;
 
 import com.gtnewhorizons.navigator.Navigator;
-import com.gtnewhorizons.navigator.api.journeymap.render.JMLayerRenderer;
-import com.gtnewhorizons.navigator.api.journeymap.waypoints.JMWaypointManager;
 import com.gtnewhorizons.navigator.api.model.SupportedMods;
 import com.gtnewhorizons.navigator.api.model.buttons.ButtonManager;
+import com.gtnewhorizons.navigator.api.model.layers.InteractableLayerManager;
 import com.gtnewhorizons.navigator.api.model.layers.LayerManager;
 import com.gtnewhorizons.navigator.api.model.layers.LayerRenderer;
-import com.gtnewhorizons.navigator.api.model.waypoints.WaypointManager;
 import com.gtnewhorizons.navigator.api.util.Util;
-import com.gtnewhorizons.navigator.api.xaero.renderers.XaeroLayerRenderer;
-import com.gtnewhorizons.navigator.api.xaero.waypoints.XaeroWaypointManager;
 import com.gtnewhorizons.navigator.mixins.late.journeymap.FullscreenAccessor;
 
 import journeymap.client.render.map.GridRenderer;
@@ -33,54 +29,48 @@ public final class NavigatorApi {
         Keyboard.KEY_DELETE,
         Navigator.MODNAME);
 
-    public static final List<ButtonManager> buttonManagers = new ArrayList<>();
     public static final List<LayerManager> layerManagers = new ArrayList<>();
-    public static final List<LayerRenderer> layerRenderers = new ArrayList<>();
-    public static final List<WaypointManager> waypointManagers = new ArrayList<>();
-
-    /**
-     * @param buttonManager The {@link ButtonManager} to register
-     *                      Only one needs to be registered per layer regardless of how many mods are supported
-     */
-    public static void registerButtonManager(ButtonManager buttonManager) {
-        buttonManagers.add(buttonManager);
-    }
 
     /**
      * @param layerManager The {@link LayerManager} to register.
-     *                     Only one needs to be registered per layer regardless of how many mods are supported
      */
     public static void registerLayerManager(LayerManager layerManager) {
         layerManagers.add(layerManager);
     }
 
-    /**
-     * @param layerRenderer The LayerRenderer to register.
-     *                      <p>
-     *                      Should be an instance of {@link JMLayerRenderer} or {@link XaeroLayerRenderer}
-     *                      Both mods can be registered at the same time and will be handled accordingly
-     */
-    public static void registerLayerRenderer(LayerRenderer layerRenderer) {
-        layerRenderers.add(layerRenderer);
+    public static List<LayerRenderer> getActiveRenderersFor(SupportedMods mod) {
+        return layerManagers.stream()
+            .filter(LayerManager::isLayerActive)
+            .map(layerManager -> layerManager.getLayerRenderer(mod))
+            .collect(Collectors.toList());
     }
 
-    /**
-     * @param waypointManager The {@link WaypointManager} to register.
-     *                        <p>
-     *                        Should be an instance of {@link JMWaypointManager} or {@link XaeroWaypointManager}
-     *                        Both mods can be registered at the same time and will be handled accordingly
-     */
-    public static void registerWaypointManager(WaypointManager waypointManager) {
-        waypointManagers.add(waypointManager);
+    public static List<LayerManager> getEnabledLayers(SupportedMods mod) {
+        return layerManagers.stream()
+            .filter(layerManager -> layerManager.isEnabled(mod))
+            .collect(Collectors.toList());
     }
 
-    public static @Nullable LayerRenderer getActiveLayerFor(SupportedMods mod) {
-        return layerRenderers.stream()
-            .filter(
-                layerRenderer -> layerRenderer.isLayerActive() && layerRenderer.getLayerMod()
-                    .equals(mod))
-            .findFirst()
-            .orElse(null);
+    public static List<ButtonManager> getEnabledButtons(SupportedMods mod) {
+        return layerManagers.stream()
+            .filter(layerManager -> layerManager.isEnabled(mod))
+            .map(LayerManager::getButtonManager)
+            .distinct()
+            .collect(Collectors.toList());
+    }
+
+    public static List<ButtonManager> getDistinctButtons() {
+        return layerManagers.stream()
+            .map(LayerManager::getButtonManager)
+            .distinct()
+            .collect(Collectors.toList());
+    }
+
+    public static List<InteractableLayerManager> getInteractableLayers() {
+        return layerManagers.stream()
+            .filter(layerManager -> layerManager instanceof InteractableLayerManager)
+            .map(layerManager -> (InteractableLayerManager) layerManager)
+            .collect(Collectors.toList());
     }
 
     public void openJourneyMapAt(@Nullable LayerManager layer, int blockX, int blockZ, int zoom) {
@@ -95,19 +85,5 @@ public final class NavigatorApi {
 
     public void openJourneyMapAt(@Nullable LayerManager layer, int blockX, int blockZ) {
         this.openJourneyMapAt(layer, blockX, blockZ, -1);
-    }
-
-    public static List<JMLayerRenderer> getJourneyMapLayerRenderers() {
-        return layerRenderers.stream()
-            .filter(JMLayerRenderer.class::isInstance)
-            .map(JMLayerRenderer.class::cast)
-            .collect(Collectors.toList());
-    }
-
-    public static List<XaeroLayerRenderer> getXaeroLayerRenderers() {
-        return layerRenderers.stream()
-            .filter(XaeroLayerRenderer.class::isInstance)
-            .map(XaeroLayerRenderer.class::cast)
-            .collect(Collectors.toList());
     }
 }

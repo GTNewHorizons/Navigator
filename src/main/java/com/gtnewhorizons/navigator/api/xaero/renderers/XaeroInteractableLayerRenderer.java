@@ -6,20 +6,19 @@ import java.util.List;
 import net.minecraft.client.gui.GuiScreen;
 
 import com.gtnewhorizons.navigator.api.NavigatorApi;
-import com.gtnewhorizons.navigator.api.model.layers.WaypointProviderManager;
+import com.gtnewhorizons.navigator.api.model.layers.InteractableLayerManager;
 import com.gtnewhorizons.navigator.api.util.Util;
 import com.gtnewhorizons.navigator.api.xaero.rendersteps.XaeroInteractableStep;
 import com.gtnewhorizons.navigator.api.xaero.rendersteps.XaeroRenderStep;
 
 public abstract class XaeroInteractableLayerRenderer extends XaeroLayerRenderer {
 
-    protected WaypointProviderManager manager;
+    protected InteractableLayerManager manager;
     protected XaeroInteractableStep hovered;
 
-    public XaeroInteractableLayerRenderer(WaypointProviderManager manager) {
+    public XaeroInteractableLayerRenderer(InteractableLayerManager manager) {
         super(manager);
         this.manager = manager;
-        hovered = null;
     }
 
     public void updateHovered(double mouseX, double mouseY, double scale) {

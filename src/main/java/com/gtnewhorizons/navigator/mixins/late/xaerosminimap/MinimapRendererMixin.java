@@ -17,6 +17,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import com.gtnewhorizons.navigator.Navigator;
 import com.gtnewhorizons.navigator.api.NavigatorApi;
 import com.gtnewhorizons.navigator.api.model.layers.LayerManager;
+import com.gtnewhorizons.navigator.api.model.layers.LayerRenderer;
 import com.gtnewhorizons.navigator.api.xaero.renderers.XaeroLayerRenderer;
 import com.gtnewhorizons.navigator.api.xaero.rendersteps.XaeroRenderStep;
 import com.llamalad7.mixinextras.sugar.Local;
@@ -46,7 +47,7 @@ public abstract class MinimapRendererMixin {
         int width, int height, int scale, int size, float partial, CallbackInfo ci,
         @Local(name = "circleShape") boolean circleShape, @Local(name = "minimapFrameSize") int minimapFrameSize,
         @Local(name = "angle") double angle, @Local(name = "minimapScale") float minimapScale) {
-        for (LayerManager layerManager : NavigatorApi.layerManagers) {
+        for (LayerManager layerManager : NavigatorApi.getEnabledLayers(XaeroWorldMap)) {
             if (layerManager.isLayerActive()) {
                 if (circleShape) {
                     layerManager.recacheMiniMap((int) mc.thePlayer.posX, (int) mc.thePlayer.posZ, minimapFrameSize * 2);
@@ -68,12 +69,12 @@ public abstract class MinimapRendererMixin {
             GL11.glScaled(mapZoom, mapZoom, 0);
             GL11.glStencilFunc(GL11.GL_EQUAL, 1, 1);
 
-            XaeroLayerRenderer activeLayer = (XaeroLayerRenderer) NavigatorApi.getActiveLayerFor(XaeroWorldMap);
-            if (activeLayer != null) {
-                for (XaeroRenderStep renderStep : activeLayer.getRenderSteps()) {
+            for (LayerRenderer layerRenderer : NavigatorApi.getActiveRenderersFor(XaeroWorldMap)) {
+                for (XaeroRenderStep renderStep : ((XaeroLayerRenderer) layerRenderer).getRenderSteps()) {
                     renderStep.draw(null, minimap.mainPlayerX, minimap.mainPlayerZ, mapZoom);
                 }
             }
+
             GL11.glDisable(GL11.GL_STENCIL_TEST);
             GL11.glPopMatrix();
         }

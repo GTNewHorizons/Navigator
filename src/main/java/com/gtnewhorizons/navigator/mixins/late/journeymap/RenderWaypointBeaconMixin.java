@@ -1,5 +1,7 @@
 package com.gtnewhorizons.navigator.mixins.late.journeymap;
 
+import static com.gtnewhorizons.navigator.api.model.SupportedMods.JourneyMap;
+
 import net.minecraft.client.Minecraft;
 
 import org.spongepowered.asm.mixin.Mixin;
@@ -10,6 +12,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.gtnewhorizons.navigator.api.NavigatorApi;
 import com.gtnewhorizons.navigator.api.journeymap.waypoints.JMWaypointManager;
+import com.gtnewhorizons.navigator.api.model.layers.InteractableLayerManager;
 import com.gtnewhorizons.navigator.api.model.waypoints.WaypointManager;
 
 import journeymap.client.model.Waypoint;
@@ -34,8 +37,9 @@ public abstract class RenderWaypointBeaconMixin {
         remap = false,
         require = 1)
     private static void navigator$onRenderAll(CallbackInfo ci) {
-        for (WaypointManager waypointManager : NavigatorApi.waypointManagers) {
-            if (waypointManager.hasWaypoint() && waypointManager instanceof JMWaypointManager jmWaypointManager) {
+        for (InteractableLayerManager layer : NavigatorApi.getInteractableLayers()) {
+            WaypointManager waypointManager = layer.getWaypointManager(JourneyMap);
+            if (waypointManager instanceof JMWaypointManager jmWaypointManager && waypointManager.hasWaypoint()) {
                 final Waypoint waypoint = jmWaypointManager.getJmWaypoint();
                 if (waypoint.getDimensions()
                     .contains(mc.thePlayer.dimension)) {

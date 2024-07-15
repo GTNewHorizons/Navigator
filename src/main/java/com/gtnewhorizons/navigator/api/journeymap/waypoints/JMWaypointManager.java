@@ -3,15 +3,15 @@ package com.gtnewhorizons.navigator.api.journeymap.waypoints;
 import java.awt.Color;
 
 import com.gtnewhorizons.navigator.api.model.SupportedMods;
-import com.gtnewhorizons.navigator.api.model.layers.WaypointProviderManager;
+import com.gtnewhorizons.navigator.api.model.layers.InteractableLayerManager;
 import com.gtnewhorizons.navigator.api.model.waypoints.Waypoint;
 import com.gtnewhorizons.navigator.api.model.waypoints.WaypointManager;
 
-public abstract class JMWaypointManager extends WaypointManager {
+public class JMWaypointManager extends WaypointManager {
 
     private journeymap.client.model.Waypoint jmWaypoint;
 
-    public JMWaypointManager(WaypointProviderManager layerManager) {
+    public JMWaypointManager(InteractableLayerManager layerManager) {
         super(layerManager, SupportedMods.JourneyMap);
     }
 

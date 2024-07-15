@@ -4,19 +4,19 @@ import java.util.Map;
 
 import com.gtnewhorizons.navigator.Navigator;
 import com.gtnewhorizons.navigator.api.model.SupportedMods;
-import com.gtnewhorizons.navigator.api.model.layers.WaypointProviderManager;
+import com.gtnewhorizons.navigator.api.model.layers.InteractableLayerManager;
 import com.gtnewhorizons.navigator.api.model.waypoints.Waypoint;
 import com.gtnewhorizons.navigator.api.model.waypoints.WaypointManager;
 
 import xaero.common.minimap.waypoints.WaypointsManager;
 
-public abstract class XaeroWaypointManager extends WaypointManager {
+public class XaeroWaypointManager extends WaypointManager {
 
     public static int lastId;
     protected final int waypointId;
     private WaypointWithDimension xWaypoint;
 
-    public XaeroWaypointManager(WaypointProviderManager layerManager) {
+    public XaeroWaypointManager(InteractableLayerManager layerManager) {
         super(layerManager, SupportedMods.XaeroMiniMap);
         waypointId = lastId++;
     }

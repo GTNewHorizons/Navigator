@@ -30,7 +30,8 @@ public abstract class ButtonManager {
     }
 
     public void activate() {
-        NavigatorApi.buttonManagers.forEach(ButtonManager::deactivate);
+        NavigatorApi.getDistinctButtons()
+            .forEach(ButtonManager::deactivate);
         isActive = true;
         if (onToggle != null) {
             onToggle.accept(true);
@@ -50,14 +51,5 @@ public abstract class ButtonManager {
         } else {
             activate();
         }
-    }
-
-    /**
-     * Whether the button should be added to the GUI.
-     *
-     * @return true if the button should be added, false otherwise
-     */
-    public boolean isEnabled(SupportedMods mod) {
-        return true;
     }
 }

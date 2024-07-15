@@ -6,8 +6,8 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import com.gtnewhorizons.navigator.api.NavigatorApi;
+import com.gtnewhorizons.navigator.api.model.layers.InteractableLayerManager;
 import com.gtnewhorizons.navigator.api.model.layers.LayerManager;
-import com.gtnewhorizons.navigator.api.model.layers.WaypointProviderManager;
 
 import journeymap.client.ui.waypoint.WaypointManager;
 
@@ -18,7 +18,7 @@ public abstract class WaypointManagerMixin {
     private void navigator$onToggleAllWaypoints(boolean enable, CallbackInfoReturnable<Boolean> cir) {
         if (!enable) {
             for (LayerManager layer : NavigatorApi.layerManagers) {
-                if (layer instanceof WaypointProviderManager waypointProvider) {
+                if (layer instanceof InteractableLayerManager waypointProvider) {
                     waypointProvider.clearActiveWaypoint();
                 }
             }

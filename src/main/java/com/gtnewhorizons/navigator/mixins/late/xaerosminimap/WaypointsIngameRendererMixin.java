@@ -10,6 +10,8 @@ import org.spongepowered.asm.mixin.injection.Slice;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.gtnewhorizons.navigator.api.NavigatorApi;
+import com.gtnewhorizons.navigator.api.model.SupportedMods;
+import com.gtnewhorizons.navigator.api.model.layers.InteractableLayerManager;
 import com.gtnewhorizons.navigator.api.model.waypoints.WaypointManager;
 import com.gtnewhorizons.navigator.api.xaero.waypoints.XaeroWaypointManager;
 
@@ -31,7 +33,12 @@ public abstract class WaypointsIngameRendererMixin {
                 opcode = Opcodes.GETSTATIC)))
     private void navigator$injectPreRenderCustomWaypoints(XaeroMinimapSession sets, float modCustomWaypoints,
         CallbackInfo ci) {
-        for (WaypointManager manager : NavigatorApi.waypointManagers) {
+        for (InteractableLayerManager layer : NavigatorApi.getInteractableLayers()) {
+            WaypointManager manager = layer.getWaypointManager(SupportedMods.XaeroMiniMap);
+            if (manager == null) {
+                manager = layer.getWaypointManager(SupportedMods.XaeroWorldMap);
+            }
+
             if (manager instanceof XaeroWaypointManager xaeroManager) {
                 if (xaeroManager.hasWaypoint()) {
                     xaeroManager.getXWaypoint()

@@ -15,7 +15,6 @@ public abstract class LayerRenderer {
     protected List<? extends RenderStep> renderSteps = new ArrayList<>();
 
     public LayerRenderer(LayerManager manager, SupportedMods mod) {
-        manager.registerLayerRenderer(mod, this);
         this.mod = mod;
         this.manager = manager;
     }
@@ -24,10 +23,6 @@ public abstract class LayerRenderer {
 
     protected abstract List<? extends RenderStep> generateRenderSteps(
         List<? extends ILocationProvider> visibleElements);
-
-    public final boolean isLayerActive() {
-        return manager.isLayerActive() && mod.isEnabled();
-    }
 
     public final SupportedMods getLayerMod() {
         return mod;

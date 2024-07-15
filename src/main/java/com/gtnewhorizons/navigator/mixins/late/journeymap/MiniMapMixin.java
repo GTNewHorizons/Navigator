@@ -38,7 +38,7 @@ public abstract class MiniMapMixin {
 
     @Inject(method = "drawOnMapWaypoints", at = @At(value = "HEAD"), require = 1)
     private void navigator$onBeforeDrawWaypoints(double rotation, CallbackInfo ci) {
-        for (LayerManager layerManager : NavigatorApi.layerManagers) {
+        for (LayerManager layerManager : NavigatorApi.getEnabledLayers(JourneyMap)) {
             if (layerManager.isLayerActive()) {
                 if (((DisplayVarsAccessor) dv).getShape() == Shape.Circle) {
                     layerManager.recacheMiniMap(
@@ -55,18 +55,17 @@ public abstract class MiniMapMixin {
             }
         }
 
-        LayerRenderer activeLayer = NavigatorApi.getActiveLayerFor(JourneyMap);
-        if (activeLayer == null) return;
-
-        for (RenderStep renderStep : activeLayer.getRenderSteps()) {
-            if (renderStep instanceof DrawStep drawStep) {
-                drawStep.draw(
-                    0.0D,
-                    0.0D,
-                    gridRenderer,
-                    ((DisplayVarsAccessor) dv).getDrawScale(),
-                    ((DisplayVarsAccessor) dv).getFontScale(),
-                    rotation);
+        for (LayerRenderer layerRenderer : NavigatorApi.getActiveRenderersFor(JourneyMap)) {
+            for (RenderStep renderStep : layerRenderer.getRenderSteps()) {
+                if (renderStep instanceof DrawStep drawStep) {
+                    drawStep.draw(
+                        0.0D,
+                        0.0D,
+                        gridRenderer,
+                        ((DisplayVarsAccessor) dv).getDrawScale(),
+                        ((DisplayVarsAccessor) dv).getFontScale(),
+                        rotation);
+                }
             }
         }
     }

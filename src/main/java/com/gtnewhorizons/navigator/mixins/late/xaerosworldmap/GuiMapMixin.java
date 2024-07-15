@@ -73,7 +73,8 @@ public abstract class GuiMapMixin extends ScreenBase {
     @Inject(method = "<init>", at = @At("RETURN"))
     private void navigator$injectConstruct(GuiScreen parent, GuiScreen escape, MapProcessor mapProcessor, Entity player,
         CallbackInfo ci) {
-        NavigatorApi.layerManagers.forEach(layerManager -> layerManager.onGuiOpened(XaeroWorldMap));
+        NavigatorApi.getEnabledLayers(XaeroWorldMap)
+            .forEach(layerManager -> layerManager.onGuiOpened(XaeroWorldMap));
     }
 
     @Inject(
@@ -92,7 +93,7 @@ public abstract class GuiMapMixin extends ScreenBase {
         double mousePosX = (Misc.getMouseX(mc) - (double) mc.displayWidth / 2) / this.scale;
         double mousePosZ = (Misc.getMouseY(mc) - (double) mc.displayHeight / 2) / this.scale;
 
-        for (LayerRenderer layer : NavigatorApi.layerRenderers) {
+        for (LayerRenderer layer : NavigatorApi.getActiveRenderersFor(XaeroWorldMap)) {
             if (layer instanceof XaeroInteractableLayerRenderer interactableLayer) {
                 interactableLayer.updateHovered(mousePosX, mousePosZ, scale);
             }
@@ -104,21 +105,20 @@ public abstract class GuiMapMixin extends ScreenBase {
         at = @At(value = "INVOKE", target = "Lxaero/map/mods/SupportMods;minimap()Z", ordinal = 1, remap = false),
         remap = true)
     private void navigator$injectDraw(int scaledMouseX, int scaledMouseY, float partialTicks, CallbackInfo ci) {
-        for (LayerManager layerManager : NavigatorApi.layerManagers) {
-            if (layerManager.isLayerActive()) {
-                // +20s are to work around precision loss from casting to int and right-shifting
-                layerManager.recacheFullscreenMap(
-                    (int) cameraX,
-                    (int) cameraZ,
-                    (int) (mc.displayWidth / scale) + 20,
-                    (int) (mc.displayHeight / scale) + 20);
-            }
+        for (LayerManager layerManager : NavigatorApi.getEnabledLayers(XaeroWorldMap)) {
+            // +20s are to work around precision loss from casting to int and right-shifting
+            layerManager.recacheFullscreenMap(
+                (int) cameraX,
+                (int) cameraZ,
+                (int) (mc.displayWidth / scale) + 20,
+                (int) (mc.displayHeight / scale) + 20);
         }
 
-        XaeroLayerRenderer renderer = (XaeroLayerRenderer) NavigatorApi.getActiveLayerFor(XaeroWorldMap);
-        if (renderer != null) {
-            for (XaeroRenderStep step : renderer.getRenderSteps()) {
-                step.draw(this, cameraX, cameraZ, scale);
+        for (LayerRenderer layer : NavigatorApi.getActiveRenderersFor(XaeroWorldMap)) {
+            if (layer instanceof XaeroLayerRenderer xaeroLayerRenderer) {
+                for (XaeroRenderStep step : xaeroLayerRenderer.getRenderSteps()) {
+                    step.draw(this, cameraX, cameraZ, scale);
+                }
             }
         }
     }
@@ -132,26 +132,26 @@ public abstract class GuiMapMixin extends ScreenBase {
             shift = At.Shift.AFTER),
         remap = true)
     private void navigator$injectDrawTooltip(int scaledMouseX, int scaledMouseY, float partialTicks, CallbackInfo ci) {
-        LayerRenderer layer = NavigatorApi.getActiveLayerFor(XaeroWorldMap);
-        if (layer instanceof XaeroInteractableLayerRenderer interactableLayer) {
-            List<String> tooltip = interactableLayer.getTooltip();
-            if (!tooltip.isEmpty()) {
-                DrawUtils
-                    .drawSimpleTooltip(this, tooltip, scaledMouseX + 16, scaledMouseY - 12, 0xFFFFFFFF, 0x86000000);
-            } else {
-                interactableLayer.drawCustomTooltip(this, scaledMouseX, scaledMouseY, scale, screenScale);
+        for (LayerRenderer layer : NavigatorApi.getActiveRenderersFor(XaeroWorldMap)) {
+            if (layer instanceof XaeroInteractableLayerRenderer interactableLayer) {
+                List<String> tooltip = interactableLayer.getTooltip();
+                if (!tooltip.isEmpty()) {
+                    DrawUtils
+                        .drawSimpleTooltip(this, tooltip, scaledMouseX + 16, scaledMouseY - 12, 0xFFFFFFFF, 0x86000000);
+                } else {
+                    interactableLayer.drawCustomTooltip(this, scaledMouseX, scaledMouseY, scale, screenScale);
+                }
             }
         }
     }
 
     @Inject(method = "initGui", at = @At(value = "TAIL"), remap = true)
     private void navigator$injectInitButtons(CallbackInfo ci) {
-        List<ButtonManager> buttons = NavigatorApi.buttonManagers;
+        List<ButtonManager> buttons = NavigatorApi.getEnabledButtons(XaeroWorldMap);
         int numBtns = buttons.size();
         int totalHeight = numBtns * 20;
         for (int i = 0; i < numBtns; i++) {
             ButtonManager btnManager = buttons.get(i);
-            if (!btnManager.isEnabled(XaeroWorldMap)) continue;
             SizedGuiTexturedButton button = new SizedGuiTexturedButton(
                 0,
                 (height / 2 + totalHeight / 2) - 20 - 20 * i,
@@ -172,10 +172,11 @@ public abstract class GuiMapMixin extends ScreenBase {
             ordinal = 1),
         cancellable = true)
     private void navigator$injectListenKeypress(boolean mouse, int code, CallbackInfoReturnable<Boolean> cir) {
-        LayerRenderer activeLayer = NavigatorApi.getActiveLayerFor(XaeroWorldMap);
-        if (activeLayer instanceof XaeroInteractableLayerRenderer interactableLayer
-            && interactableLayer.onKeyPressed(code)) {
-            cir.setReturnValue(true);
+        for (LayerRenderer layer : NavigatorApi.getActiveRenderersFor(XaeroWorldMap)) {
+            if (layer instanceof XaeroInteractableLayerRenderer interactableLayer
+                && interactableLayer.onKeyPressed(code)) {
+                cir.setReturnValue(true);
+            }
         }
     }
 
@@ -189,16 +190,18 @@ public abstract class GuiMapMixin extends ScreenBase {
             navigator$oldMouseY = y;
             navigator$timeLastClick = isDoubleClick ? 0 : timestamp;
 
-            LayerRenderer layer = NavigatorApi.getActiveLayerFor(XaeroWorldMap);
-            if (layer instanceof XaeroInteractableLayerRenderer interactableLayer) {
-                interactableLayer.onMapClick(isDoubleClick, x, y, mouseBlockPosX, mouseBlockPosZ);
+            for (LayerRenderer layer : NavigatorApi.getActiveRenderersFor(XaeroWorldMap)) {
+                if (layer instanceof XaeroInteractableLayerRenderer interactableLayer) {
+                    interactableLayer.onMapClick(isDoubleClick, x, y, mouseBlockPosX, mouseBlockPosZ);
+                }
             }
         }
     }
 
     @Inject(method = "onGuiClosed", at = @At("RETURN"), remap = true)
     private void navigator$onGuiClosed(CallbackInfo ci) {
-        NavigatorApi.layerManagers.forEach(layerManager -> layerManager.onGuiClosed(XaeroWorldMap));
+        NavigatorApi.getEnabledLayers(XaeroWorldMap)
+            .forEach(layerManager -> layerManager.onGuiClosed(XaeroWorldMap));
     }
 
     @Override

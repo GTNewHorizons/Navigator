@@ -5,6 +5,8 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.annotation.Nullable;
+
 import com.gtnewhorizons.navigator.api.model.SupportedMods;
 import com.gtnewhorizons.navigator.api.model.buttons.ButtonManager;
 import com.gtnewhorizons.navigator.api.model.locations.ILocationProvider;
@@ -15,7 +17,7 @@ public abstract class LayerManager {
 
     protected boolean forceRefresh = false;
     private List<? extends ILocationProvider> visibleElements = new ArrayList<>();
-    protected Map<SupportedMods, LayerRenderer> layerRenderer = new EnumMap<>(SupportedMods.class);
+    protected final Map<SupportedMods, LayerRenderer> layerRenderer = new EnumMap<>(SupportedMods.class);
     private int miniMapWidth = 0;
     private int miniMapHeight = 0;
     private int fullscreenMapWidth = 0;
@@ -24,7 +26,24 @@ public abstract class LayerManager {
 
     public LayerManager(ButtonManager buttonManager) {
         this.buttonManager = buttonManager;
+        for (SupportedMods mod : SupportedMods.values()) {
+            if (!mod.isEnabled() || !isEnabled(mod)) continue;
+
+            LayerRenderer renderer = addLayerRenderer(this, mod);
+            if (renderer == null) continue;
+            layerRenderer.put(mod, renderer);
+        }
     }
+
+    /**
+     * @param manager This layer manager
+     * @param mod     The mod to add the layer renderer for
+     * @return The layer renderer implementation for the mod or null if none
+     */
+    protected abstract @Nullable LayerRenderer addLayerRenderer(LayerManager manager, SupportedMods mod);
+
+    protected abstract List<? extends ILocationProvider> generateVisibleElements(int minBlockX, int minBlockZ,
+        int maxBlockX, int maxBlockZ);
 
     public boolean isLayerActive() {
         return buttonManager.isActive();
@@ -63,9 +82,6 @@ public abstract class LayerManager {
     public final SupportedMods getOpenModGui() {
         return openModGui;
     }
-
-    protected abstract List<? extends ILocationProvider> generateVisibleElements(int minBlockX, int minBlockZ,
-        int maxBlockX, int maxBlockZ);
 
     protected boolean needsRegenerateVisibleElements(int minBlockX, int minBlockZ, int maxBlockX, int maxBlockZ) {
         return true;
@@ -108,12 +124,21 @@ public abstract class LayerManager {
         }
     }
 
-    public void registerLayerRenderer(SupportedMods mod, LayerRenderer renderer) {
-        if (!mod.isEnabled()) return;
-        layerRenderer.put(mod, renderer);
+    public ButtonManager getButtonManager() {
+        return buttonManager;
     }
 
     public LayerRenderer getLayerRenderer(SupportedMods map) {
         return layerRenderer.get(map);
+    }
+
+    /**
+     * Whether the layer is enabled for the corresponding mod.
+     *
+     * @param mod the mod checking if it is enabled
+     * @return true if there is a layer implementation for the mod, false otherwise
+     */
+    public boolean isEnabled(SupportedMods mod) {
+        return true;
     }
 }
