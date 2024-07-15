@@ -27,7 +27,7 @@ public abstract class LayerManager {
     public LayerManager(ButtonManager buttonManager) {
         this.buttonManager = buttonManager;
         for (SupportedMods mod : SupportedMods.values()) {
-            if (!mod.isEnabled() || !isEnabled(mod)) continue;
+            if (!mod.isEnabled()) continue;
 
             LayerRenderer renderer = addLayerRenderer(this, mod);
             if (renderer == null) continue;
@@ -139,6 +139,6 @@ public abstract class LayerManager {
      * @return true if there is a layer implementation for the mod, false otherwise
      */
     public boolean isEnabled(SupportedMods mod) {
-        return true;
+        return layerRenderer.containsKey(mod);
     }
 }
