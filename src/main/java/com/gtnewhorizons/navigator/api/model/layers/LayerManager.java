@@ -38,7 +38,7 @@ public abstract class LayerManager {
     /**
      * @param manager This layer manager
      * @param mod     The mod to add the layer renderer for
-     * @return The layer renderer implementation for the mod or null if none
+     * @return The {@link LayerRenderer} implementation for the mod or null if none
      */
     protected abstract @Nullable LayerRenderer addLayerRenderer(LayerManager manager, SupportedMods mod);
 
