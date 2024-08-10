@@ -1,12 +1,7 @@
 package com.gtnewhorizons.navigator.impl;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import javax.annotation.Nullable;
 
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.entity.EntityClientPlayerMP;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.IChunkProvider;
@@ -15,9 +10,9 @@ import com.gtnewhorizons.navigator.api.journeymap.waypoints.JMWaypointManager;
 import com.gtnewhorizons.navigator.api.model.SupportedMods;
 import com.gtnewhorizons.navigator.api.model.layers.InteractableLayerManager;
 import com.gtnewhorizons.navigator.api.model.layers.LayerRenderer;
+import com.gtnewhorizons.navigator.api.model.locations.ILocationProvider;
 import com.gtnewhorizons.navigator.api.model.locations.IWaypointAndLocationProvider;
 import com.gtnewhorizons.navigator.api.model.waypoints.WaypointManager;
-import com.gtnewhorizons.navigator.api.util.Util;
 import com.gtnewhorizons.navigator.api.xaero.waypoints.XaeroWaypointManager;
 import com.gtnewhorizons.navigator.impl.journeymap.JMDirtyChunkRenderer;
 import com.gtnewhorizons.navigator.impl.xaero.XaeroDirtyChunkRenderer;
@@ -50,36 +45,27 @@ public class DirtyChunkLayerManager extends InteractableLayerManager {
     }
 
     @Override
-    protected List<? extends IWaypointAndLocationProvider> generateVisibleElements(int minBlockX, int minBlockZ,
-        int maxBlockX, int maxBlockZ) {
-        final int minX = Util.coordBlockToChunk(minBlockX);
-        final int minZ = Util.coordBlockToChunk(minBlockZ);
-        final int maxX = Util.coordBlockToChunk(maxBlockX);
-        final int maxZ = Util.coordBlockToChunk(maxBlockZ);
-        final EntityClientPlayerMP player = Minecraft.getMinecraft().thePlayer;
-        final int playerDimensionId = player.dimension;
+    public void updateElement(IWaypointAndLocationProvider location) {
+        DirtyChunkLocation loc = (DirtyChunkLocation) location;
+        MinecraftServer server = MinecraftServer.getServer();
+        if (server == null) return;
+        World world = server.worldServerForDimension(loc.getDimensionId());
 
-        ArrayList<DirtyChunkLocation> dirtyChunks = new ArrayList<>();
+        boolean dirty = world.getChunkFromChunkCoords(loc.getChunkX(), loc.getChunkZ()).isModified;
+        loc.setDirty(dirty);
+    }
 
-        if (MinecraftServer.getServer() == null || MinecraftServer.getServer()
-            .worldServerForDimension(playerDimensionId) == null) {
-            return dirtyChunks;
+    @Override
+    protected ILocationProvider generateLocation(int chunkX, int chunkZ, int dim) {
+        MinecraftServer server = MinecraftServer.getServer();
+        if (server == null) return null;
+        World world = server.worldServerForDimension(dim);
+        IChunkProvider chunkProvider = world.getChunkProvider();
+
+        if (!chunkProvider.chunkExists(chunkX, chunkZ)) {
+            return null;
         }
-
-        World w = MinecraftServer.getServer()
-            .worldServerForDimension(playerDimensionId);
-        IChunkProvider chunkProvider = w.getChunkProvider();
-
-        for (int chunkX = minX; chunkX <= maxX; chunkX++) {
-            for (int chunkZ = minZ; chunkZ <= maxZ; chunkZ++) {
-                if (!chunkProvider.chunkExists(chunkX, chunkZ)) {
-                    continue;
-                }
-                final boolean dirty = w.getChunkFromChunkCoords(chunkX, chunkZ).isModified;
-                dirtyChunks.add(new DirtyChunkLocation(chunkX, chunkZ, playerDimensionId, dirty));
-            }
-        }
-
-        return dirtyChunks;
+        boolean dirty = world.getChunkFromChunkCoords(chunkX, chunkZ).isModified;
+        return new DirtyChunkLocation(chunkX, chunkZ, dim, dirty);
     }
 }

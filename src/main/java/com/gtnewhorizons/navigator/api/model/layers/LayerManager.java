@@ -1,22 +1,35 @@
 package com.gtnewhorizons.navigator.api.model.layers;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.EnumMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.annotation.Nullable;
 
+import net.minecraft.client.Minecraft;
+
+import com.gtnewhorizon.gtnhlib.util.CoordinatePacker;
 import com.gtnewhorizons.navigator.api.model.SupportedMods;
 import com.gtnewhorizons.navigator.api.model.buttons.ButtonManager;
 import com.gtnewhorizons.navigator.api.model.locations.ILocationProvider;
+import com.gtnewhorizons.navigator.api.util.Util;
+
+import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
+import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 
 public abstract class LayerManager {
 
     private final ButtonManager buttonManager;
 
-    protected boolean forceRefresh = false;
-    private List<? extends ILocationProvider> visibleElements = new ArrayList<>();
+    public boolean forceRefresh = false;
+    protected List<? extends ILocationProvider> visibleElements = new ArrayList<>();
+    private final Long2ObjectMap<ILocationProvider> cachedLocations = new Long2ObjectOpenHashMap<>();
+    private final Set<ILocationProvider> visibleLocations = new HashSet<>();
+    private final Set<ILocationProvider> removeQueue = new HashSet<>();
     protected final Map<SupportedMods, LayerRenderer> layerRenderer = new EnumMap<>(SupportedMods.class);
     private int miniMapWidth = 0;
     private int miniMapHeight = 0;
@@ -26,6 +39,7 @@ public abstract class LayerManager {
 
     public LayerManager(ButtonManager buttonManager) {
         this.buttonManager = buttonManager;
+        buttonManager.setLayerNotify(this::onLayerToggled);
         for (SupportedMods mod : SupportedMods.values()) {
             if (!mod.isEnabled()) continue;
 
@@ -42,8 +56,51 @@ public abstract class LayerManager {
      */
     protected abstract @Nullable LayerRenderer addLayerRenderer(LayerManager manager, SupportedMods mod);
 
-    protected abstract List<? extends ILocationProvider> generateVisibleElements(int minBlockX, int minBlockZ,
-        int maxBlockX, int maxBlockZ);
+    protected @Nullable ILocationProvider generateLocation(int chunkX, int chunkZ, int dim) {
+        return null;
+    }
+
+    private ILocationProvider getOrCreateLocation(int chunkX, int chunkZ, int dim) {
+        long chunkKey = CoordinatePacker.pack(chunkX, dim, chunkZ);
+        ILocationProvider location = cachedLocations.get(chunkKey);
+        if (location != null) return location;
+
+        location = generateLocation(chunkX, chunkZ, dim);
+        if (location == null) {
+            location = tryOldLocation(chunkX, chunkZ);
+            if (location == null) return null;
+        }
+        cachedLocations.put(chunkKey, location);
+        return location;
+    }
+
+    private ILocationProvider tryOldLocation(int chunkX, int chunkZ) {
+        int minBlockX = Util.coordChunkToBlock(chunkX);
+        int minBlockZ = Util.coordChunkToBlock(chunkZ);
+        int maxBlockX = minBlockX + 15;
+        int maxBlockZ = minBlockZ + 15;
+        if (needsRegenerateVisibleElements(minBlockX, minBlockZ, maxBlockX, maxBlockZ)) {
+            List<? extends ILocationProvider> oldLoc = generateVisibleElements(
+                minBlockX,
+                minBlockZ,
+                maxBlockX,
+                maxBlockZ);
+            if (oldLoc != null && !oldLoc.isEmpty()) {
+                ILocationProvider loc = null;
+                for (ILocationProvider location : oldLoc) {
+                    // Capture first location to return
+                    if (loc == null) {
+                        loc = location;
+                        continue;
+                    }
+                    cachedLocations.put(location.toLong(), location);
+                }
+
+                return loc;
+            }
+        }
+        return null;
+    }
 
     public boolean isLayerActive() {
         return buttonManager.isActive();
@@ -67,6 +124,9 @@ public abstract class LayerManager {
 
     public final void onGuiOpened(SupportedMods mod) {
         openModGui = mod;
+        cachedLocations.clear();
+        layerRenderer.values()
+            .forEach(LayerRenderer::clearRenderSteps);
         onOpenMap();
     }
 
@@ -81,10 +141,6 @@ public abstract class LayerManager {
 
     public final SupportedMods getOpenModGui() {
         return openModGui;
-    }
-
-    protected boolean needsRegenerateVisibleElements(int minBlockX, int minBlockZ, int maxBlockX, int maxBlockZ) {
-        return true;
     }
 
     public void recacheMiniMap(int centerBlockX, int centerBlockZ, int blockRadius) {
@@ -104,25 +160,64 @@ public abstract class LayerManager {
     }
 
     private void recacheVisibleElements(int centerBlockX, int centerBlockZ) {
-        final int radiusBlockX = (Math.max(miniMapWidth, fullscreenMapWidth) + 1) >> 1;
-        final int radiusBlockZ = (Math.max(miniMapHeight, fullscreenMapHeight) + 1) >> 1;
+        int radiusBlockX = (Math.max(miniMapWidth, fullscreenMapWidth) + 1) >> 1;
+        int radiusBlockZ = (Math.max(miniMapHeight, fullscreenMapHeight) + 1) >> 1;
+        int minBlockX = centerBlockX - radiusBlockX;
+        int minBlockZ = centerBlockZ - radiusBlockZ;
+        int maxBlockX = centerBlockX + radiusBlockX;
+        int maxBlockZ = centerBlockZ + radiusBlockZ;
 
-        final int minBlockX = centerBlockX - radiusBlockX;
-        final int minBlockZ = centerBlockZ - radiusBlockZ;
-        final int maxBlockX = centerBlockX + radiusBlockX;
-        final int maxBlockZ = centerBlockZ + radiusBlockZ;
-
-        checkAndUpdateElements(minBlockX, minBlockZ, maxBlockX, maxBlockZ);
-    }
-
-    protected void checkAndUpdateElements(int minBlockX, int minBlockZ, int maxBlockX, int maxBlockZ) {
-        if (forceRefresh || needsRegenerateVisibleElements(minBlockX, minBlockZ, maxBlockX, maxBlockZ)) {
-            visibleElements = generateVisibleElements(minBlockX, minBlockZ, maxBlockX, maxBlockZ);
-            layerRenderer.values()
-                .forEach(layer -> layer.updateVisibleElements(visibleElements));
-            forceRefresh = false;
+        if (!removeQueue.isEmpty()) {
+            for (ILocationProvider location : removeQueue) {
+                layerRenderer.values()
+                    .forEach(layer -> layer.removeRenderStep(location.toLong()));
+                cachedLocations.remove(location.toLong());
+            }
+            removeQueue.clear();
         }
+
+        int chunkMinX = Util.coordBlockToChunk(minBlockX);
+        int chunkMinZ = Util.coordBlockToChunk(minBlockZ);
+        int chunkMaxX = Util.coordBlockToChunk(maxBlockX);
+        int chunkMaxZ = Util.coordBlockToChunk(maxBlockZ);
+        int dim = Minecraft.getMinecraft().thePlayer.dimension;
+
+        onUpdatePre(chunkMinX, chunkMaxX, chunkMinZ, chunkMaxZ);
+
+        visibleLocations.clear();
+        for (int chunkX = chunkMinX; chunkX <= chunkMaxX; chunkX++) {
+            for (int chunkZ = chunkMinZ; chunkZ <= chunkMaxZ; chunkZ++) {
+                ILocationProvider location = getOrCreateLocation(chunkX, chunkZ, dim);
+                if (location == null) continue;
+
+                updateElement(location);
+                visibleLocations.add(location);
+            }
+        }
+
+        layerRenderer.values()
+            .forEach(layer -> layer.refreshVisibleElements(visibleLocations));
+        onUpdatePost(chunkMinX, chunkMaxX, chunkMinZ, chunkMaxZ);
     }
+
+    public void onLayerToggled(boolean state) {
+        cachedLocations.clear();
+    }
+
+    public void onUpdatePre(int minX, int maxX, int minZ, int maxZ) {}
+
+    public void onUpdatePost(int minX, int maxX, int minZ, int maxZ) {}
+
+    public final void removeLocation(ILocationProvider location) {
+        removeQueue.add(location);
+        forceRefresh();
+    }
+
+    public final void addExtraLocation(ILocationProvider location) {
+        cachedLocations.put(location.toLong(), location);
+    }
+
+    public void updateElement(ILocationProvider location) {}
 
     public ButtonManager getButtonManager() {
         return buttonManager;
@@ -130,6 +225,14 @@ public abstract class LayerManager {
 
     public LayerRenderer getLayerRenderer(SupportedMods map) {
         return layerRenderer.get(map);
+    }
+
+    public Collection<? extends ILocationProvider> getVisibleLocations() {
+        return visibleLocations;
+    }
+
+    public Collection<? extends ILocationProvider> getCachedLocations() {
+        return cachedLocations.values();
     }
 
     /**
@@ -140,5 +243,19 @@ public abstract class LayerManager {
      */
     public boolean isEnabled(SupportedMods mod) {
         return layerRenderer.containsKey(mod);
+    }
+
+    @Deprecated
+    protected void checkAndUpdateElements(int minBlockX, int minBlockZ, int maxBlockX, int maxBlockZ) {}
+
+    @Deprecated
+    protected boolean needsRegenerateVisibleElements(int minBlockX, int minBlockZ, int maxBlockX, int maxBlockZ) {
+        return false;
+    }
+
+    @Deprecated
+    protected List<? extends ILocationProvider> generateVisibleElements(int minBlockX, int minBlockZ, int maxBlockX,
+        int maxBlockZ) {
+        return null;
     }
 }

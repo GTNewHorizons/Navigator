@@ -1,4 +1,14 @@
 package com.gtnewhorizons.navigator.api.model.steps;
 
-public interface InteractableStep {
+import java.util.List;
+
+import com.gtnewhorizons.navigator.api.model.locations.IWaypointAndLocationProvider;
+
+public interface InteractableStep extends RenderStep {
+
+    void getTooltip(List<String> list);
+
+    void onActionKeyPressed();
+
+    IWaypointAndLocationProvider getLocationProvider();
 }

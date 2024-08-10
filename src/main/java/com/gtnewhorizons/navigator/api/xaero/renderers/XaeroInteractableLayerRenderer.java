@@ -39,9 +39,12 @@ public abstract class XaeroInteractableLayerRenderer extends XaeroLayerRenderer 
     }
 
     public final void onMapClick(boolean isDoubleClick, int mouseX, int mouseY, int mouseBlockX, int mouseBlockZ) {
-        if (manager.getOpenModGui()
-            .equals(getLayerMod())) {
+        if (!manager.getOpenModGui()
+            .equals(getLayerMod())) return;
+        if (hovered != null) {
             onClick(isDoubleClick, mouseX, mouseY, mouseBlockX, mouseBlockZ);
+        } else {
+            onClickOutsideRenderStep(isDoubleClick, mouseX, mouseY, mouseBlockX, mouseBlockZ);
         }
     }
 
@@ -54,19 +57,15 @@ public abstract class XaeroInteractableLayerRenderer extends XaeroLayerRenderer 
     }
 
     public void onClick(boolean isDoubleClick, int mouseX, int mouseY, int mouseBlockX, int mouseBlockZ) {
-        if (hovered != null) {
-            if (isDoubleClick) {
-                if (hovered.getLocationProvider()
-                    .isActiveAsWaypoint()) {
-                    manager.clearActiveWaypoint();
-                } else {
-                    manager.setActiveWaypoint(
-                        hovered.getLocationProvider()
-                            .toWaypoint());
-                }
+        if (isDoubleClick) {
+            if (hovered.getLocationProvider()
+                .isActiveAsWaypoint()) {
+                manager.clearActiveWaypoint();
+            } else {
+                manager.setActiveWaypoint(
+                    hovered.getLocationProvider()
+                        .toWaypoint());
             }
-        } else {
-            onClickOutsideRenderStep(isDoubleClick, mouseX, mouseY, mouseBlockX, mouseBlockZ);
         }
     }
 
@@ -79,7 +78,7 @@ public abstract class XaeroInteractableLayerRenderer extends XaeroLayerRenderer 
      */
     public boolean onKeyPressed(int keyCode) {
         if (Util.isKeyPressed(NavigatorApi.ACTION_KEY) && hovered != null) {
-            hovered.onActionButton();
+            hovered.onActionKeyPressed();
             manager.forceRefresh();
             return true;
         }

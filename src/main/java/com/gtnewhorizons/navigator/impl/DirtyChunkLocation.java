@@ -9,7 +9,7 @@ public class DirtyChunkLocation implements IWaypointAndLocationProvider {
     private final int blockX;
     private final int blockZ;
     private final int dimensionId;
-    private final boolean dirty;
+    private boolean dirty;
 
     private boolean isActiveAsWaypoint;
 
@@ -55,5 +55,9 @@ public class DirtyChunkLocation implements IWaypointAndLocationProvider {
     public void onWaypointUpdated(Waypoint waypoint) {
         isActiveAsWaypoint = waypoint.dimensionId == dimensionId && waypoint.blockX == blockX
             && waypoint.blockZ == blockZ;
+    }
+
+    public void setDirty(boolean dirty) {
+        this.dirty = dirty;
     }
 }

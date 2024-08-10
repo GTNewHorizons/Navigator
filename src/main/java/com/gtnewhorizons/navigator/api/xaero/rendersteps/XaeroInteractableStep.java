@@ -1,20 +1,23 @@
 package com.gtnewhorizons.navigator.api.xaero.rendersteps;
 
-import java.util.List;
-
 import net.minecraft.client.gui.GuiScreen;
 
-import com.gtnewhorizons.navigator.api.model.locations.IWaypointAndLocationProvider;
+import com.gtnewhorizons.navigator.api.model.steps.InteractableStep;
 
-public interface XaeroInteractableStep extends XaeroRenderStep {
+public interface XaeroInteractableStep extends XaeroRenderStep, InteractableStep {
 
     boolean isMouseOver(double mouseX, double mouseY, double scale);
 
-    void getTooltip(List<String> list);
-
     void drawCustomTooltip(GuiScreen gui, double mouseX, double mouseY, double scale, int scaleAdj);
 
-    void onActionButton();
+    @Override
+    default void onActionKeyPressed() {
+        onActionButton();
+    }
 
-    IWaypointAndLocationProvider getLocationProvider();
+    /**
+     * @deprecated Use {@link #onActionKeyPressed()} instead
+     */
+    @Deprecated
+    default void onActionButton() {}
 }

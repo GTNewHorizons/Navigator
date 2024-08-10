@@ -2,6 +2,9 @@ package com.gtnewhorizons.navigator.mixins.late.journeymap;
 
 import static com.gtnewhorizons.navigator.api.model.SupportedMods.JourneyMap;
 
+import java.util.Comparator;
+import java.util.List;
+
 import net.minecraft.client.Minecraft;
 
 import org.spongepowered.asm.mixin.Final;
@@ -55,7 +58,9 @@ public abstract class MiniMapMixin {
             }
         }
 
-        for (LayerRenderer layerRenderer : NavigatorApi.getActiveRenderersFor(JourneyMap)) {
+        List<LayerRenderer> activeRenderers = NavigatorApi.getActiveRenderersFor(JourneyMap);
+        activeRenderers.sort(Comparator.comparingInt(LayerRenderer::getRenderPriority));
+        for (LayerRenderer layerRenderer : activeRenderers) {
             for (RenderStep renderStep : layerRenderer.getRenderSteps()) {
                 if (renderStep instanceof DrawStep drawStep) {
                     drawStep.draw(

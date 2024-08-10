@@ -2,11 +2,11 @@ package com.gtnewhorizons.navigator.mixins.late.xaerosworldmap;
 
 import static com.gtnewhorizons.navigator.api.model.SupportedMods.XaeroWorldMap;
 
+import java.util.Comparator;
 import java.util.List;
 
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.entity.Entity;
 
 import org.spongepowered.asm.lib.Opcodes;
 import org.spongepowered.asm.mixin.Mixin;
@@ -27,7 +27,6 @@ import com.gtnewhorizons.navigator.api.xaero.renderers.XaeroInteractableLayerRen
 import com.gtnewhorizons.navigator.api.xaero.renderers.XaeroLayerRenderer;
 import com.gtnewhorizons.navigator.api.xaero.rendersteps.XaeroRenderStep;
 
-import xaero.map.MapProcessor;
 import xaero.map.gui.CursorBox;
 import xaero.map.gui.GuiMap;
 import xaero.map.gui.ScreenBase;
@@ -44,6 +43,21 @@ public abstract class GuiMapMixin extends ScreenBase {
 
     @Unique
     private long navigator$timeLastClick = 0;
+
+    @Unique
+    private double navigator$oldCameraX = 0;
+
+    @Unique
+    private double navigator$oldCameraZ = 0;
+
+    @Unique
+    private int navigator$oldWidth = 0;
+
+    @Unique
+    private int navigator$oldHeight = 0;
+
+    @Unique
+    private long navigator$lastRecache = 0;
 
     protected GuiMapMixin(GuiScreen parent, GuiScreen escape) {
         super(parent, escape);
@@ -70,11 +84,12 @@ public abstract class GuiMapMixin extends ScreenBase {
     @Shadow
     private int mouseBlockPosZ;
 
-    @Inject(method = "<init>", at = @At("RETURN"))
-    private void navigator$injectConstruct(GuiScreen parent, GuiScreen escape, MapProcessor mapProcessor, Entity player,
-        CallbackInfo ci) {
+    @Inject(method = "initGui", at = @At("RETURN"))
+    private void navigator$injectConstruct(CallbackInfo ci) {
         NavigatorApi.getEnabledLayers(XaeroWorldMap)
             .forEach(layerManager -> layerManager.onGuiOpened(XaeroWorldMap));
+        NavigatorApi.getEnabledLayers(XaeroWorldMap)
+            .forEach(LayerManager::forceRefresh);
     }
 
     @Inject(
@@ -107,14 +122,16 @@ public abstract class GuiMapMixin extends ScreenBase {
     private void navigator$injectDraw(int scaledMouseX, int scaledMouseY, float partialTicks, CallbackInfo ci) {
         for (LayerManager layerManager : NavigatorApi.getEnabledLayers(XaeroWorldMap)) {
             // +20s are to work around precision loss from casting to int and right-shifting
-            layerManager.recacheFullscreenMap(
-                (int) cameraX,
-                (int) cameraZ,
-                (int) (mc.displayWidth / scale) + 20,
-                (int) (mc.displayHeight / scale) + 20);
+            int width = (int) (mc.displayWidth / scale) + 20;
+            int height = (int) (mc.displayHeight / scale) + 20;
+            if (navigator$shouldRecache(width, height, layerManager)) {
+                layerManager.recacheFullscreenMap((int) cameraX, (int) cameraZ, width, height);
+            }
         }
 
-        for (LayerRenderer layer : NavigatorApi.getActiveRenderersFor(XaeroWorldMap)) {
+        List<LayerRenderer> activeRenderers = NavigatorApi.getActiveRenderersFor(XaeroWorldMap);
+        activeRenderers.sort(Comparator.comparingInt(LayerRenderer::getRenderPriority));
+        for (LayerRenderer layer : activeRenderers) {
             if (layer instanceof XaeroLayerRenderer xaeroLayerRenderer) {
                 for (XaeroRenderStep step : xaeroLayerRenderer.getRenderSteps()) {
                     step.draw(this, cameraX, cameraZ, scale);
@@ -202,6 +219,25 @@ public abstract class GuiMapMixin extends ScreenBase {
     private void navigator$onGuiClosed(CallbackInfo ci) {
         NavigatorApi.getEnabledLayers(XaeroWorldMap)
             .forEach(layerManager -> layerManager.onGuiClosed(XaeroWorldMap));
+    }
+
+    @Unique
+    private boolean navigator$shouldRecache(int width, int height, LayerManager manager) {
+        if (!manager.isLayerActive()) return false;
+        long now = System.currentTimeMillis();
+        if (navigator$oldCameraX != cameraX || navigator$oldCameraZ != cameraZ
+            || navigator$oldWidth != width
+            || navigator$oldHeight != height
+            || manager.forceRefresh
+            || now - navigator$lastRecache >= 1000) {
+            navigator$oldCameraX = cameraX;
+            navigator$oldCameraZ = cameraZ;
+            navigator$oldWidth = width;
+            navigator$oldHeight = height;
+            navigator$lastRecache = now;
+            return true;
+        }
+        return false;
     }
 
     @Override
