@@ -14,6 +14,7 @@ import com.gtnewhorizons.navigator.api.model.steps.RenderStep;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 
+@SuppressWarnings("DeprecatedIsStillUsed")
 public abstract class LayerRenderer {
 
     protected final LayerManager manager;
@@ -99,6 +100,9 @@ public abstract class LayerRenderer {
     @Deprecated
     public void updateVisibleElements(List<? extends ILocationProvider> visibleElements) {}
 
+    /**
+     * @deprecated Use {@link #generateRenderStep(ILocationProvider)} to generate a single RenderStep
+     */
     @Deprecated
     protected List<? extends RenderStep> generateRenderSteps(List<? extends ILocationProvider> visibleElements) {
         return null;

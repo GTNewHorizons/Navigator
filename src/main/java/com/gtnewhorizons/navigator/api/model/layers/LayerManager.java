@@ -21,6 +21,7 @@ import com.gtnewhorizons.navigator.api.util.Util;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 
+@SuppressWarnings("DeprecatedIsStillUsed")
 public abstract class LayerManager {
 
     private final ButtonManager buttonManager;
@@ -201,7 +202,7 @@ public abstract class LayerManager {
     }
 
     public void onLayerToggled(boolean state) {
-        cachedLocations.clear();
+        clearCache();
     }
 
     public void onUpdatePre(int minX, int maxX, int minZ, int maxZ) {}
@@ -245,6 +246,16 @@ public abstract class LayerManager {
         return layerRenderer.containsKey(mod);
     }
 
+    public void clearCache() {
+        cachedLocations.clear();
+        layerRenderer.values()
+            .forEach(LayerRenderer::clearRenderSteps);
+    }
+
+    /**
+     * @deprecated Use {@link #updateElement(ILocationProvider)} to update the info contained in a single
+     *             {@link ILocationProvider}
+     */
     @Deprecated
     protected void checkAndUpdateElements(int minBlockX, int minBlockZ, int maxBlockX, int maxBlockZ) {}
 
@@ -253,6 +264,9 @@ public abstract class LayerManager {
         return false;
     }
 
+    /**
+     * @deprecated Use {@link #generateLocation(int chunkX, int chunkZ, int dim)} to generate a single location
+     */
     @Deprecated
     protected List<? extends ILocationProvider> generateVisibleElements(int minBlockX, int minBlockZ, int maxBlockX,
         int maxBlockZ) {
