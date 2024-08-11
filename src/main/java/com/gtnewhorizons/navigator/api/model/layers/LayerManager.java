@@ -67,16 +67,24 @@ public abstract class LayerManager {
         return null;
     }
 
+    /**
+     * @param packedChunk A long packed with {@link CoordinatePacker#pack(int chunkX, int dim, int chunkZ)}
+     * @return The {@link ILocationProvider} for the chunk or null if none
+     */
+    protected @Nullable ILocationProvider generateLocation(long packedChunk) {
+        return null;
+    }
+
     private ILocationProvider getOrCreateLocation(int chunkX, int chunkZ, int dim) {
         long chunkKey = CoordinatePacker.pack(chunkX, dim, chunkZ);
         ILocationProvider location = cachedLocations.get(chunkKey);
         if (location != null) return location;
 
         location = generateLocation(chunkX, chunkZ, dim);
-        if (location == null) {
-            location = tryOldLocation(chunkX, chunkZ);
-            if (location == null) return null;
-        }
+        if (location == null) location = generateLocation(chunkKey);
+        if (location == null) location = tryOldLocation(chunkX, chunkZ);
+        if (location == null) return null;
+
         cachedLocations.put(chunkKey, location);
         return location;
     }
@@ -92,19 +100,18 @@ public abstract class LayerManager {
                 minBlockZ,
                 maxBlockX,
                 maxBlockZ);
-            if (oldLoc != null && !oldLoc.isEmpty()) {
-                ILocationProvider loc = null;
-                for (ILocationProvider location : oldLoc) {
-                    // Capture first location to return
-                    if (loc == null) {
-                        loc = location;
-                        continue;
-                    }
-                    cachedLocations.put(location.toLong(), location);
+            if (oldLoc == null || oldLoc.isEmpty()) return null;
+            ILocationProvider loc = null;
+            for (ILocationProvider location : oldLoc) {
+                // Capture first location to return
+                if (loc == null) {
+                    loc = location;
+                    continue;
                 }
-
-                return loc;
+                cachedLocations.put(location.toLong(), location);
             }
+
+            return loc;
         }
         return null;
     }
@@ -232,7 +239,7 @@ public abstract class LayerManager {
      * Update the information contained in the {@link ILocationProvider}
      * <p>
      * If this information is updated outside of this method {@link #forceRefresh()} should be called
-     * 
+     *
      * @param location The location to update
      */
     public void updateElement(ILocationProvider location) {}
