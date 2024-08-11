@@ -34,8 +34,8 @@
  * For more details, see https://docs.gradle.org/8.0.1/userguide/java_library_plugin.html#sec:java_library_configurations_graph
  */
 dependencies {
-    api("com.github.GTNewHorizons:GTNHLib:0.3.2:dev")
-    runtimeOnlyNonPublishable("com.github.GTNewHorizons:NotEnoughItems:2.5.4-GTNH:dev")
+    api("com.github.GTNewHorizons:GTNHLib:0.4.2:dev")
+    runtimeOnlyNonPublishable("com.github.GTNewHorizons:NotEnoughItems:2.6.22-GTNH:dev")
 
     compileOnlyApi(rfg.deobf('maven.modrinth:journeymap:5.2.5'))
     compileOnlyApi(deobfCurse('xaeros-minimap-263420:5060684'))
