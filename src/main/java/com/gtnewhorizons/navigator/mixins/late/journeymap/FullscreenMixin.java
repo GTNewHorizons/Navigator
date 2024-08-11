@@ -2,7 +2,6 @@ package com.gtnewhorizons.navigator.mixins.late.journeymap;
 
 import static com.gtnewhorizons.navigator.api.model.SupportedMods.JourneyMap;
 
-import java.util.Comparator;
 import java.util.List;
 
 import net.minecraft.client.Minecraft;
@@ -42,7 +41,7 @@ import journeymap.client.ui.theme.ThemeButton;
 import journeymap.client.ui.theme.ThemeToggle;
 import journeymap.client.ui.theme.ThemeToolbar;
 
-@Mixin(value = Fullscreen.class, remap = false)
+@Mixin(Fullscreen.class)
 public abstract class FullscreenMixin extends JmUI {
 
     @Unique
@@ -65,43 +64,43 @@ public abstract class FullscreenMixin extends JmUI {
     private long navigator$lastRecache = 0;
 
     @Final
-    @Shadow
+    @Shadow(remap = false)
     static GridRenderer gridRenderer;
 
-    @Shadow
+    @Shadow(remap = false)
     ThemeToolbar mapTypeToolbar;
 
-    @Shadow
+    @Shadow(remap = false)
     ThemeButton buttonCaves;
 
-    @Shadow
+    @Shadow(remap = false)
     ThemeButton buttonNight;
 
-    @Shadow
+    @Shadow(remap = false)
     ThemeButton buttonDay;
 
-    @Shadow()
+    @Shadow(remap = false)
     MapChat chat;
 
     @Final
-    @Shadow
+    @Shadow(remap = false)
     LayerDelegate layerDelegate;
 
-    @Shadow
+    @Shadow(remap = false)
     int mx;
 
-    @Shadow
+    @Shadow(remap = false)
     int my;
 
     public FullscreenMixin() {
         super("");
     }
 
-    @Shadow
+    @Shadow(remap = false)
     protected abstract int getMapFontScale();
 
     @Inject(method = "initGui", at = @At("RETURN"), require = 1)
-    private void navigator$onConstructed(CallbackInfo ci) {
+    private void navigator$onInit(CallbackInfo ci) {
         NavigatorApi.getEnabledLayers(JourneyMap)
             .forEach(layerManager -> layerManager.onGuiOpened(JourneyMap));
         NavigatorApi.getEnabledLayers(JourneyMap)
@@ -128,9 +127,7 @@ public abstract class FullscreenMixin extends JmUI {
             }
         }
 
-        List<LayerRenderer> activeRenderers = NavigatorApi.getActiveRenderersFor(JourneyMap);
-        activeRenderers.sort(Comparator.comparingInt(LayerRenderer::getRenderPriority));
-        for (LayerRenderer layer : activeRenderers) {
+        for (LayerRenderer layer : NavigatorApi.getActiveRenderersByPriority(JourneyMap)) {
             if (layer instanceof JMLayerRenderer jmLayer) {
                 gridRenderer.draw(jmLayer.getRenderSteps(), xOffset, yOffset, drawScale, fontScale, 0.0);
             }
@@ -143,6 +140,7 @@ public abstract class FullscreenMixin extends JmUI {
             value = "FIELD",
             target = "Ljourneymap/client/ui/fullscreen/Fullscreen;mapTypeToolbar:Ljourneymap/client/ui/theme/ThemeToolbar;",
             opcode = Opcodes.PUTFIELD),
+        remap = false,
         require = 1)
     private void navigator$OnCreateMapTypeToolbar(Fullscreen owner, ThemeToolbar value) {
         final Theme theme = ThemeFileHandler.getCurrentTheme();
@@ -175,8 +173,7 @@ public abstract class FullscreenMixin extends JmUI {
             value = "INVOKE",
             target = "Lnet/minecraft/client/renderer/RenderHelper;disableStandardItemLighting()V",
             shift = At.Shift.BY,
-            by = 2),
-        remap = true)
+            by = 2))
     private void navigator$drawCustomTooltip(CallbackInfo ci, @Local List<String> tooltip) {
         if (tooltip == null || tooltip.isEmpty()) {
             for (LayerRenderer layer : NavigatorApi.getActiveRenderersFor(JourneyMap)) {
@@ -195,8 +192,7 @@ public abstract class FullscreenMixin extends JmUI {
             target = "Ljourneymap/client/ui/fullscreen/Fullscreen;chat:Ljourneymap/client/ui/fullscreen/MapChat;",
             ordinal = 0,
             shift = At.Shift.BEFORE,
-            remap = false),
-        remap = true)
+            remap = false))
     private void navigator$getLayerTooltip(CallbackInfo ci, @Local LocalRef<List<String>> tooltip) {
         final int scaledMouseX = (mx * mc.displayWidth) / this.width;
         final int scaledMouseY = (my * mc.displayHeight) / this.height;
@@ -210,7 +206,7 @@ public abstract class FullscreenMixin extends JmUI {
         }
     }
 
-    @Inject(method = "keyTyped", at = @At(value = "HEAD"), remap = true, require = 1, cancellable = true)
+    @Inject(method = "keyTyped", at = @At(value = "HEAD"), require = 1, cancellable = true)
     private void navigator$onKeyPress(CallbackInfo ci, @Local(argsOnly = true) int keyCode) {
         if ((chat == null || chat.isHidden())) {
             for (LayerRenderer layer : NavigatorApi.getActiveRenderersFor(JourneyMap)) {
@@ -223,7 +219,7 @@ public abstract class FullscreenMixin extends JmUI {
         }
     }
 
-    @Inject(method = "onGuiClosed", at = @At("RETURN"), remap = true)
+    @Inject(method = "onGuiClosed", at = @At("RETURN"))
     private void navigator$onGuiClosed(CallbackInfo ci) {
         NavigatorApi.getEnabledLayers(JourneyMap)
             .forEach(layerManager -> layerManager.onGuiClosed(JourneyMap));

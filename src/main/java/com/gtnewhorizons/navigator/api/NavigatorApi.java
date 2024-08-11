@@ -1,6 +1,7 @@
 package com.gtnewhorizons.navigator.api;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -43,6 +44,12 @@ public final class NavigatorApi {
             .filter(LayerManager::isLayerActive)
             .map(layerManager -> layerManager.getLayerRenderer(mod))
             .collect(Collectors.toList());
+    }
+
+    public static List<LayerRenderer> getActiveRenderersByPriority(SupportedMods mod) {
+        List<LayerRenderer> list = getActiveRenderersFor(mod);
+        list.sort(Comparator.comparingInt(LayerRenderer::getRenderPriority));
+        return list;
     }
 
     public static List<LayerManager> getEnabledLayers(SupportedMods mod) {

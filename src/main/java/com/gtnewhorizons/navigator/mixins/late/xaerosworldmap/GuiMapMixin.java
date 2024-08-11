@@ -2,7 +2,6 @@ package com.gtnewhorizons.navigator.mixins.late.xaerosworldmap;
 
 import static com.gtnewhorizons.navigator.api.model.SupportedMods.XaeroWorldMap;
 
-import java.util.Comparator;
 import java.util.List;
 
 import net.minecraft.client.gui.GuiButton;
@@ -129,9 +128,7 @@ public abstract class GuiMapMixin extends ScreenBase {
             }
         }
 
-        List<LayerRenderer> activeRenderers = NavigatorApi.getActiveRenderersFor(XaeroWorldMap);
-        activeRenderers.sort(Comparator.comparingInt(LayerRenderer::getRenderPriority));
-        for (LayerRenderer layer : activeRenderers) {
+        for (LayerRenderer layer : NavigatorApi.getActiveRenderersByPriority(XaeroWorldMap)) {
             if (layer instanceof XaeroLayerRenderer xaeroLayerRenderer) {
                 for (XaeroRenderStep step : xaeroLayerRenderer.getRenderSteps()) {
                     step.draw(this, cameraX, cameraZ, scale);
