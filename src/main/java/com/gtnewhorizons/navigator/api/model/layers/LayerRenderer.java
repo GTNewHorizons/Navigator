@@ -61,6 +61,10 @@ public abstract class LayerRenderer {
         return null;
     }
 
+    /**
+     * @param location The location to generate a {@link RenderStep} for
+     * @return A {@link RenderStep} for the given location, or null if none should be generated
+     */
     protected @Nullable RenderStep generateRenderStep(ILocationProvider location) {
         return null;
     }

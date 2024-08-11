@@ -57,6 +57,12 @@ public abstract class LayerManager {
      */
     protected abstract @Nullable LayerRenderer addLayerRenderer(LayerManager manager, SupportedMods mod);
 
+    /**
+     * @param chunkX The chunk x coordinate
+     * @param chunkZ The chunk z coordinate
+     * @param dim    The dimension id
+     * @return The {@link ILocationProvider} for the chunk or null if none
+     */
     protected @Nullable ILocationProvider generateLocation(int chunkX, int chunkZ, int dim) {
         return null;
     }
@@ -218,6 +224,12 @@ public abstract class LayerManager {
         cachedLocations.put(location.toLong(), location);
     }
 
+    /**
+     * Update the information contained in the {@link ILocationProvider}
+     * If this information is updated outside of this method {@link #forceRefresh()} should be called
+     * 
+     * @param location The location to update
+     */
     public void updateElement(ILocationProvider location) {}
 
     public ButtonManager getButtonManager() {
