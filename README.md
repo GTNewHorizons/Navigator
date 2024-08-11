@@ -44,9 +44,13 @@ class MyLayerManager extends LayerManager {
     }
 
     @Override
-    protected List<? extends ILocationProvider> generateVisibleElements(int minBlockX, int minBlockZ, int maxBlockX, int maxBlockZ) {
-      // You can safely return an empty list here until you have implemented your own ILocationProvider.
-      return Collections.singletonList(new MyLocation);
+    public void updateElement(ILocationProvider location) {
+      // Update the information of your location here
+    }
+
+    @Override
+    protected @Nullable ILocationProvider generateLocation(int chunkX, int chunkZ, int dim) {
+        return MyLocation();
     }
 }
 ```
@@ -129,14 +133,9 @@ class MyLayerRenderer extends JMLayerRenderer {
     }
 
     @Override
-    public List<? extends RenderStep> generateRenderSteps(List<? extends ILocationProvider> visibleElements) {
-        final List<MyDrawStep> drawSteps = new ArrayList<>();
-        visibleElements.stream()
-                .map(element -> (MyLocation) element)
-                .forEach(location -> drawSteps.add(new MyDrawStep(location)));
-        return drawSteps;
+    protected @Nullable RenderStep generateRenderStep(ILocationProvider location) {
+        return new MyDrawStep((MyLocation) location);
     }
-
 }
 ```
 
