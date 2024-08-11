@@ -6,7 +6,6 @@ import java.util.List;
 
 import net.minecraft.client.Minecraft;
 
-import org.lwjgl.input.Mouse;
 import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -24,6 +23,8 @@ import com.gtnewhorizons.navigator.api.journeymap.render.JMLayerRenderer;
 import com.gtnewhorizons.navigator.api.model.buttons.ButtonManager;
 import com.gtnewhorizons.navigator.api.model.layers.LayerManager;
 import com.gtnewhorizons.navigator.api.model.layers.LayerRenderer;
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.llamalad7.mixinextras.sugar.ref.LocalRef;
 
@@ -225,28 +226,18 @@ public abstract class FullscreenMixin extends JmUI {
             .forEach(layerManager -> layerManager.onGuiClosed(JourneyMap));
     }
 
-    @Override
-    protected void mouseClicked(int mouseX, int mouseY, int mouseButton) {
-        if (chat != null && !chat.isHidden()) {
-            chat.mouseClicked(mouseX, mouseY, mouseButton);
-        }
-
-        super.mouseClicked(mouseX, mouseY, mouseButton);
-        if (!this.isMouseOverButton(mouseX, mouseY)) {
-            final int scaledMouseX = mx * mc.displayWidth / width;
-            final int scaledMouseY = my * mc.displayHeight / height;
-            BlockCoordIntPair blockCoord = gridRenderer
-                .getBlockUnderMouse(Mouse.getEventX(), Mouse.getEventY(), mc.displayWidth, mc.displayHeight);
-            if (!navigator$onMapClicked(mouseButton, scaledMouseX, scaledMouseY, blockCoord)) {
-                layerDelegate.onMouseClicked(
-                    mc,
-                    Mouse.getEventX(),
-                    Mouse.getEventY(),
-                    gridRenderer.getWidth(),
-                    gridRenderer.getHeight(),
-                    blockCoord,
-                    mouseButton);
-            }
+    @WrapOperation(
+        method = "mouseClicked",
+        at = @At(
+            value = "INVOKE",
+            target = "Ljourneymap/client/ui/fullscreen/layer/LayerDelegate;onMouseClicked(Lnet/minecraft/client/Minecraft;DDIILjourneymap/client/model/BlockCoordIntPair;I)V",
+            remap = false))
+    private void navigator$mouseClicked(LayerDelegate instance, Minecraft mc, double mouseX, double mouseY,
+        int gridWidth, int gridHeight, BlockCoordIntPair clickedBlock, int mouseButton, Operation<Void> original) {
+        int scaledMouseX = mx * mc.displayWidth / width;
+        int scaledMouseY = my * mc.displayHeight / height;
+        if (!navigator$onMapClicked(mouseButton, scaledMouseX, scaledMouseY, clickedBlock)) {
+            original.call(instance, mc, mouseX, mouseY, gridWidth, gridHeight, clickedBlock, mouseButton);
         }
     }
 
