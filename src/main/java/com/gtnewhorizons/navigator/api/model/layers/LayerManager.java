@@ -131,9 +131,7 @@ public abstract class LayerManager {
 
     public final void onGuiOpened(SupportedMods mod) {
         openModGui = mod;
-        cachedLocations.clear();
-        layerRenderer.values()
-            .forEach(LayerRenderer::clearRenderSteps);
+        clearCache();
         onOpenMap();
     }
 
@@ -220,12 +218,19 @@ public abstract class LayerManager {
         forceRefresh();
     }
 
+    public final void removeLocation(long location) {
+        ILocationProvider loc = cachedLocations.get(location);
+        if (loc == null) return;
+        removeLocation(loc);
+    }
+
     public final void addExtraLocation(ILocationProvider location) {
         cachedLocations.put(location.toLong(), location);
     }
 
     /**
      * Update the information contained in the {@link ILocationProvider}
+     * <p>
      * If this information is updated outside of this method {@link #forceRefresh()} should be called
      * 
      * @param location The location to update
