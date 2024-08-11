@@ -243,15 +243,13 @@ public abstract class FullscreenMixin extends JmUI {
 
     @Unique
     private boolean navigator$onMapClicked(int mouseButton, int mouseX, int mouseY, BlockCoordIntPair blockCoord) {
+        if (mouseButton != 0) return false;
         final long timestamp = System.currentTimeMillis();
         final boolean isDoubleClick = mouseX == navigator$oldMouseX && mouseY == navigator$oldMouseY
-            && timestamp - navigator$timeLastClick < 500;
+            && timestamp - navigator$timeLastClick < 250L;
         navigator$oldMouseX = mouseX;
         navigator$oldMouseY = mouseY;
-        navigator$timeLastClick = isDoubleClick ? 0 : timestamp;
-        if (mouseButton != 0) {
-            return false;
-        }
+        navigator$timeLastClick = timestamp;
         for (LayerRenderer layer : NavigatorApi.getActiveRenderersFor(JourneyMap)) {
             if (layer instanceof JMInteractableLayerRenderer waypointProviderLayer) {
                 return waypointProviderLayer.onMapClick(isDoubleClick, mouseX, mouseY, blockCoord.x, blockCoord.z);

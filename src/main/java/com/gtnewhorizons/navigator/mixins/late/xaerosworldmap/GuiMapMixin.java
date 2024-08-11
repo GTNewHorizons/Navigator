@@ -196,18 +196,17 @@ public abstract class GuiMapMixin extends ScreenBase {
 
     @Inject(method = "mapClicked", at = @At("TAIL"))
     private void navigator$injectListenClick(int button, int x, int y, CallbackInfo ci) {
-        if (button == 0) {
-            final long timestamp = System.currentTimeMillis();
-            final boolean isDoubleClick = x == navigator$oldMouseX && y == navigator$oldMouseY
-                && timestamp - navigator$timeLastClick < 500;
-            navigator$oldMouseX = x;
-            navigator$oldMouseY = y;
-            navigator$timeLastClick = isDoubleClick ? 0 : timestamp;
+        if (button != 0) return;
+        final long timestamp = System.currentTimeMillis();
+        final boolean isDoubleClick = x == navigator$oldMouseX && y == navigator$oldMouseY
+            && timestamp - navigator$timeLastClick < 250L;
+        navigator$oldMouseX = x;
+        navigator$oldMouseY = y;
+        navigator$timeLastClick = timestamp;
 
-            for (LayerRenderer layer : NavigatorApi.getActiveRenderersFor(XaeroWorldMap)) {
-                if (layer instanceof XaeroInteractableLayerRenderer interactableLayer) {
-                    interactableLayer.onMapClick(isDoubleClick, x, y, mouseBlockPosX, mouseBlockPosZ);
-                }
+        for (LayerRenderer layer : NavigatorApi.getActiveRenderersFor(XaeroWorldMap)) {
+            if (layer instanceof XaeroInteractableLayerRenderer interactableLayer) {
+                interactableLayer.onMapClick(isDoubleClick, x, y, mouseBlockPosX, mouseBlockPosZ);
             }
         }
     }
