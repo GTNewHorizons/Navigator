@@ -81,6 +81,15 @@ public abstract class LayerManager {
      */
     public void updateElement(ILocationProvider location) {}
 
+    /**
+     * Needed for layers where a location represents an area larger than a single chunk
+     * 
+     * @return The width/height of the element in chunks
+     */
+    public int getElementSize() {
+        return 0;
+    }
+
     private ILocationProvider getOrCreateLocation(int chunkX, int chunkZ, int dim) {
         long chunkKey = CoordinatePacker.pack(chunkX, dim, chunkZ);
         ILocationProvider location = cachedLocations.get(chunkKey);
@@ -194,10 +203,10 @@ public abstract class LayerManager {
             removeQueue.clear();
         }
 
-        int chunkMinX = Util.coordBlockToChunk(minBlockX);
-        int chunkMinZ = Util.coordBlockToChunk(minBlockZ);
-        int chunkMaxX = Util.coordBlockToChunk(maxBlockX);
-        int chunkMaxZ = Util.coordBlockToChunk(maxBlockZ);
+        int chunkMinX = Util.coordBlockToChunk(minBlockX) - getElementSize();
+        int chunkMinZ = Util.coordBlockToChunk(minBlockZ) - getElementSize();
+        int chunkMaxX = Util.coordBlockToChunk(maxBlockX) + getElementSize();
+        int chunkMaxZ = Util.coordBlockToChunk(maxBlockZ) + getElementSize();
         int dim = Minecraft.getMinecraft().thePlayer.dimension;
 
         onUpdatePre(chunkMinX, chunkMaxX, chunkMinZ, chunkMaxZ);
