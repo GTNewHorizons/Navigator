@@ -20,8 +20,8 @@ public abstract class LayerRenderer {
     protected final LayerManager manager;
     private final SupportedMods mod;
     protected List<? extends RenderStep> renderSteps = new ArrayList<>();
-    protected Long2ObjectMap<RenderStep> cachedRenderSteps = new Long2ObjectOpenHashMap<>();
-    protected List<RenderStep> visibleSteps = new ArrayList<>();
+    protected final Long2ObjectMap<RenderStep> cachedRenderSteps = new Long2ObjectOpenHashMap<>();
+    private final List<RenderStep> visibleSteps = new ArrayList<>();
 
     public LayerRenderer(LayerManager manager, SupportedMods mod) {
         this.mod = mod;

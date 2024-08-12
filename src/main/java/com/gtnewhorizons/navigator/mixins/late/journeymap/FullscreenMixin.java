@@ -83,10 +83,6 @@ public abstract class FullscreenMixin extends JmUI {
     @Shadow(remap = false)
     MapChat chat;
 
-    @Final
-    @Shadow(remap = false)
-    LayerDelegate layerDelegate;
-
     @Shadow(remap = false)
     int mx;
 
@@ -103,9 +99,10 @@ public abstract class FullscreenMixin extends JmUI {
     @Inject(method = "initGui", at = @At("RETURN"), require = 1)
     private void navigator$onInit(CallbackInfo ci) {
         NavigatorApi.getEnabledLayers(JourneyMap)
-            .forEach(layerManager -> layerManager.onGuiOpened(JourneyMap));
-        NavigatorApi.getEnabledLayers(JourneyMap)
-            .forEach(LayerManager::forceRefresh);
+            .forEach(layerManager -> {
+                layerManager.onGuiOpened(JourneyMap);
+                layerManager.forceRefresh();
+            });
     }
 
     @Inject(

@@ -1,6 +1,5 @@
 package com.gtnewhorizons.navigator.api.model.layers;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumMap;
 import java.util.HashSet;
@@ -21,13 +20,11 @@ import com.gtnewhorizons.navigator.api.util.Util;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 
-@SuppressWarnings("DeprecatedIsStillUsed")
+@SuppressWarnings({ "DeprecatedIsStillUsed", "unused" })
 public abstract class LayerManager {
 
     private final ButtonManager buttonManager;
-
     public boolean forceRefresh = false;
-    protected List<? extends ILocationProvider> visibleElements = new ArrayList<>();
     private final Long2ObjectMap<ILocationProvider> cachedLocations = new Long2ObjectOpenHashMap<>();
     private final Set<ILocationProvider> visibleLocations = new HashSet<>();
     private final Set<ILocationProvider> removeQueue = new HashSet<>();
@@ -74,6 +71,15 @@ public abstract class LayerManager {
     protected @Nullable ILocationProvider generateLocation(long packedChunk) {
         return null;
     }
+
+    /**
+     * Update the information contained in the {@link ILocationProvider}
+     * <p>
+     * If this information is updated outside of this method {@link #forceRefresh()} should be called
+     *
+     * @param location The location to update
+     */
+    public void updateElement(ILocationProvider location) {}
 
     private ILocationProvider getOrCreateLocation(int chunkX, int chunkZ, int dim) {
         long chunkKey = CoordinatePacker.pack(chunkX, dim, chunkZ);
@@ -234,15 +240,6 @@ public abstract class LayerManager {
     public final void addExtraLocation(ILocationProvider location) {
         cachedLocations.put(location.toLong(), location);
     }
-
-    /**
-     * Update the information contained in the {@link ILocationProvider}
-     * <p>
-     * If this information is updated outside of this method {@link #forceRefresh()} should be called
-     *
-     * @param location The location to update
-     */
-    public void updateElement(ILocationProvider location) {}
 
     public ButtonManager getButtonManager() {
         return buttonManager;

@@ -86,9 +86,10 @@ public abstract class GuiMapMixin extends ScreenBase {
     @Inject(method = "initGui", at = @At("RETURN"))
     private void navigator$injectConstruct(CallbackInfo ci) {
         NavigatorApi.getEnabledLayers(XaeroWorldMap)
-            .forEach(layerManager -> layerManager.onGuiOpened(XaeroWorldMap));
-        NavigatorApi.getEnabledLayers(XaeroWorldMap)
-            .forEach(LayerManager::forceRefresh);
+            .forEach(layerManager -> {
+                layerManager.onGuiOpened(XaeroWorldMap);
+                layerManager.forceRefresh();
+            });
     }
 
     @Inject(

@@ -47,6 +47,15 @@ public abstract class InteractableLayerManager extends LayerManager {
         return null;
     }
 
+    /**
+     * Update the information contained in the {@link IWaypointAndLocationProvider}
+     * <p>
+     * If this information is updated outside of this method {@link #forceRefresh()} should be called
+     *
+     * @param location The location to update
+     */
+    public void updateElement(IWaypointAndLocationProvider location) {}
+
     @Nullable
     @Override
     protected final LayerRenderer addLayerRenderer(LayerManager manager, SupportedMods mod) {
@@ -84,8 +93,6 @@ public abstract class InteractableLayerManager extends LayerManager {
             updateElement(waypointLoc);
         }
     }
-
-    public void updateElement(IWaypointAndLocationProvider location) {}
 
     @Override
     @SuppressWarnings("unchecked")
