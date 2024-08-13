@@ -3,15 +3,17 @@ package com.gtnewhorizons.navigator.api.xaero.renderers;
 import java.util.ArrayList;
 import java.util.List;
 
+import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.GuiScreen;
 
 import com.gtnewhorizons.navigator.api.NavigatorApi;
+import com.gtnewhorizons.navigator.api.model.layers.InteractableLayer;
 import com.gtnewhorizons.navigator.api.model.layers.InteractableLayerManager;
 import com.gtnewhorizons.navigator.api.util.Util;
 import com.gtnewhorizons.navigator.api.xaero.rendersteps.XaeroInteractableStep;
 import com.gtnewhorizons.navigator.api.xaero.rendersteps.XaeroRenderStep;
 
-public abstract class XaeroInteractableLayerRenderer extends XaeroLayerRenderer {
+public abstract class XaeroInteractableLayerRenderer extends XaeroLayerRenderer implements InteractableLayer {
 
     protected InteractableLayerManager manager;
     protected XaeroInteractableStep hovered;
@@ -38,13 +40,20 @@ public abstract class XaeroInteractableLayerRenderer extends XaeroLayerRenderer 
         }
     }
 
-    public final void onMapClick(boolean isDoubleClick, int mouseX, int mouseY, int mouseBlockX, int mouseBlockZ) {
+    @Override
+    public final void onMouseMove(int mouseX, int mouseY) {
+        updateHovered(mouseX, mouseY, 1f);
+    }
+
+    public final boolean onMapClick(boolean isDoubleClick, int mouseX, int mouseY, int mouseBlockX, int mouseBlockZ) {
         if (!manager.getOpenModGui()
-            .equals(getLayerMod())) return;
+            .equals(getLayerMod())) return false;
         if (hovered != null) {
             onClick(isDoubleClick, mouseX, mouseY, mouseBlockX, mouseBlockZ);
+            return true;
         } else {
             onClickOutsideRenderStep(isDoubleClick, mouseX, mouseY, mouseBlockX, mouseBlockZ);
+            return false;
         }
     }
 
@@ -56,14 +65,20 @@ public abstract class XaeroInteractableLayerRenderer extends XaeroLayerRenderer 
         return tooltip;
     }
 
+    @Override
+    public final void drawCustomTooltip(FontRenderer fontRenderer, int mouseX, int mouseY, int displayWidth,
+        int displayHeight) {
+
+    }
+
     public void onClick(boolean isDoubleClick, int mouseX, int mouseY, int mouseBlockX, int mouseBlockZ) {
         if (isDoubleClick) {
-            if (hovered.getLocationProvider()
+            if (hovered.getLocation()
                 .isActiveAsWaypoint()) {
                 manager.clearActiveWaypoint();
             } else {
                 manager.setActiveWaypoint(
-                    hovered.getLocationProvider()
+                    hovered.getLocation()
                         .toWaypoint());
             }
         }

@@ -18,11 +18,12 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
 import com.gtnewhorizons.navigator.api.NavigatorApi;
-import com.gtnewhorizons.navigator.api.journeymap.render.JMInteractableLayerRenderer;
 import com.gtnewhorizons.navigator.api.journeymap.render.JMLayerRenderer;
 import com.gtnewhorizons.navigator.api.model.buttons.ButtonManager;
+import com.gtnewhorizons.navigator.api.model.layers.InteractableLayer;
 import com.gtnewhorizons.navigator.api.model.layers.LayerManager;
 import com.gtnewhorizons.navigator.api.model.layers.LayerRenderer;
+import com.gtnewhorizons.navigator.api.model.layers.UniversalLayerRenderer;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
@@ -31,6 +32,7 @@ import com.llamalad7.mixinextras.sugar.ref.LocalRef;
 import journeymap.client.io.ThemeFileHandler;
 import journeymap.client.log.StatTimer;
 import journeymap.client.model.BlockCoordIntPair;
+import journeymap.client.render.draw.DrawStep;
 import journeymap.client.render.map.GridRenderer;
 import journeymap.client.ui.component.ButtonList;
 import journeymap.client.ui.component.JmUI;
@@ -111,6 +113,7 @@ public abstract class FullscreenMixin extends JmUI {
         remap = false,
         require = 1,
         locals = LocalCapture.CAPTURE_FAILEXCEPTION)
+    @SuppressWarnings("unchecked")
     private void navigator$onBeforeDrawJourneyMapWaypoints(CallbackInfo ci, boolean refreshReady, StatTimer timer,
         int xOffset, int yOffset, float drawScale) {
         final int fontScale = getMapFontScale();
@@ -126,8 +129,9 @@ public abstract class FullscreenMixin extends JmUI {
         }
 
         for (LayerRenderer layer : NavigatorApi.getActiveRenderersByPriority(JourneyMap)) {
-            if (layer instanceof JMLayerRenderer jmLayer) {
-                gridRenderer.draw(jmLayer.getRenderSteps(), xOffset, yOffset, drawScale, fontScale, 0.0);
+            if (layer instanceof JMLayerRenderer || layer instanceof UniversalLayerRenderer) {
+                List<? extends DrawStep> steps = (List<? extends DrawStep>) layer.getRenderSteps();
+                gridRenderer.draw(steps, xOffset, yOffset, drawScale, fontScale, 0.0);
             }
         }
     }
@@ -175,8 +179,8 @@ public abstract class FullscreenMixin extends JmUI {
     private void navigator$drawCustomTooltip(CallbackInfo ci, @Local List<String> tooltip) {
         if (tooltip == null || tooltip.isEmpty()) {
             for (LayerRenderer layer : NavigatorApi.getActiveRenderersFor(JourneyMap)) {
-                if (layer instanceof JMInteractableLayerRenderer waypointProviderLayer) {
-                    waypointProviderLayer.drawCustomTooltip(getFontRenderer(), mx, my, this.width, this.height);
+                if (layer instanceof InteractableLayer interactableLayer) {
+                    interactableLayer.drawCustomTooltip(getFontRenderer(), mx, my, this.width, this.height);
                 }
             }
         }
@@ -195,7 +199,7 @@ public abstract class FullscreenMixin extends JmUI {
         final int scaledMouseX = (mx * mc.displayWidth) / this.width;
         final int scaledMouseY = (my * mc.displayHeight) / this.height;
         for (LayerRenderer layer : NavigatorApi.getActiveRenderersFor(JourneyMap)) {
-            if (layer instanceof JMInteractableLayerRenderer waypointProviderLayer) {
+            if (layer instanceof InteractableLayer waypointProviderLayer) {
                 waypointProviderLayer.onMouseMove(scaledMouseX, scaledMouseY);
                 if (tooltip.get() == null) {
                     tooltip.set(waypointProviderLayer.getTooltip());
@@ -208,7 +212,7 @@ public abstract class FullscreenMixin extends JmUI {
     private void navigator$onKeyPress(CallbackInfo ci, @Local(argsOnly = true) int keyCode) {
         if ((chat == null || chat.isHidden())) {
             for (LayerRenderer layer : NavigatorApi.getActiveRenderersFor(JourneyMap)) {
-                if (layer instanceof JMInteractableLayerRenderer waypointProvider) {
+                if (layer instanceof InteractableLayer waypointProvider) {
                     if (waypointProvider.onKeyPressed(keyCode)) {
                         ci.cancel();
                     }
@@ -248,7 +252,7 @@ public abstract class FullscreenMixin extends JmUI {
         navigator$oldMouseY = mouseY;
         navigator$timeLastClick = timestamp;
         for (LayerRenderer layer : NavigatorApi.getActiveRenderersFor(JourneyMap)) {
-            if (layer instanceof JMInteractableLayerRenderer waypointProviderLayer) {
+            if (layer instanceof InteractableLayer waypointProviderLayer) {
                 return waypointProviderLayer.onMapClick(isDoubleClick, mouseX, mouseY, blockCoord.x, blockCoord.z);
             }
         }

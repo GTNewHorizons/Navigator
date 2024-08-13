@@ -8,11 +8,12 @@ import net.minecraft.client.gui.FontRenderer;
 import com.gtnewhorizons.navigator.api.NavigatorApi;
 import com.gtnewhorizons.navigator.api.journeymap.drawsteps.JMInteractableStep;
 import com.gtnewhorizons.navigator.api.journeymap.drawsteps.JMRenderStep;
+import com.gtnewhorizons.navigator.api.model.layers.InteractableLayer;
 import com.gtnewhorizons.navigator.api.model.layers.InteractableLayerManager;
 import com.gtnewhorizons.navigator.api.model.steps.RenderStep;
 import com.gtnewhorizons.navigator.api.util.Util;
 
-public abstract class JMInteractableLayerRenderer extends JMLayerRenderer {
+public abstract class JMInteractableLayerRenderer extends JMLayerRenderer implements InteractableLayer {
 
     protected InteractableLayerManager manager;
     protected JMInteractableStep hoveredDrawStep = null;
@@ -52,12 +53,12 @@ public abstract class JMInteractableLayerRenderer extends JMLayerRenderer {
 
     public boolean onClick(boolean isDoubleClick, int mouseX, int mouseY, int blockX, int blockZ) {
         if (isDoubleClick) {
-            if (hoveredDrawStep.getLocationProvider()
+            if (hoveredDrawStep.getLocation()
                 .isActiveAsWaypoint()) {
                 manager.clearActiveWaypoint();
             } else {
                 manager.setActiveWaypoint(
-                    hoveredDrawStep.getLocationProvider()
+                    hoveredDrawStep.getLocation()
                         .toWaypoint());
             }
             return true;
