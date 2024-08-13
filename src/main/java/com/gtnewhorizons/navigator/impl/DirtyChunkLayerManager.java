@@ -10,12 +10,11 @@ import com.gtnewhorizons.navigator.api.journeymap.waypoints.JMWaypointManager;
 import com.gtnewhorizons.navigator.api.model.SupportedMods;
 import com.gtnewhorizons.navigator.api.model.layers.InteractableLayerManager;
 import com.gtnewhorizons.navigator.api.model.layers.LayerRenderer;
+import com.gtnewhorizons.navigator.api.model.layers.UniversalInteractableRenderer;
 import com.gtnewhorizons.navigator.api.model.locations.ILocationProvider;
 import com.gtnewhorizons.navigator.api.model.locations.IWaypointAndLocationProvider;
 import com.gtnewhorizons.navigator.api.model.waypoints.WaypointManager;
 import com.gtnewhorizons.navigator.api.xaero.waypoints.XaeroWaypointManager;
-import com.gtnewhorizons.navigator.impl.journeymap.JMDirtyChunkRenderer;
-import com.gtnewhorizons.navigator.impl.xaero.XaeroDirtyChunkRenderer;
 
 public class DirtyChunkLayerManager extends InteractableLayerManager {
 
@@ -28,9 +27,10 @@ public class DirtyChunkLayerManager extends InteractableLayerManager {
     @Override
     protected @Nullable LayerRenderer addLayerRenderer(InteractableLayerManager manager, SupportedMods mod) {
         return switch (mod) {
-            case XaeroWorldMap -> new XaeroDirtyChunkRenderer(manager);
-            case JourneyMap -> new JMDirtyChunkRenderer(manager);
-            default -> null;
+            // case XaeroWorldMap -> new XaeroDirtyChunkRenderer(manager);
+            // case JourneyMap -> new JMDirtyChunkRenderer(manager);
+            default -> new UniversalInteractableRenderer(manager).withLocation(DirtyChunkLocation.class)
+                .withRenderStep(DirtyChunkRenderStep.class);
         };
     }
 

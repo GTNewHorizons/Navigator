@@ -83,7 +83,7 @@ public abstract class LayerManager {
 
     /**
      * Needed for layers where a location represents an area larger than a single chunk
-     * 
+     *
      * @return The width/height of the element in chunks
      */
     public int getElementSize() {

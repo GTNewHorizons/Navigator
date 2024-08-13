@@ -1,4 +1,4 @@
-package com.gtnewhorizons.navigator.api.journeymap.render;
+package com.gtnewhorizons.navigator.api.model.layers;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -7,26 +7,17 @@ import net.minecraft.client.gui.FontRenderer;
 
 import com.gtnewhorizons.navigator.api.NavigatorApi;
 import com.gtnewhorizons.navigator.api.journeymap.drawsteps.JMInteractableStep;
-import com.gtnewhorizons.navigator.api.journeymap.drawsteps.JMRenderStep;
-import com.gtnewhorizons.navigator.api.model.layers.InteractableLayer;
-import com.gtnewhorizons.navigator.api.model.layers.InteractableLayerManager;
 import com.gtnewhorizons.navigator.api.model.steps.RenderStep;
 import com.gtnewhorizons.navigator.api.util.Util;
 
-public abstract class JMInteractableLayerRenderer extends JMLayerRenderer implements InteractableLayer {
+public class UniversalInteractableRenderer extends UniversalLayerRenderer implements InteractableLayer {
 
     protected InteractableLayerManager manager;
     protected JMInteractableStep hoveredDrawStep = null;
 
-    public JMInteractableLayerRenderer(InteractableLayerManager manager) {
+    public UniversalInteractableRenderer(InteractableLayerManager manager) {
         super(manager);
         this.manager = manager;
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public List<JMRenderStep> getRenderSteps() {
-        return (List<JMRenderStep>) getReversedRenderSteps();
     }
 
     public void onMouseMove(int mouseX, int mouseY) {
@@ -42,8 +33,6 @@ public abstract class JMInteractableLayerRenderer extends JMLayerRenderer implem
     }
 
     public final boolean onMapClick(boolean isDoubleClick, int mouseX, int mouseY, int blockX, int blockZ) {
-        if (!manager.getOpenModGui()
-            .equals(getLayerMod())) return false;
         if (hoveredDrawStep != null) {
             return onClick(isDoubleClick, mouseX, mouseY, blockX, blockZ);
         }
