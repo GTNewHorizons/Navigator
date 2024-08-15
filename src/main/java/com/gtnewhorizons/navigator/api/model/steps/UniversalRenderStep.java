@@ -18,15 +18,15 @@ import cpw.mods.fml.common.Optional;
 import journeymap.client.render.map.GridRenderer;
 
 @Optional.Interface(iface = "com.gtnewhorizons.navigator.api.journeymap.drawsteps.JMRenderStep", modid = "journeymap")
-public class UniversalRenderStep<T extends ILocationProvider> implements JMRenderStep, XaeroRenderStep {
+public abstract class UniversalRenderStep<T extends ILocationProvider> implements JMRenderStep, XaeroRenderStep {
 
     private final Vector2d pos = new Vector2d();
     protected double fontScale = 1;
     protected double rotation = 0;
     protected double width = NavigatorApi.CHUNK_WIDTH;
     protected double height = NavigatorApi.CHUNK_WIDTH;
-    protected double topX;
-    protected double topY;
+    protected double x;
+    protected double y;
     protected double blockSize = 1;
     protected T location;
     protected double offsetX, offsetY;
@@ -39,13 +39,12 @@ public class UniversalRenderStep<T extends ILocationProvider> implements JMRende
         this.location = location;
     }
 
-    public void draw(double topX, double topY, float drawScale, double zoom) {
+    public abstract void draw(double x, double y, float drawScale, double zoom);
 
-    }
-
-    public void preRender(double topX, double topY, float drawScale, double zoom) {
-
-    }
+    /**
+     * Do any setup that needs to happen prior to rendering.
+     */
+    public void preRender(double x, double y, float drawScale, double zoom) {}
 
     @Override
     public final void draw(@Nullable GuiScreen gui, double cameraX, double cameraZ, double scale) {}
@@ -53,15 +52,15 @@ public class UniversalRenderStep<T extends ILocationProvider> implements JMRende
     @Override
     public final void draw(double cameraX, double cameraZ, double scale, float guiBasedScale) {
         isXaero = true;
-        topX = location.getBlockX() - 0.5 - cameraX;
-        topY = location.getBlockZ() - 0.5 - cameraZ;
+        x = location.getBlockX() - 0.5 - cameraX;
+        y = location.getBlockZ() - 0.5 - cameraZ;
         zoom = scale;
         preRender(getX(), getY(), guiBasedScale, scale);
         GL11.glPushMatrix();
         if (shouldScale) {
             double scaling = getScaling(scale);
-            topX *= scaling;
-            topY *= scaling;
+            x *= scaling;
+            y *= scaling;
             GL11.glScaled(1 / scaling, 1 / scaling, 1);
         }
         DrawUtils.setupDrawing();
@@ -82,8 +81,8 @@ public class UniversalRenderStep<T extends ILocationProvider> implements JMRende
             draggedPixelY,
             location.getBlockX(),
             location.getBlockZ());
-        topX = blockPos.x;
-        topY = blockPos.y;
+        x = blockPos.x;
+        y = blockPos.y;
         preRender(getX(), getY(), drawScale, zoom);
         GL11.glPushMatrix();
         DrawUtils.setupDrawing();
@@ -91,6 +90,10 @@ public class UniversalRenderStep<T extends ILocationProvider> implements JMRende
         GL11.glPopMatrix();
     }
 
+    /**
+     * Only applies to Xaero's if used in the constructor.
+     * If needed for both mods it should be set in {@link #preRender(double, double, float, double)}
+     */
     public void setFontScale(double fontScale) {
         this.fontScale = fontScale;
     }
@@ -117,10 +120,16 @@ public class UniversalRenderStep<T extends ILocationProvider> implements JMRende
         return fontScale;
     }
 
+    /**
+     * Gives a consistent width regardless of mod
+     */
     public double getAdjustedWidth() {
         return width * blockSize;
     }
 
+    /**
+     * Gives a consistent height regardless of mod
+     */
     public double getAdjustedHeight() {
         return height * blockSize;
     }
@@ -134,13 +143,18 @@ public class UniversalRenderStep<T extends ILocationProvider> implements JMRende
     }
 
     public double getX() {
-        return topX + offsetX;
+        return x + offsetX;
     }
 
     public double getY() {
-        return topY + offsetY;
+        return y + offsetY;
     }
 
+    /**
+     * Only relevant for Xaero's maps
+     * 
+     * @param minScale the zoom level at which the RenderStep should stop scaling
+     */
     public void setMinScale(int minScale) {
         this.minScale = minScale;
         shouldScale = true;

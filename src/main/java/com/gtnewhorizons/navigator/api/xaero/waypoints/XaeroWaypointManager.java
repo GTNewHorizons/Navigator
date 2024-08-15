@@ -15,7 +15,7 @@ public class XaeroWaypointManager extends WaypointManager {
     public static int lastId;
     protected final int waypointId;
     private WaypointWithDimension xWaypoint;
-    private String symbol;
+    private String symbol = "";
 
     public XaeroWaypointManager(InteractableLayerManager layerManager) {
         super(layerManager, SupportedMods.XaeroMiniMap);
