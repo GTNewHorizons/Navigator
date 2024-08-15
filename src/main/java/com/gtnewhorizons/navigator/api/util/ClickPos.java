@@ -41,6 +41,14 @@ public class ClickPos {
         return blockZ;
     }
 
+    public int getChunkX() {
+        return Util.coordBlockToChunk(blockX);
+    }
+
+    public int getChunkZ() {
+        return Util.coordBlockToChunk(blockZ);
+    }
+
     public @Nullable InteractableStep getRenderStep() {
         return renderStep;
     }
