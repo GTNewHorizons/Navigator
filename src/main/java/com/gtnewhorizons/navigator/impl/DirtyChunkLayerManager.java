@@ -2,7 +2,10 @@ package com.gtnewhorizons.navigator.impl;
 
 import javax.annotation.Nullable;
 
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.entity.EntityClientPlayerMP;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.util.ChatComponentText;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.IChunkProvider;
 
@@ -14,6 +17,7 @@ import com.gtnewhorizons.navigator.api.model.layers.UniversalInteractableRendere
 import com.gtnewhorizons.navigator.api.model.locations.ILocationProvider;
 import com.gtnewhorizons.navigator.api.model.locations.IWaypointAndLocationProvider;
 import com.gtnewhorizons.navigator.api.model.waypoints.WaypointManager;
+import com.gtnewhorizons.navigator.api.util.ClickPos;
 import com.gtnewhorizons.navigator.api.xaero.waypoints.XaeroWaypointManager;
 
 public class DirtyChunkLayerManager extends InteractableLayerManager {
@@ -26,12 +30,9 @@ public class DirtyChunkLayerManager extends InteractableLayerManager {
 
     @Override
     protected @Nullable LayerRenderer addLayerRenderer(InteractableLayerManager manager, SupportedMods mod) {
-        return switch (mod) {
-            // case XaeroWorldMap -> new XaeroDirtyChunkRenderer(manager);
-            // case JourneyMap -> new JMDirtyChunkRenderer(manager);
-            default -> new UniversalInteractableRenderer(manager).withLocation(DirtyChunkLocation.class)
-                .withRenderStep(DirtyChunkRenderStep.class);
-        };
+        return new UniversalInteractableRenderer(manager).withClickAction(this::onClick)
+            .withKeyPressAction(this::onKeyPress)
+            .withRenderStep(location -> new DirtyChunkRenderStep((DirtyChunkLocation) location));
     }
 
     @Nullable
@@ -51,7 +52,14 @@ public class DirtyChunkLayerManager extends InteractableLayerManager {
         if (server == null) return;
         World world = server.worldServerForDimension(loc.getDimensionId());
 
-        boolean dirty = world.getChunkFromChunkCoords(loc.getChunkX(), loc.getChunkZ()).isModified;
+        IChunkProvider chunkProvider = world.getChunkProvider();
+
+        int chunkX = loc.getChunkX();
+        int chunkZ = loc.getChunkZ();
+        if (!chunkProvider.chunkExists(chunkX, chunkZ)) {
+            return;
+        }
+        boolean dirty = world.getChunkFromChunkCoords(chunkX, chunkZ).isModified;
         loc.setDirty(dirty);
     }
 
@@ -65,7 +73,28 @@ public class DirtyChunkLayerManager extends InteractableLayerManager {
         if (!chunkProvider.chunkExists(chunkX, chunkZ)) {
             return null;
         }
+
         boolean dirty = world.getChunkFromChunkCoords(chunkX, chunkZ).isModified;
         return new DirtyChunkLocation(chunkX, chunkZ, dim, dirty);
+    }
+
+    public boolean onClick(ClickPos pos) {
+        EntityClientPlayerMP player = Minecraft.getMinecraft().thePlayer;
+        if (pos.getRenderStep() == null) {
+            player.addChatMessage(new ChatComponentText("Clicked outside of render step"));
+        } else {
+            DirtyChunkLocation loc = (DirtyChunkLocation) pos.getRenderStep()
+                .getLocation();
+            String status = loc.isDirty() ? "dirty" : "clean";
+            player.addChatMessage(
+                new ChatComponentText("Chunk " + loc.getChunkX() + ", " + loc.getChunkZ() + " is " + status));
+        }
+        return true;
+    }
+
+    public boolean onKeyPress(int keyCode) {
+        EntityClientPlayerMP player = Minecraft.getMinecraft().thePlayer;
+        player.addChatMessage(new ChatComponentText("Key pressed: " + keyCode));
+        return false;
     }
 }

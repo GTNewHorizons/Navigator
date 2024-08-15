@@ -15,16 +15,11 @@ public class DirtyChunkRenderStep extends UniversalInteractableStep<DirtyChunkLo
 
     @Override
     public void draw(double topX, double topY, float drawScale, double zoom) {
-        float alpha = 0.5f;
-        alpha *= alpha * 204;
         int color = location.isDirty() ? 0xFF0000 : 0x00FFAA;
-        DrawUtils.drawRect(topX, topY, getAdjustedWidth(), getAdjustedHeight(), color, alpha);
+        DrawUtils.drawRect(topX, topY, getAdjustedWidth(), getAdjustedHeight(), color, 120);
 
         if (location.isDirty()) {
-            int borderAlpha = 204;
-            int borderColor = 0xFFD700;
-            DrawUtils
-                .drawHollowRect(topX, topY, getAdjustedWidth(), getAdjustedHeight(), borderColor, borderAlpha, false);
+            DrawUtils.drawHollowRect(topX, topY, getAdjustedWidth(), getAdjustedHeight(), 0xFFD700, 204);
             DrawUtils.drawLabel(
                 "D",
                 topX + getAdjustedWidth() / 2,
@@ -32,7 +27,7 @@ public class DirtyChunkRenderStep extends UniversalInteractableStep<DirtyChunkLo
                 0xFFFFFFFF,
                 0xB4000000,
                 false,
-                getFontScale());
+                fontScale);
         }
     }
 

@@ -10,7 +10,7 @@ public interface XaeroRenderStep extends RenderStep {
 
     void draw(@Nullable GuiScreen gui, double cameraX, double cameraZ, double scale);
 
-    default void draw(@Nullable GuiScreen gui, double cameraX, double cameraZ, double scale, float guiBasedScale) {
+    default void draw(double cameraX, double cameraZ, double scale, float guiBasedScale) {
 
     }
 }

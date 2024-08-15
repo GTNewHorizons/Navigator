@@ -73,12 +73,12 @@ public abstract class XaeroInteractableLayerRenderer extends XaeroLayerRenderer 
 
     public void onClick(boolean isDoubleClick, int mouseX, int mouseY, int mouseBlockX, int mouseBlockZ) {
         if (isDoubleClick) {
-            if (hovered.getLocationProvider()
+            if (hovered.getLocation()
                 .isActiveAsWaypoint()) {
                 manager.clearActiveWaypoint();
             } else {
                 manager.setActiveWaypoint(
-                    hovered.getLocationProvider()
+                    hovered.getLocation()
                         .toWaypoint());
             }
         }

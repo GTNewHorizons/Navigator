@@ -21,6 +21,7 @@ import com.gtnewhorizons.navigator.api.model.buttons.ButtonManager;
 import com.gtnewhorizons.navigator.api.model.layers.InteractableLayer;
 import com.gtnewhorizons.navigator.api.model.layers.LayerManager;
 import com.gtnewhorizons.navigator.api.model.layers.LayerRenderer;
+import com.gtnewhorizons.navigator.api.model.layers.UniversalInteractableRenderer;
 import com.gtnewhorizons.navigator.api.model.layers.UniversalLayerRenderer;
 import com.gtnewhorizons.navigator.api.util.DrawUtils;
 import com.gtnewhorizons.navigator.api.xaero.buttons.SizedGuiTexturedButton;
@@ -136,13 +137,16 @@ public abstract class GuiMapMixin extends ScreenBase {
         }
 
         for (LayerRenderer layer : NavigatorApi.getActiveRenderersByPriority(XaeroWorldMap)) {
+            if (layer instanceof UniversalLayerRenderer universalLayerRenderer) {
+                for (XaeroRenderStep step : universalLayerRenderer.getRenderSteps()) {
+                    step.draw(cameraX, cameraZ, scale, guiBasedScale);
+                }
+                continue;
+            }
+
             if (layer instanceof XaeroLayerRenderer xaeroLayerRenderer) {
                 for (XaeroRenderStep step : xaeroLayerRenderer.getRenderSteps()) {
                     step.draw(this, cameraX, cameraZ, scale);
-                }
-            } else if (layer instanceof UniversalLayerRenderer universalLayerRenderer) {
-                for (XaeroRenderStep step : universalLayerRenderer.getRenderSteps()) {
-                    step.draw(this, cameraX, cameraZ, scale, guiBasedScale);
                 }
             }
         }
@@ -231,6 +235,12 @@ public abstract class GuiMapMixin extends ScreenBase {
         navigator$timeLastClick = timestamp;
 
         for (LayerRenderer layer : NavigatorApi.getActiveRenderersFor(XaeroWorldMap)) {
+            if (layer instanceof UniversalInteractableRenderer universal) {
+                if (universal.onMapClick(isDoubleClick, x, y, mouseBlockPosX, mouseBlockPosZ)) {
+                    continue;
+                }
+            }
+
             if (layer instanceof XaeroInteractableLayerRenderer interactableLayer) {
                 interactableLayer.onMapClick(isDoubleClick, x, y, mouseBlockPosX, mouseBlockPosZ);
             }

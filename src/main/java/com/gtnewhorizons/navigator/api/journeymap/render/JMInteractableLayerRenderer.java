@@ -53,12 +53,12 @@ public abstract class JMInteractableLayerRenderer extends JMLayerRenderer implem
 
     public boolean onClick(boolean isDoubleClick, int mouseX, int mouseY, int blockX, int blockZ) {
         if (isDoubleClick) {
-            if (hoveredDrawStep.getLocationProvider()
+            if (hoveredDrawStep.getLocation()
                 .isActiveAsWaypoint()) {
                 manager.clearActiveWaypoint();
             } else {
                 manager.setActiveWaypoint(
-                    hoveredDrawStep.getLocationProvider()
+                    hoveredDrawStep.getLocation()
                         .toWaypoint());
             }
             return true;

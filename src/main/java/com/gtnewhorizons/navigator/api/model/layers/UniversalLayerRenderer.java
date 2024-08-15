@@ -1,6 +1,7 @@
 package com.gtnewhorizons.navigator.api.model.layers;
 
 import java.util.List;
+import java.util.function.Function;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -8,45 +9,44 @@ import javax.annotation.Nullable;
 import com.gtnewhorizons.navigator.api.model.SupportedMods;
 import com.gtnewhorizons.navigator.api.model.locations.ILocationProvider;
 import com.gtnewhorizons.navigator.api.model.steps.RenderStep;
-import com.gtnewhorizons.navigator.api.model.steps.UniversalInteractableStep;
 import com.gtnewhorizons.navigator.api.model.steps.UniversalRenderStep;
 
 public class UniversalLayerRenderer extends LayerRenderer {
 
-    private Class<? extends UniversalRenderStep<?>> renderStepClass;
-    private Class<?> locationClass;
+    private Function<ILocationProvider, UniversalRenderStep<?>> stepCreator;
+    private int renderPriority = 0;
 
     public UniversalLayerRenderer(LayerManager manager) {
         super(manager, SupportedMods.NONE);
     }
 
-    public UniversalLayerRenderer(LayerManager manager, Class<? extends UniversalInteractableStep<?>> renderStepClass,
-        Class<?> location) {
-        super(manager, SupportedMods.NONE);
-        this.renderStepClass = renderStepClass;
-        this.locationClass = location;
-    }
-
-    public UniversalLayerRenderer withLocation(@Nonnull Class<?> location) {
-        this.locationClass = location;
+    public UniversalLayerRenderer withRenderStep(
+        @Nonnull Function<ILocationProvider, UniversalRenderStep<?>> supplier) {
+        this.stepCreator = supplier;
         return this;
     }
 
-    public UniversalLayerRenderer withRenderStep(@Nonnull Class<? extends UniversalRenderStep<?>> step) {
-        this.renderStepClass = step;
+    public UniversalLayerRenderer withRenderPriority(int renderPriority) {
+        this.renderPriority = renderPriority;
         return this;
     }
 
     @Nullable
     @Override
     protected RenderStep generateRenderStep(ILocationProvider location) {
-        try {
-            return renderStepClass.getDeclaredConstructor(locationClass)
-                .newInstance(location);
-        } catch (Exception ignored) {}
+        if (stepCreator != null) {
+            return stepCreator.apply(location);
+        }
+
         return null;
     }
 
+    @Override
+    public int getRenderPriority() {
+        return renderPriority;
+    }
+
+    @SuppressWarnings("unchecked")
     @Override
     public List<UniversalRenderStep<?>> getRenderSteps() {
         return (List<UniversalRenderStep<?>>) super.getRenderSteps();

@@ -32,6 +32,7 @@ import com.llamalad7.mixinextras.sugar.ref.LocalRef;
 import journeymap.client.io.ThemeFileHandler;
 import journeymap.client.log.StatTimer;
 import journeymap.client.model.BlockCoordIntPair;
+import journeymap.client.render.draw.DrawStep;
 import journeymap.client.render.map.GridRenderer;
 import journeymap.client.ui.component.ButtonList;
 import journeymap.client.ui.component.JmUI;
@@ -112,6 +113,7 @@ public abstract class FullscreenMixin extends JmUI {
         remap = false,
         require = 1,
         locals = LocalCapture.CAPTURE_FAILEXCEPTION)
+    @SuppressWarnings("unchecked")
     private void navigator$onBeforeDrawJourneyMapWaypoints(CallbackInfo ci, boolean refreshReady, StatTimer timer,
         int xOffset, int yOffset, float drawScale) {
         final int fontScale = getMapFontScale();
@@ -127,10 +129,9 @@ public abstract class FullscreenMixin extends JmUI {
         }
 
         for (LayerRenderer layer : NavigatorApi.getActiveRenderersByPriority(JourneyMap)) {
-            if (layer instanceof JMLayerRenderer jmLayer) {
-                gridRenderer.draw(jmLayer.getRenderSteps(), xOffset, yOffset, drawScale, fontScale, 0.0);
-            } else if (layer instanceof UniversalLayerRenderer universalLayer) {
-                gridRenderer.draw(universalLayer.getRenderSteps(), xOffset, yOffset, drawScale, fontScale, 0.0);
+            if (layer instanceof JMLayerRenderer || layer instanceof UniversalLayerRenderer) {
+                List<? extends DrawStep> steps = (List<? extends DrawStep>) layer.getRenderSteps();
+                gridRenderer.draw(steps, xOffset, yOffset, drawScale, fontScale, 0.0);
             }
         }
     }
