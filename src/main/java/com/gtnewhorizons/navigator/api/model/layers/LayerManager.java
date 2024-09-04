@@ -11,12 +11,13 @@ import javax.annotation.Nullable;
 
 import net.minecraft.client.Minecraft;
 
-import com.gtnewhorizon.gtnhlib.util.CoordinatePacker;
 import com.gtnewhorizons.navigator.api.model.SupportedMods;
 import com.gtnewhorizons.navigator.api.model.buttons.ButtonManager;
 import com.gtnewhorizons.navigator.api.model.locations.ILocationProvider;
 import com.gtnewhorizons.navigator.api.util.Util;
 
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 
@@ -25,7 +26,8 @@ public abstract class LayerManager {
 
     private final ButtonManager buttonManager;
     public boolean forceRefresh = false;
-    private final Long2ObjectMap<ILocationProvider> cachedLocations = new Long2ObjectOpenHashMap<>();
+    private final Int2ObjectMap<Long2ObjectMap<ILocationProvider>> dimCachedLocations = new Int2ObjectOpenHashMap<>();
+    private Long2ObjectMap<ILocationProvider> currentDimCache;
     private final Set<ILocationProvider> visibleLocations = new HashSet<>();
     private final Set<ILocationProvider> removeQueue = new HashSet<>();
     protected final Map<SupportedMods, LayerRenderer> layerRenderer = new EnumMap<>(SupportedMods.class);
@@ -33,7 +35,9 @@ public abstract class LayerManager {
     private int miniMapHeight = 0;
     private int fullscreenMapWidth = 0;
     private int fullscreenMapHeight = 0;
+    private Integer currentDim = null;
     private SupportedMods openModGui;
+    private boolean clearFull, clearCurrent;
 
     public LayerManager(ButtonManager buttonManager) {
         this.buttonManager = buttonManager;
@@ -65,10 +69,10 @@ public abstract class LayerManager {
     }
 
     /**
-     * @param packedChunk A long packed with {@link CoordinatePacker#pack(int chunkX, int dim, int chunkZ)}
+     * @param packedChunk A long packed with {@link Util#packChunkToLocation(int, int)}
      * @return The {@link ILocationProvider} for the chunk or null if none
      */
-    protected @Nullable ILocationProvider generateLocation(long packedChunk) {
+    protected @Nullable ILocationProvider generateLocation(long packedChunk, int dim) {
         return null;
     }
 
@@ -83,24 +87,24 @@ public abstract class LayerManager {
 
     /**
      * Needed for layers where a location represents an area larger than a single chunk
-     * 
+     *
      * @return The width/height of the element in chunks
      */
     public int getElementSize() {
         return 0;
     }
 
-    private ILocationProvider getOrCreateLocation(int chunkX, int chunkZ, int dim) {
-        long chunkKey = CoordinatePacker.pack(chunkX, dim, chunkZ);
-        ILocationProvider location = cachedLocations.get(chunkKey);
+    private ILocationProvider getOrCreateLocation(int chunkX, int chunkZ) {
+        long chunkKey = Util.packChunkToLocation(chunkX, chunkZ);
+        ILocationProvider location = currentDimCache.get(chunkKey);
         if (location != null) return location;
 
-        location = generateLocation(chunkX, chunkZ, dim);
-        if (location == null) location = generateLocation(chunkKey);
+        location = generateLocation(chunkX, chunkZ, currentDim);
+        if (location == null) location = generateLocation(chunkKey, currentDim);
         if (location == null) location = tryOldLocation(chunkX, chunkZ);
         if (location == null) return null;
 
-        cachedLocations.put(chunkKey, location);
+        currentDimCache.put(chunkKey, location);
         return location;
     }
 
@@ -123,7 +127,7 @@ public abstract class LayerManager {
                     loc = location;
                     continue;
                 }
-                cachedLocations.put(location.toLong(), location);
+                currentDimCache.put(location.toLong(), location);
             }
 
             return loc;
@@ -153,7 +157,6 @@ public abstract class LayerManager {
 
     public final void onGuiOpened(SupportedMods mod) {
         openModGui = mod;
-        clearCache();
         onOpenMap();
     }
 
@@ -194,11 +197,20 @@ public abstract class LayerManager {
         int maxBlockX = centerBlockX + radiusBlockX;
         int maxBlockZ = centerBlockZ + radiusBlockZ;
 
+        if (clearCurrent) clearCurrent();
+        if (clearFull) clearFull();
+
+        int dim = Minecraft.getMinecraft().thePlayer.dimension;
+        if (currentDim == null || currentDim != dim) {
+            currentDim = dim;
+            refreshDimCache();
+        }
+
         if (!removeQueue.isEmpty()) {
             for (ILocationProvider location : removeQueue) {
                 layerRenderer.values()
                     .forEach(layer -> layer.removeRenderStep(location.toLong()));
-                cachedLocations.remove(location.toLong());
+                currentDimCache.remove(location.toLong());
             }
             removeQueue.clear();
         }
@@ -207,14 +219,13 @@ public abstract class LayerManager {
         int chunkMinZ = Util.coordBlockToChunk(minBlockZ) - getElementSize();
         int chunkMaxX = Util.coordBlockToChunk(maxBlockX) + getElementSize();
         int chunkMaxZ = Util.coordBlockToChunk(maxBlockZ) + getElementSize();
-        int dim = Minecraft.getMinecraft().thePlayer.dimension;
 
         onUpdatePre(chunkMinX, chunkMaxX, chunkMinZ, chunkMaxZ);
 
         visibleLocations.clear();
         for (int chunkX = chunkMinX; chunkX <= chunkMaxX; chunkX++) {
             for (int chunkZ = chunkMinZ; chunkZ <= chunkMaxZ; chunkZ++) {
-                ILocationProvider location = getOrCreateLocation(chunkX, chunkZ, dim);
+                ILocationProvider location = getOrCreateLocation(chunkX, chunkZ);
                 if (location == null) continue;
 
                 updateElement(location);
@@ -227,8 +238,10 @@ public abstract class LayerManager {
         onUpdatePost(chunkMinX, chunkMaxX, chunkMinZ, chunkMaxZ);
     }
 
-    public void onLayerToggled(boolean state) {
-        clearCache();
+    public void onLayerToggled(boolean toEnable) {
+        if (!toEnable) {
+            clearFull();
+        }
     }
 
     public void onUpdatePre(int minX, int maxX, int minZ, int maxZ) {}
@@ -240,14 +253,17 @@ public abstract class LayerManager {
         forceRefresh();
     }
 
+    /**
+     * @param location must be a long packed with {@link Util#packChunkToLocation(int, int)}
+     */
     public final void removeLocation(long location) {
-        ILocationProvider loc = cachedLocations.get(location);
+        ILocationProvider loc = currentDimCache.get(location);
         if (loc == null) return;
         removeLocation(loc);
     }
 
     public final void addExtraLocation(ILocationProvider location) {
-        cachedLocations.put(location.toLong(), location);
+        currentDimCache.put(location.toLong(), location);
     }
 
     public ButtonManager getButtonManager() {
@@ -263,7 +279,14 @@ public abstract class LayerManager {
     }
 
     public Collection<? extends ILocationProvider> getCachedLocations() {
-        return cachedLocations.values();
+        return getCurrentDimCache().values();
+    }
+
+    public Long2ObjectMap<ILocationProvider> getCurrentDimCache() {
+        if (currentDimCache == null) {
+            currentDimCache = dimCachedLocations.computeIfAbsent(currentDim, k -> new Long2ObjectOpenHashMap<>());
+        }
+        return currentDimCache;
     }
 
     /**
@@ -276,10 +299,35 @@ public abstract class LayerManager {
         return layerRenderer.containsKey(mod);
     }
 
-    public void clearCache() {
-        cachedLocations.clear();
+    protected void refreshDimCache() {
+        currentDimCache = dimCachedLocations.computeIfAbsent(currentDim, k -> new Long2ObjectOpenHashMap<>());
         layerRenderer.values()
-            .forEach(LayerRenderer::clearRenderSteps);
+            .forEach(renderer -> renderer.setDimCache(currentDim));
+    }
+
+    public void clearCurrentCache() {
+        clearCurrent = true;
+        forceRefresh();
+    }
+
+    public void clearFullCache() {
+        clearFull = true;
+        forceRefresh();
+    }
+
+    private void clearCurrent() {
+        if (currentDimCache == null) return;
+        currentDimCache.clear();
+        layerRenderer.values()
+            .forEach(LayerRenderer::clearCurrentCache);
+    }
+
+    private void clearFull() {
+        currentDim = null;
+        dimCachedLocations.clear();
+        currentDimCache = null;
+        layerRenderer.values()
+            .forEach(LayerRenderer::clearFullCache);
     }
 
     /**

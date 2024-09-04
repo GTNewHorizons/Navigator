@@ -4,6 +4,8 @@ import net.minecraft.client.settings.KeyBinding;
 
 import org.lwjgl.input.Keyboard;
 
+import com.gtnewhorizon.gtnhlib.util.CoordinatePacker;
+
 import cpw.mods.fml.common.Loader;
 
 public class Util {
@@ -48,6 +50,10 @@ public class Util {
 
     public static int coordChunkToBlock(int chunkCoord) {
         return chunkCoord < 0 ? -((-chunkCoord) << 4) : chunkCoord << 4;
+    }
+
+    public static long packChunkToLocation(int chunkX, int chunkZ) {
+        return CoordinatePacker.pack(chunkX, 0, chunkZ);
     }
 
     public static double journeyMapScaleToLinear(final int jzoom) {

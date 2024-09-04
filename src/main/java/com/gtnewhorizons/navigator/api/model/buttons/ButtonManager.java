@@ -35,7 +35,7 @@ public abstract class ButtonManager {
     }
 
     public void activate() {
-        NavigatorApi.getDistinctButtons()
+        NavigatorApi.getDistinctButtons(this)
             .forEach(ButtonManager::deactivate);
         isActive = true;
         if (onToggle != null) {

@@ -11,6 +11,8 @@ import com.gtnewhorizons.navigator.api.model.SupportedMods;
 import com.gtnewhorizons.navigator.api.model.locations.ILocationProvider;
 import com.gtnewhorizons.navigator.api.model.steps.RenderStep;
 
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 
@@ -20,7 +22,8 @@ public abstract class LayerRenderer {
     protected final LayerManager manager;
     private final SupportedMods mod;
     protected List<? extends RenderStep> renderSteps = new ArrayList<>();
-    protected final Long2ObjectMap<RenderStep> cachedRenderSteps = new Long2ObjectOpenHashMap<>();
+    protected final Int2ObjectMap<Long2ObjectMap<RenderStep>> dimCachedRenderSteps = new Int2ObjectOpenHashMap<>();
+    protected Long2ObjectMap<RenderStep> currentDimSteps;
     private final List<RenderStep> visibleSteps = new ArrayList<>();
 
     public LayerRenderer(LayerManager manager, SupportedMods mod) {
@@ -42,20 +45,20 @@ public abstract class LayerRenderer {
     private RenderStep getOrCreateRenderStep(ILocationProvider location) {
         long key = location.toLong();
 
-        RenderStep renderStep = cachedRenderSteps.get(key);
+        RenderStep renderStep = currentDimSteps.get(key);
         if (renderStep != null) {
             return renderStep;
         }
 
         renderStep = generateRenderStep(location);
         if (renderStep != null) {
-            return cachedRenderSteps.put(key, renderStep);
+            return currentDimSteps.put(key, renderStep);
         }
 
         List<? extends RenderStep> renderSteps = generateRenderSteps(Collections.singletonList(location));
         if (renderSteps != null) {
             for (RenderStep step : renderSteps) {
-                return cachedRenderSteps.put(key, step);
+                return currentDimSteps.put(key, step);
             }
         }
         return null;
@@ -88,13 +91,26 @@ public abstract class LayerRenderer {
     }
 
     void removeRenderStep(long key) {
-        RenderStep renderStep = cachedRenderSteps.remove(key);
+        RenderStep renderStep = currentDimSteps.remove(key);
         renderSteps.remove(renderStep);
     }
 
-    void clearRenderSteps() {
-        cachedRenderSteps.clear();
+    void setDimCache(int dim) {
+        currentDimSteps = dimCachedRenderSteps.computeIfAbsent(dim, k -> new Long2ObjectOpenHashMap<>());
+    }
+
+    void clearCurrentCache() {
+        if (currentDimSteps != null) {
+            currentDimSteps.clear();
+        }
+        visibleSteps.clear();
         renderSteps.clear();
+    }
+
+    void clearFullCache() {
+        currentDimSteps = null;
+        clearCurrentCache();
+        dimCachedRenderSteps.clear();
     }
 
     public int getRenderPriority() {

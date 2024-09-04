@@ -67,9 +67,14 @@ public final class NavigatorApi {
     }
 
     public static List<ButtonManager> getDistinctButtons() {
+        return getDistinctButtons(null);
+    }
+
+    public static List<ButtonManager> getDistinctButtons(ButtonManager toExclude) {
         return layerManagers.stream()
             .map(LayerManager::getButtonManager)
             .distinct()
+            .filter(buttonManager -> !buttonManager.equals(toExclude))
             .collect(Collectors.toList());
     }
 

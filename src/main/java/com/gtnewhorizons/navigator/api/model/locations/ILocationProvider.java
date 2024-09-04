@@ -1,6 +1,5 @@
 package com.gtnewhorizons.navigator.api.model.locations;
 
-import com.gtnewhorizon.gtnhlib.util.CoordinatePacker;
 import com.gtnewhorizons.navigator.api.util.Util;
 
 public interface ILocationProvider {
@@ -12,7 +11,7 @@ public interface ILocationProvider {
     double getBlockZ();
 
     default long toLong() {
-        return CoordinatePacker.pack(getChunkX(), getDimensionId(), getChunkZ());
+        return Util.packChunkToLocation(getChunkX(), getChunkZ());
     }
 
     default int getChunkX() {
