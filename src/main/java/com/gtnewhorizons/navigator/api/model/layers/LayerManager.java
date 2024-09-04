@@ -262,6 +262,10 @@ public abstract class LayerManager {
         removeLocation(loc);
     }
 
+    public final void removeLocation(int chunkX, int chunkZ) {
+        removeLocation(Util.packChunkToLocation(chunkX, chunkZ));
+    }
+
     public final void addExtraLocation(ILocationProvider location) {
         currentDimCache.put(location.toLong(), location);
     }
