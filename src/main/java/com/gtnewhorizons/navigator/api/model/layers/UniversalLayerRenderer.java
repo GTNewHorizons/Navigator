@@ -16,7 +16,7 @@ public class UniversalLayerRenderer extends LayerRenderer {
     private Function<ILocationProvider, UniversalRenderStep<?>> stepCreator;
     private int renderPriority = 0;
 
-    public UniversalLayerRenderer(LayerManager manager) {
+    public UniversalLayerRenderer(@Nonnull LayerManager manager) {
         super(manager, SupportedMods.NONE);
     }
 

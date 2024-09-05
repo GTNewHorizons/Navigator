@@ -3,6 +3,8 @@ package com.gtnewhorizons.navigator.api.xaero.renderers;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.annotation.Nonnull;
+
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.GuiScreen;
 
@@ -18,7 +20,7 @@ public abstract class XaeroInteractableLayerRenderer extends XaeroLayerRenderer 
     protected InteractableLayerManager manager;
     protected XaeroInteractableStep hovered;
 
-    public XaeroInteractableLayerRenderer(InteractableLayerManager manager) {
+    public XaeroInteractableLayerRenderer(@Nonnull InteractableLayerManager manager) {
         super(manager);
         this.manager = manager;
     }

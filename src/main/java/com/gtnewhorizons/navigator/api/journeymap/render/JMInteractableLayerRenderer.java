@@ -3,6 +3,8 @@ package com.gtnewhorizons.navigator.api.journeymap.render;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.annotation.Nonnull;
+
 import net.minecraft.client.gui.FontRenderer;
 
 import com.gtnewhorizons.navigator.api.NavigatorApi;
@@ -18,7 +20,7 @@ public abstract class JMInteractableLayerRenderer extends JMLayerRenderer implem
     protected InteractableLayerManager manager;
     protected JMInteractableStep hoveredDrawStep = null;
 
-    public JMInteractableLayerRenderer(InteractableLayerManager manager) {
+    public JMInteractableLayerRenderer(@Nonnull InteractableLayerManager manager) {
         super(manager);
         this.manager = manager;
     }

@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import com.gtnewhorizons.navigator.api.model.SupportedMods;
@@ -26,7 +27,7 @@ public abstract class LayerRenderer {
     protected Long2ObjectMap<RenderStep> currentDimSteps;
     private final List<RenderStep> visibleSteps = new ArrayList<>();
 
-    public LayerRenderer(LayerManager manager, SupportedMods mod) {
+    public LayerRenderer(@Nonnull LayerManager manager, SupportedMods mod) {
         this.mod = mod;
         this.manager = manager;
     }

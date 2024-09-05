@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.function.IntPredicate;
 import java.util.function.Predicate;
 
+import javax.annotation.Nonnull;
+
 import net.minecraft.client.gui.FontRenderer;
 
 import com.gtnewhorizons.navigator.api.NavigatorApi;
@@ -21,7 +23,7 @@ public class UniversalInteractableRenderer extends UniversalLayerRenderer implem
     private Predicate<ClickPos> clickAction;
     private IntPredicate keyPressAction;
 
-    public UniversalInteractableRenderer(InteractableLayerManager manager) {
+    public UniversalInteractableRenderer(@Nonnull InteractableLayerManager manager) {
         super(manager);
         this.manager = manager;
     }
@@ -110,12 +112,12 @@ public class UniversalInteractableRenderer extends UniversalLayerRenderer implem
         return false;
     }
 
-    public UniversalInteractableRenderer withClickAction(Predicate<ClickPos> action) {
+    public UniversalInteractableRenderer withClickAction(@Nonnull Predicate<ClickPos> action) {
         this.clickAction = action;
         return this;
     }
 
-    public UniversalInteractableRenderer withKeyPressAction(IntPredicate keyPressAction) {
+    public UniversalInteractableRenderer withKeyPressAction(@Nonnull IntPredicate keyPressAction) {
         this.keyPressAction = keyPressAction;
         return this;
     }
