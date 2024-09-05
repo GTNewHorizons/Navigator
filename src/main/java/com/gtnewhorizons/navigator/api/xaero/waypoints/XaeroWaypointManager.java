@@ -15,10 +15,16 @@ public class XaeroWaypointManager extends WaypointManager {
     public static int lastId;
     protected final int waypointId;
     private WaypointWithDimension xWaypoint;
+    private String symbol = "";
 
     public XaeroWaypointManager(InteractableLayerManager layerManager) {
         super(layerManager, SupportedMods.XaeroMiniMap);
         waypointId = lastId++;
+    }
+
+    public XaeroWaypointManager(InteractableLayerManager layerManager, String symbol) {
+        this(layerManager);
+        this.symbol = symbol;
     }
 
     @Override
@@ -59,6 +65,10 @@ public class XaeroWaypointManager extends WaypointManager {
     }
 
     protected String getSymbol(Waypoint waypoint) {
+        if (!symbol.isEmpty()) {
+            return symbol;
+        }
+
         return waypoint.label.substring(0, 1);
     }
 }

@@ -10,5 +10,16 @@ public interface InteractableStep extends RenderStep {
 
     void onActionKeyPressed();
 
-    IWaypointAndLocationProvider getLocationProvider();
+    @Override
+    default IWaypointAndLocationProvider getLocation() {
+        return getLocationProvider();
+    }
+
+    /**
+     * @deprecated Use {@link #getLocation()} instead
+     */
+    @Deprecated
+    default IWaypointAndLocationProvider getLocationProvider() {
+        return null;
+    }
 }

@@ -54,7 +54,7 @@ public class DrawUtils {
     }
 
     public static void drawQuad(ResourceLocation texture, double x, double y, double width, double height, int color,
-        float alpha) {
+        int alpha) {
 
         GL11.glEnable(GL11.GL_BLEND);
         OpenGlHelper.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA, 1, 0);
@@ -69,14 +69,11 @@ public class DrawUtils {
 
         Tessellator tessellator = Tessellator.instance;
         tessellator.startDrawingQuads();
-        tessellator.addVertexWithUV(x, y + height, 0.0, 0.0, 1.0);
-        tessellator.addVertexWithUV(x + width, y + height, 0.0, 1.0, 1.0);
-        tessellator.addVertexWithUV(x + width, y, 0.0, 1.0, 0.0);
-        tessellator.addVertexWithUV(x, y, 0.0, 0.0, 0.0);
+        addRectToBufferWithUV(tessellator, x, y, width, height, color, alpha, 0, 0, 1, 1);
         tessellator.draw();
     }
 
-    public static void drawQuad(IIcon icon, double x, double y, double width, double height, int color, float alpha) {
+    public static void drawQuad(IIcon icon, double x, double y, double width, double height, int color, int alpha) {
 
         GL11.glEnable(GL11.GL_BLEND);
         OpenGlHelper.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA, 1, 0);
@@ -91,33 +88,102 @@ public class DrawUtils {
 
         Tessellator tessellator = Tessellator.instance;
         tessellator.startDrawingQuads();
-        tessellator.addVertexWithUV(x, y + height, 0.0, icon.getMinU(), icon.getMaxV());
-        tessellator.addVertexWithUV(x + width, y + height, 0.0, icon.getMaxU(), icon.getMaxV());
-        tessellator.addVertexWithUV(x + width, y, 0.0, icon.getMaxU(), icon.getMinV());
-        tessellator.addVertexWithUV(x, y, 0.0, icon.getMinU(), icon.getMinV());
+        addRectToBufferWithUV(
+            tessellator,
+            x,
+            y,
+            width,
+            height,
+            color,
+            alpha,
+            icon.getMinU(),
+            icon.getMinV(),
+            icon.getMaxU(),
+            icon.getMaxV());
         tessellator.draw();
+    }
+
+    public static void addRectToBuffer(Tessellator tessellator, double x, double y, double w, double h, int color,
+        int alpha) {
+        int[] c = ints(color, alpha);
+        tessellator.setColorRGBA(c[0], c[1], c[2], c[3]);
+        tessellator.addVertex(x, y + h, 0D);
+        tessellator.addVertex(x + w, y + h, 0D);
+        tessellator.addVertex(x + w, y, 0D);
+        tessellator.addVertex(x, y, 0D);
+    }
+
+    public static void addRectToBufferWithUV(Tessellator tessellator, double x, double y, double w, double h, int color,
+        int alpha, double u0, double v0, double u1, double v1) {
+        int[] c = ints(color, alpha);
+        tessellator.setColorRGBA(c[0], c[1], c[2], c[3]);
+        tessellator.addVertexWithUV(x, y + h, 0D, u0, v1);
+        tessellator.addVertexWithUV(x + w, y + h, 0D, u1, v1);
+        tessellator.addVertexWithUV(x + w, y, 0D, u1, v0);
+        tessellator.addVertexWithUV(x, y, 0D, u0, v0);
+    }
+
+    public static void drawRect(double x, double y, double w, double h, int color, int alpha) {
+        GL11.glDisable(GL11.GL_TEXTURE_2D);
+        Tessellator tessellator = Tessellator.instance;
+        tessellator.startDrawingQuads();
+        addRectToBuffer(tessellator, x, y, w, h, color, alpha);
+        tessellator.draw();
+        GL11.glEnable(GL11.GL_TEXTURE_2D);
+    }
+
+    public static void setupDrawing() {
+        GL11.glColor4f(1F, 1F, 1F, 1F);
+        GL11.glDisable(GL11.GL_LIGHTING);
+        GL11.glEnable(GL11.GL_BLEND);
+        OpenGlHelper.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA, 1, 0);
     }
 
     public static void drawSimpleLabel(GuiScreen gui, String text, double textX, double textY, int fontColor,
         int bgColor, boolean centered) {
         GL11.glPushMatrix();
-        double dTextX = textX - (double) (int) textX;
-        double dTextY = textY - (double) (int) textY;
         double textWidth = gui.mc.fontRenderer.getStringWidth(text);
         double xOffsetL = centered ? -textWidth / 2.0 - 2 : -2;
         double xOffsetR = centered ? textWidth / 2.0 + 2 : textWidth + 2;
-        GL11.glTranslated(dTextX, dTextY, 0.0);
-        drawGradientRect(
-            (int) textX + xOffsetL,
-            (int) textY - 2,
-            (int) textX + xOffsetR,
-            (int) textY + gui.mc.fontRenderer.FONT_HEIGHT + 2,
-            0,
-            bgColor,
-            bgColor);
+        drawRect(textX + xOffsetL, textY - 2, xOffsetR, gui.mc.fontRenderer.FONT_HEIGHT + 2, bgColor, 180);
         if (centered) gui.drawCenteredString(gui.mc.fontRenderer, text, (int) textX, (int) textY, fontColor);
         else gui.drawString(gui.mc.fontRenderer, text, (int) textX, (int) textY, fontColor);
         GL11.glPopMatrix();
+    }
+
+    public static void drawSimpleLabel(String text, double textX, double textY, int fontColor, int bgColor,
+        boolean centered) {
+        Minecraft mc = Minecraft.getMinecraft();
+        FontRenderer fontRenderer = mc.fontRenderer;
+        GL11.glPushMatrix();
+        double dTextX = textX - (double) (int) textX;
+        double dTextY = textY - (double) (int) textY;
+        double textWidth = fontRenderer.getStringWidth(text);
+        double xOffsetL = centered ? -textWidth / 2.0 - 2 : -2;
+        double xOffsetR = centered ? textWidth / 2.0 + 2 : textWidth + 2;
+        GL11.glTranslated(dTextX, dTextY, 0.0);
+        drawRect(textX + xOffsetL, textY - 2, xOffsetR, fontRenderer.FONT_HEIGHT + 2, bgColor, 180);
+        if (centered) fontRenderer.drawStringWithShadow(text, (int) (textX - textWidth / 2), (int) textY, fontColor);
+        else fontRenderer.drawString(text, (int) textX, (int) textY, fontColor);
+        GL11.glPopMatrix();
+    }
+
+    public static void drawHollowRect(double x, double y, double w, double h, int col, int alpha) {
+        drawHollowRect(x, y, w, h, col, alpha, 1);
+    }
+
+    public static void drawHollowRect(double x, double y, double w, double h, int col, int alpha, double thickness) {
+        GL11.glDisable(GL11.GL_TEXTURE_2D);
+        Tessellator tessellator = Tessellator.instance;
+        tessellator.startDrawingQuads();
+
+        addRectToBuffer(tessellator, x, y + thickness, thickness, h - 1 - thickness, col, alpha);
+        addRectToBuffer(tessellator, x + w - thickness, y + thickness, thickness, h - 1 - thickness, col, alpha);
+        addRectToBuffer(tessellator, x, y, w, thickness, col, alpha);
+        addRectToBuffer(tessellator, x, y + h - thickness, w, thickness, col, alpha);
+
+        tessellator.draw();
+        GL11.glEnable(GL11.GL_TEXTURE_2D);
     }
 
     public static void drawSimpleTooltip(GuiScreen gui, List<String> text, double x, double y, int fontColor,
@@ -138,7 +204,7 @@ public class DrawUtils {
 
         GL11.glPushMatrix();
 
-        drawGradientRect(x, y, x + boxWidth, y + boxHeight, bgColor, bgColor);
+        drawRect(x, y, boxWidth, boxHeight, bgColor, 180);
         GL11.glTranslated(dx, dy, 301);
         for (int i = 0; i < text.size(); i++) {
             gui.drawString(
@@ -152,8 +218,18 @@ public class DrawUtils {
         GL11.glPopMatrix();
     }
 
+    public static void drawLabel(String text, double textX, double textY, int fontColor, int bgColor,
+        boolean centered) {
+        drawLabel(text, textX, textY, fontColor, bgColor, centered, 1.0);
+    }
+
     public static void drawLabel(String text, double textX, double textY, int fontColor, int bgColor, boolean centered,
         double fontScale) {
+        drawLabel(text, textX, textY, fontColor, bgColor, centered, true, fontScale);
+    }
+
+    public static void drawLabel(String text, double textX, double textY, int fontColor, int bgColor, boolean centered,
+        boolean fontShadow, double fontScale) {
         final FontRenderer fontRenderer = Minecraft.getMinecraft().fontRenderer;
 
         GL11.glPushMatrix();
@@ -163,30 +239,32 @@ public class DrawUtils {
             textY /= fontScale;
             GL11.glScaled(fontScale, fontScale, 0);
         }
+
         double dTextX = textX - (double) (int) textX;
         double dTextY = textY - (double) (int) textY;
         double textWidth = fontRenderer.getStringWidth(text);
         double xOffsetL = centered ? -textWidth / 2.0 - 2 : -2;
-        double xOffsetR = centered ? textWidth / 2.0 + 2 : textWidth + 2;
         GL11.glTranslated(dTextX, dTextY, 0.0);
-        drawGradientRect(
-            (int) textX + xOffsetL,
-            (int) textY - 2,
-            (int) textX + xOffsetR,
-            (int) textY + fontRenderer.FONT_HEIGHT + 2,
-            0,
-            bgColor,
-            bgColor);
-        fontRenderer.drawStringWithShadow(
-            text,
-            (centered ? (int) (textX - textWidth / 2.0) : (int) textX),
-            (int) textY,
-            fontColor);
+        drawRect(textX + xOffsetL, textY - 2, textWidth + 2, fontRenderer.FONT_HEIGHT + 2, bgColor, 180);
+        if (fontShadow) {
+            fontRenderer.drawStringWithShadow(
+                text,
+                (centered ? (int) (textX - textWidth / 2.0) : (int) textX),
+                (int) textY,
+                fontColor);
+        } else {
+            fontRenderer
+                .drawString(text, (centered ? (int) (textX - textWidth / 2.0) : (int) textX), (int) textY, fontColor);
+        }
         GL11.glPopMatrix();
     }
 
     public static float[] floats(int rgb) {
         return new float[] { (float) (rgb >> 16 & 255) / 255.0F, (float) (rgb >> 8 & 255) / 255.0F,
             (float) (rgb & 255) / 255.0F };
+    }
+
+    public static int[] ints(int rgb, int alpha) {
+        return new int[] { (rgb >> 16) & 255, (rgb >> 8) & 255, rgb & 255, alpha & 255 };
     }
 }

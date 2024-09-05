@@ -1,43 +1,40 @@
-package com.gtnewhorizons.navigator.api.journeymap.render;
+package com.gtnewhorizons.navigator.api.model.layers;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.IntPredicate;
+import java.util.function.Predicate;
 
 import javax.annotation.Nonnull;
 
 import net.minecraft.client.gui.FontRenderer;
 
 import com.gtnewhorizons.navigator.api.NavigatorApi;
-import com.gtnewhorizons.navigator.api.journeymap.drawsteps.JMInteractableStep;
-import com.gtnewhorizons.navigator.api.journeymap.drawsteps.JMRenderStep;
-import com.gtnewhorizons.navigator.api.model.layers.InteractableLayer;
-import com.gtnewhorizons.navigator.api.model.layers.InteractableLayerManager;
 import com.gtnewhorizons.navigator.api.model.steps.RenderStep;
+import com.gtnewhorizons.navigator.api.model.steps.UniversalInteractableStep;
+import com.gtnewhorizons.navigator.api.util.ClickPos;
 import com.gtnewhorizons.navigator.api.util.Util;
 
-public abstract class JMInteractableLayerRenderer extends JMLayerRenderer implements InteractableLayer {
+public class UniversalInteractableRenderer extends UniversalLayerRenderer implements InteractableLayer {
 
+    private final ClickPos clickPos = new ClickPos();
     protected InteractableLayerManager manager;
-    protected JMInteractableStep hoveredDrawStep = null;
+    protected UniversalInteractableStep<?> hoveredRenderStep = null;
+    private Predicate<ClickPos> clickAction;
+    private IntPredicate keyPressAction;
 
-    public JMInteractableLayerRenderer(@Nonnull InteractableLayerManager manager) {
+    public UniversalInteractableRenderer(@Nonnull InteractableLayerManager manager) {
         super(manager);
         this.manager = manager;
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public List<JMRenderStep> getRenderSteps() {
-        return (List<JMRenderStep>) getReversedRenderSteps();
-    }
-
-    @Override
     public void onMouseMove(int mouseX, int mouseY) {
-        hoveredDrawStep = null;
+        hoveredRenderStep = null;
         for (RenderStep drawStep : getRenderStepsForInteraction()) {
-            if (drawStep instanceof JMInteractableStep clickableDrawStep) {
-                if (clickableDrawStep.isMouseOver(mouseX, mouseY)) {
-                    hoveredDrawStep = clickableDrawStep;
+            if (drawStep instanceof UniversalInteractableStep<?>step) {
+                if (step.mouseOver(mouseX, mouseY)) {
+                    hoveredRenderStep = step;
                     return;
                 }
             }
@@ -46,9 +43,13 @@ public abstract class JMInteractableLayerRenderer extends JMLayerRenderer implem
 
     @Override
     public final boolean onMapClick(boolean isDoubleClick, int mouseX, int mouseY, int blockX, int blockZ) {
-        if (!manager.getOpenModGui()
-            .equals(getLayerMod())) return false;
-        if (hoveredDrawStep != null) {
+        if (clickAction != null) {
+            if (clickAction.test(clickPos.set(hoveredRenderStep, isDoubleClick, mouseX, mouseY, blockX, blockZ))) {
+                return true;
+            }
+        }
+
+        if (hoveredRenderStep != null) {
             return onClick(isDoubleClick, mouseX, mouseY, blockX, blockZ);
         }
 
@@ -57,12 +58,12 @@ public abstract class JMInteractableLayerRenderer extends JMLayerRenderer implem
 
     public boolean onClick(boolean isDoubleClick, int mouseX, int mouseY, int blockX, int blockZ) {
         if (isDoubleClick) {
-            if (hoveredDrawStep.getLocation()
+            if (hoveredRenderStep.getLocation()
                 .isActiveAsWaypoint()) {
                 manager.clearActiveWaypoint();
             } else {
                 manager.setActiveWaypoint(
-                    hoveredDrawStep.getLocation()
+                    hoveredRenderStep.getLocation()
                         .toWaypoint());
             }
             return true;
@@ -77,8 +78,8 @@ public abstract class JMInteractableLayerRenderer extends JMLayerRenderer implem
     @Override
     public List<String> getTooltip() {
         List<String> tooltip = new ArrayList<>();
-        if (hoveredDrawStep != null) {
-            hoveredDrawStep.getTooltip(tooltip);
+        if (hoveredRenderStep != null) {
+            hoveredRenderStep.getTooltip(tooltip);
         }
         return tooltip;
     }
@@ -86,8 +87,8 @@ public abstract class JMInteractableLayerRenderer extends JMLayerRenderer implem
     @Override
     public void drawCustomTooltip(FontRenderer fontRenderer, int mouseX, int mouseY, int displayWidth,
         int displayHeight) {
-        if (hoveredDrawStep != null) {
-            hoveredDrawStep.drawCustomTooltip(fontRenderer, mouseX, mouseY, displayWidth, displayHeight);
+        if (hoveredRenderStep != null) {
+            hoveredRenderStep.drawCustomTooltip(fontRenderer, mouseX, mouseY, displayWidth, displayHeight);
         }
     }
 
@@ -97,11 +98,28 @@ public abstract class JMInteractableLayerRenderer extends JMLayerRenderer implem
      */
     @Override
     public boolean onKeyPressed(int keyCode) {
-        if (Util.isKeyPressed(NavigatorApi.ACTION_KEY) && hoveredDrawStep != null) {
-            hoveredDrawStep.onActionKeyPressed();
+        if (keyPressAction != null) {
+            if (keyPressAction.test(keyCode)) {
+                return true;
+            }
+        }
+
+        if (Util.isKeyPressed(NavigatorApi.ACTION_KEY) && hoveredRenderStep != null) {
+            hoveredRenderStep.onActionKeyPressed();
             manager.forceRefresh();
             return true;
         }
         return false;
     }
+
+    public UniversalInteractableRenderer withClickAction(@Nonnull Predicate<ClickPos> action) {
+        this.clickAction = action;
+        return this;
+    }
+
+    public UniversalInteractableRenderer withKeyPressAction(@Nonnull IntPredicate keyPressAction) {
+        this.keyPressAction = keyPressAction;
+        return this;
+    }
+
 }
