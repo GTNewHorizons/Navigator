@@ -35,8 +35,9 @@ public abstract class LayerManager {
     private int miniMapHeight = 0;
     private int fullscreenMapWidth = 0;
     private int fullscreenMapHeight = 0;
-    private Integer currentDim = null;
+    private int currentDim;
     private SupportedMods openModGui;
+    private boolean refreshDim = true;
     private boolean clearFull, clearCurrent;
 
     public LayerManager(ButtonManager buttonManager) {
@@ -201,7 +202,7 @@ public abstract class LayerManager {
         if (clearFull) clearFull();
 
         int dim = Minecraft.getMinecraft().thePlayer.dimension;
-        if (currentDim == null || currentDim != dim) {
+        if (refreshDim || currentDim != dim) {
             currentDim = dim;
             refreshDimCache();
         }
@@ -304,6 +305,7 @@ public abstract class LayerManager {
     }
 
     protected void refreshDimCache() {
+        refreshDim = false;
         currentDimCache = dimCachedLocations.computeIfAbsent(currentDim, k -> new Long2ObjectOpenHashMap<>());
         layerRenderer.values()
             .forEach(renderer -> renderer.setDimCache(currentDim));
@@ -320,6 +322,7 @@ public abstract class LayerManager {
     }
 
     private void clearCurrent() {
+        clearCurrent = false;
         if (currentDimCache == null) return;
         currentDimCache.clear();
         layerRenderer.values()
@@ -327,7 +330,8 @@ public abstract class LayerManager {
     }
 
     private void clearFull() {
-        currentDim = null;
+        clearFull = false;
+        refreshDim = true;
         dimCachedLocations.clear();
         currentDimCache = null;
         layerRenderer.values()
