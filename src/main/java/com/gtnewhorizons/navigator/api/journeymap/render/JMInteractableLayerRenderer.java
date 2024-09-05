@@ -29,6 +29,7 @@ public abstract class JMInteractableLayerRenderer extends JMLayerRenderer implem
         return (List<JMRenderStep>) getReversedRenderSteps();
     }
 
+    @Override
     public void onMouseMove(int mouseX, int mouseY) {
         hoveredDrawStep = null;
         for (RenderStep drawStep : getRenderStepsForInteraction()) {
@@ -41,6 +42,7 @@ public abstract class JMInteractableLayerRenderer extends JMLayerRenderer implem
         }
     }
 
+    @Override
     public final boolean onMapClick(boolean isDoubleClick, int mouseX, int mouseY, int blockX, int blockZ) {
         if (!manager.getOpenModGui()
             .equals(getLayerMod())) return false;
@@ -70,6 +72,7 @@ public abstract class JMInteractableLayerRenderer extends JMLayerRenderer implem
         return false;
     }
 
+    @Override
     public List<String> getTooltip() {
         List<String> tooltip = new ArrayList<>();
         if (hoveredDrawStep != null) {
@@ -78,6 +81,7 @@ public abstract class JMInteractableLayerRenderer extends JMLayerRenderer implem
         return tooltip;
     }
 
+    @Override
     public void drawCustomTooltip(FontRenderer fontRenderer, int mouseX, int mouseY, int displayWidth,
         int displayHeight) {
         if (hoveredDrawStep != null) {
@@ -89,6 +93,7 @@ public abstract class JMInteractableLayerRenderer extends JMLayerRenderer implem
      * @param keyCode The key code of the key that was pressed
      * @return true if the key press was handled, false otherwise
      */
+    @Override
     public boolean onKeyPressed(int keyCode) {
         if (Util.isKeyPressed(NavigatorApi.ACTION_KEY) && hoveredDrawStep != null) {
             hoveredDrawStep.onActionKeyPressed();

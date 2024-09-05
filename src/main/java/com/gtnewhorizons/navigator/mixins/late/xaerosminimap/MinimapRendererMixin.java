@@ -20,6 +20,7 @@ import com.gtnewhorizons.navigator.api.model.layers.LayerManager;
 import com.gtnewhorizons.navigator.api.model.layers.LayerRenderer;
 import com.gtnewhorizons.navigator.api.model.layers.UniversalLayerRenderer;
 import com.gtnewhorizons.navigator.api.model.steps.RenderStep;
+import com.gtnewhorizons.navigator.api.model.steps.UniversalRenderStep;
 import com.gtnewhorizons.navigator.api.xaero.rendersteps.XaeroRenderStep;
 import com.llamalad7.mixinextras.sugar.Local;
 
@@ -72,11 +73,9 @@ public abstract class MinimapRendererMixin {
             GL11.glStencilFunc(GL11.GL_EQUAL, 1, 1);
 
             for (LayerRenderer layerRenderer : NavigatorApi.getActiveRenderersByPriority(XaeroWorldMap)) {
-                if (layerRenderer instanceof UniversalLayerRenderer) {
-                    for (RenderStep renderStep : layerRenderer.getRenderSteps()) {
-                        if (renderStep instanceof XaeroRenderStep xaeroRenderStep) {
-                            xaeroRenderStep.draw(minimap.mainPlayerX, minimap.mainPlayerZ, mapZoom, minimapScale);
-                        }
+                if (layerRenderer instanceof UniversalLayerRenderer universal) {
+                    for (UniversalRenderStep<?> renderStep : universal.getRenderSteps()) {
+                        renderStep.draw(minimap.mainPlayerX, minimap.mainPlayerZ, mapZoom, minimapScale);
                     }
                     continue;
                 }

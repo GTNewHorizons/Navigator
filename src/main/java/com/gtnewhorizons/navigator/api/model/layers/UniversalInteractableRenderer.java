@@ -26,6 +26,7 @@ public class UniversalInteractableRenderer extends UniversalLayerRenderer implem
         this.manager = manager;
     }
 
+    @Override
     public void onMouseMove(int mouseX, int mouseY) {
         hoveredRenderStep = null;
         for (RenderStep drawStep : getRenderStepsForInteraction()) {
@@ -38,6 +39,7 @@ public class UniversalInteractableRenderer extends UniversalLayerRenderer implem
         }
     }
 
+    @Override
     public final boolean onMapClick(boolean isDoubleClick, int mouseX, int mouseY, int blockX, int blockZ) {
         if (clickAction != null) {
             if (clickAction.test(clickPos.set(hoveredRenderStep, isDoubleClick, mouseX, mouseY, blockX, blockZ))) {
@@ -71,6 +73,7 @@ public class UniversalInteractableRenderer extends UniversalLayerRenderer implem
         return false;
     }
 
+    @Override
     public List<String> getTooltip() {
         List<String> tooltip = new ArrayList<>();
         if (hoveredRenderStep != null) {
@@ -79,6 +82,7 @@ public class UniversalInteractableRenderer extends UniversalLayerRenderer implem
         return tooltip;
     }
 
+    @Override
     public void drawCustomTooltip(FontRenderer fontRenderer, int mouseX, int mouseY, int displayWidth,
         int displayHeight) {
         if (hoveredRenderStep != null) {
@@ -90,6 +94,7 @@ public class UniversalInteractableRenderer extends UniversalLayerRenderer implem
      * @param keyCode The key code of the key that was pressed
      * @return true if the key press was handled, false otherwise
      */
+    @Override
     public boolean onKeyPressed(int keyCode) {
         if (keyPressAction != null) {
             if (keyPressAction.test(keyCode)) {

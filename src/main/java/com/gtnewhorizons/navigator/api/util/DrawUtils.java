@@ -265,6 +265,6 @@ public class DrawUtils {
     }
 
     public static int[] ints(int rgb, int alpha) {
-        return new int[] { rgb >> 16 & 255, rgb >> 8 & 255, rgb & 255, alpha & 255 };
+        return new int[] { (rgb >> 16) & 255, (rgb >> 8) & 255, rgb & 255, alpha & 255 };
     }
 }
