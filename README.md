@@ -50,7 +50,7 @@ class MyLayerManager extends LayerManager {
 
     @Override
     protected @Nullable ILocationProvider generateLocation(int chunkX, int chunkZ, int dim) {
-        return MyLocation();
+        return new MyLocation();
     }
 }
 ```
