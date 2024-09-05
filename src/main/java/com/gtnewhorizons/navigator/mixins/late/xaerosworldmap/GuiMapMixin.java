@@ -6,7 +6,6 @@ import java.util.List;
 
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.entity.Entity;
 
 import org.spongepowered.asm.lib.Opcodes;
 import org.spongepowered.asm.mixin.Mixin;
@@ -27,7 +26,6 @@ import com.gtnewhorizons.navigator.api.xaero.renderers.XaeroInteractableLayerRen
 import com.gtnewhorizons.navigator.api.xaero.renderers.XaeroLayerRenderer;
 import com.gtnewhorizons.navigator.api.xaero.rendersteps.XaeroRenderStep;
 
-import xaero.map.MapProcessor;
 import xaero.map.gui.CursorBox;
 import xaero.map.gui.GuiMap;
 import xaero.map.gui.ScreenBase;
@@ -44,6 +42,21 @@ public abstract class GuiMapMixin extends ScreenBase {
 
     @Unique
     private long navigator$timeLastClick = 0;
+
+    @Unique
+    private double navigator$oldCameraX = 0;
+
+    @Unique
+    private double navigator$oldCameraZ = 0;
+
+    @Unique
+    private int navigator$oldWidth = 0;
+
+    @Unique
+    private int navigator$oldHeight = 0;
+
+    @Unique
+    private long navigator$lastRecache = 0;
 
     protected GuiMapMixin(GuiScreen parent, GuiScreen escape) {
         super(parent, escape);
@@ -70,11 +83,13 @@ public abstract class GuiMapMixin extends ScreenBase {
     @Shadow
     private int mouseBlockPosZ;
 
-    @Inject(method = "<init>", at = @At("RETURN"))
-    private void navigator$injectConstruct(GuiScreen parent, GuiScreen escape, MapProcessor mapProcessor, Entity player,
-        CallbackInfo ci) {
+    @Inject(method = "initGui", at = @At("RETURN"))
+    private void navigator$injectConstruct(CallbackInfo ci) {
         NavigatorApi.getEnabledLayers(XaeroWorldMap)
-            .forEach(layerManager -> layerManager.onGuiOpened(XaeroWorldMap));
+            .forEach(layerManager -> {
+                layerManager.onGuiOpened(XaeroWorldMap);
+                layerManager.forceRefresh();
+            });
     }
 
     @Inject(
@@ -107,14 +122,14 @@ public abstract class GuiMapMixin extends ScreenBase {
     private void navigator$injectDraw(int scaledMouseX, int scaledMouseY, float partialTicks, CallbackInfo ci) {
         for (LayerManager layerManager : NavigatorApi.getEnabledLayers(XaeroWorldMap)) {
             // +20s are to work around precision loss from casting to int and right-shifting
-            layerManager.recacheFullscreenMap(
-                (int) cameraX,
-                (int) cameraZ,
-                (int) (mc.displayWidth / scale) + 20,
-                (int) (mc.displayHeight / scale) + 20);
+            int width = (int) (mc.displayWidth / scale) + 20;
+            int height = (int) (mc.displayHeight / scale) + 20;
+            if (navigator$shouldRecache(width, height, layerManager)) {
+                layerManager.recacheFullscreenMap((int) cameraX, (int) cameraZ, width, height);
+            }
         }
 
-        for (LayerRenderer layer : NavigatorApi.getActiveRenderersFor(XaeroWorldMap)) {
+        for (LayerRenderer layer : NavigatorApi.getActiveRenderersByPriority(XaeroWorldMap)) {
             if (layer instanceof XaeroLayerRenderer xaeroLayerRenderer) {
                 for (XaeroRenderStep step : xaeroLayerRenderer.getRenderSteps()) {
                     step.draw(this, cameraX, cameraZ, scale);
@@ -182,18 +197,17 @@ public abstract class GuiMapMixin extends ScreenBase {
 
     @Inject(method = "mapClicked", at = @At("TAIL"))
     private void navigator$injectListenClick(int button, int x, int y, CallbackInfo ci) {
-        if (button == 0) {
-            final long timestamp = System.currentTimeMillis();
-            final boolean isDoubleClick = x == navigator$oldMouseX && y == navigator$oldMouseY
-                && timestamp - navigator$timeLastClick < 500;
-            navigator$oldMouseX = x;
-            navigator$oldMouseY = y;
-            navigator$timeLastClick = isDoubleClick ? 0 : timestamp;
+        if (button != 0) return;
+        final long timestamp = System.currentTimeMillis();
+        final boolean isDoubleClick = x == navigator$oldMouseX && y == navigator$oldMouseY
+            && timestamp - navigator$timeLastClick < 250L;
+        navigator$oldMouseX = x;
+        navigator$oldMouseY = y;
+        navigator$timeLastClick = timestamp;
 
-            for (LayerRenderer layer : NavigatorApi.getActiveRenderersFor(XaeroWorldMap)) {
-                if (layer instanceof XaeroInteractableLayerRenderer interactableLayer) {
-                    interactableLayer.onMapClick(isDoubleClick, x, y, mouseBlockPosX, mouseBlockPosZ);
-                }
+        for (LayerRenderer layer : NavigatorApi.getActiveRenderersFor(XaeroWorldMap)) {
+            if (layer instanceof XaeroInteractableLayerRenderer interactableLayer) {
+                interactableLayer.onMapClick(isDoubleClick, x, y, mouseBlockPosX, mouseBlockPosZ);
             }
         }
     }
@@ -202,6 +216,25 @@ public abstract class GuiMapMixin extends ScreenBase {
     private void navigator$onGuiClosed(CallbackInfo ci) {
         NavigatorApi.getEnabledLayers(XaeroWorldMap)
             .forEach(layerManager -> layerManager.onGuiClosed(XaeroWorldMap));
+    }
+
+    @Unique
+    private boolean navigator$shouldRecache(int width, int height, LayerManager manager) {
+        if (!manager.isLayerActive()) return false;
+        long now = System.currentTimeMillis();
+        if (navigator$oldCameraX != cameraX || navigator$oldCameraZ != cameraZ
+            || navigator$oldWidth != width
+            || navigator$oldHeight != height
+            || manager.forceRefresh
+            || now - navigator$lastRecache >= 1000) {
+            navigator$oldCameraX = cameraX;
+            navigator$oldCameraZ = cameraZ;
+            navigator$oldWidth = width;
+            navigator$oldHeight = height;
+            navigator$lastRecache = now;
+            return true;
+        }
+        return false;
     }
 
     @Override

@@ -67,7 +67,7 @@ public class XaeroDirtyChunkRenderSteps implements XaeroInteractableStep {
     public void drawCustomTooltip(GuiScreen gui, double mouseX, double mouseY, double scale, int scaleAdj) {}
 
     @Override
-    public void onActionButton() {
+    public void onActionKeyPressed() {
         dirtyChunkLocation.onWaypointCleared();
     }
 

@@ -47,6 +47,7 @@ public abstract class MinimapRendererMixin {
         int width, int height, int scale, int size, float partial, CallbackInfo ci,
         @Local(name = "circleShape") boolean circleShape, @Local(name = "minimapFrameSize") int minimapFrameSize,
         @Local(name = "angle") double angle, @Local(name = "minimapScale") float minimapScale) {
+        if (mc.currentScreen != null) return;
         for (LayerManager layerManager : NavigatorApi.getEnabledLayers(XaeroWorldMap)) {
             if (layerManager.isLayerActive()) {
                 if (circleShape) {
@@ -69,7 +70,7 @@ public abstract class MinimapRendererMixin {
             GL11.glScaled(mapZoom, mapZoom, 0);
             GL11.glStencilFunc(GL11.GL_EQUAL, 1, 1);
 
-            for (LayerRenderer layerRenderer : NavigatorApi.getActiveRenderersFor(XaeroWorldMap)) {
+            for (LayerRenderer layerRenderer : NavigatorApi.getActiveRenderersByPriority(XaeroWorldMap)) {
                 for (XaeroRenderStep renderStep : ((XaeroLayerRenderer) layerRenderer).getRenderSteps()) {
                     renderStep.draw(null, minimap.mainPlayerX, minimap.mainPlayerZ, mapZoom);
                 }
@@ -89,6 +90,7 @@ public abstract class MinimapRendererMixin {
                 target = "Lxaero/common/minimap/render/MinimapRendererHelper;drawTexturedElipseInsideRectangle(IFFIIFF)V")))
     private void navigator$injectBeginStencil(XaeroMinimapSession minimapSession, MinimapProcessor minimap, int x,
         int y, int width, int height, int scale, int size, float partial, CallbackInfo ci) {
+        if (mc.currentScreen != null) return;
         if (navigator$stencilEnabled && MinecraftForgeClient.getStencilBits() == 0) {
             navigator$stencilEnabled = false;
             Navigator.LOG.warn("Could not enable stencils! Xaero's minimap overlays will not render");
@@ -110,6 +112,7 @@ public abstract class MinimapRendererMixin {
                 target = "Lxaero/common/minimap/render/MinimapRendererHelper;drawTexturedElipseInsideRectangle(IFFIIFF)V")))
     private void navigator$injectEndStencil(XaeroMinimapSession minimapSession, MinimapProcessor minimap, int x, int y,
         int width, int height, int scale, int size, float partial, CallbackInfo ci) {
+        if (mc.currentScreen != null) return;
         GL11.glStencilOp(GL11.GL_KEEP, GL11.GL_KEEP, GL11.GL_KEEP);
         GL11.glStencilMask(0x00);
         GL11.glDisable(GL11.GL_STENCIL_TEST);

@@ -1,21 +1,20 @@
 package com.gtnewhorizons.navigator.api.model.layers;
 
-import java.util.ArrayList;
+import java.util.Collection;
 import java.util.EnumMap;
-import java.util.List;
 import java.util.Map;
 
 import javax.annotation.Nullable;
 
 import com.gtnewhorizons.navigator.api.model.SupportedMods;
 import com.gtnewhorizons.navigator.api.model.buttons.ButtonManager;
+import com.gtnewhorizons.navigator.api.model.locations.ILocationProvider;
 import com.gtnewhorizons.navigator.api.model.locations.IWaypointAndLocationProvider;
 import com.gtnewhorizons.navigator.api.model.waypoints.Waypoint;
 import com.gtnewhorizons.navigator.api.model.waypoints.WaypointManager;
 
 public abstract class InteractableLayerManager extends LayerManager {
 
-    private List<? extends IWaypointAndLocationProvider> visibleElements = new ArrayList<>();
     protected final Map<SupportedMods, WaypointManager> waypointManagers = new EnumMap<>(SupportedMods.class);
 
     protected Waypoint activeWaypoint = null;
@@ -48,6 +47,15 @@ public abstract class InteractableLayerManager extends LayerManager {
         return null;
     }
 
+    /**
+     * Update the information contained in the {@link IWaypointAndLocationProvider}
+     * <p>
+     * If this information is updated outside of this method {@link #forceRefresh()} should be called
+     *
+     * @param location The location to update
+     */
+    public void updateElement(IWaypointAndLocationProvider location) {}
+
     @Nullable
     @Override
     protected final LayerRenderer addLayerRenderer(LayerManager manager, SupportedMods mod) {
@@ -56,14 +64,14 @@ public abstract class InteractableLayerManager extends LayerManager {
 
     public void setActiveWaypoint(Waypoint waypoint) {
         activeWaypoint = waypoint;
-        visibleElements.forEach(element -> element.onWaypointUpdated(waypoint));
+        getVisibleLocations().forEach(element -> element.onWaypointUpdated(waypoint));
         waypointManagers.values()
             .forEach(translator -> translator.updateActiveWaypoint(waypoint));
     }
 
     public void clearActiveWaypoint() {
         activeWaypoint = null;
-        visibleElements.forEach(IWaypointAndLocationProvider::onWaypointCleared);
+        getVisibleLocations().forEach(IWaypointAndLocationProvider::onWaypointCleared);
         waypointManagers.values()
             .forEach(WaypointManager::clearActiveWaypoint);
     }
@@ -76,23 +84,19 @@ public abstract class InteractableLayerManager extends LayerManager {
         return waypointManagers.get(map);
     }
 
-    protected abstract List<? extends IWaypointAndLocationProvider> generateVisibleElements(int minBlockX,
-        int minBlockZ, int maxBlockX, int maxBlockZ);
+    @Override
+    public final void updateElement(ILocationProvider location) {
+        if (location instanceof IWaypointAndLocationProvider waypointLoc) {
+            if (hasActiveWaypoint()) {
+                waypointLoc.onWaypointUpdated(activeWaypoint);
+            }
+            updateElement(waypointLoc);
+        }
+    }
 
     @Override
-    protected void checkAndUpdateElements(int minBlockX, int minBlockZ, int maxBlockX, int maxBlockZ) {
-        if (forceRefresh || needsRegenerateVisibleElements(minBlockX, minBlockZ, maxBlockX, maxBlockZ)) {
-            visibleElements = generateVisibleElements(minBlockX, minBlockZ, maxBlockX, maxBlockZ);
-
-            if (hasActiveWaypoint()) {
-                for (IWaypointAndLocationProvider element : visibleElements) {
-                    element.onWaypointUpdated(activeWaypoint);
-                }
-            }
-
-            layerRenderer.values()
-                .forEach(layer -> layer.updateVisibleElements(visibleElements));
-            forceRefresh = false;
-        }
+    @SuppressWarnings("unchecked")
+    public Collection<IWaypointAndLocationProvider> getVisibleLocations() {
+        return (Collection<IWaypointAndLocationProvider>) super.getVisibleLocations();
     }
 }

@@ -41,28 +41,28 @@ public abstract class JMInteractableLayerRenderer extends JMLayerRenderer {
     }
 
     public final boolean onMapClick(boolean isDoubleClick, int mouseX, int mouseY, int blockX, int blockZ) {
-        if (manager.getOpenModGui()
-            .equals(getLayerMod())) {
+        if (!manager.getOpenModGui()
+            .equals(getLayerMod())) return false;
+        if (hoveredDrawStep != null) {
             return onClick(isDoubleClick, mouseX, mouseY, blockX, blockZ);
         }
-        return false;
+
+        return onClickOutsideRenderStep(isDoubleClick, mouseX, mouseY, blockX, blockZ);
     }
 
     public boolean onClick(boolean isDoubleClick, int mouseX, int mouseY, int blockX, int blockZ) {
-        if (hoveredDrawStep != null) {
-            if (isDoubleClick) {
-                if (hoveredDrawStep.getLocationProvider()
-                    .isActiveAsWaypoint()) {
-                    manager.clearActiveWaypoint();
-                } else {
-                    manager.setActiveWaypoint(
-                        hoveredDrawStep.getLocationProvider()
-                            .toWaypoint());
-                }
+        if (isDoubleClick) {
+            if (hoveredDrawStep.getLocationProvider()
+                .isActiveAsWaypoint()) {
+                manager.clearActiveWaypoint();
+            } else {
+                manager.setActiveWaypoint(
+                    hoveredDrawStep.getLocationProvider()
+                        .toWaypoint());
             }
             return true;
         }
-        return onClickOutsideRenderStep(isDoubleClick, mouseX, mouseY, blockX, blockZ);
+        return false;
     }
 
     public boolean onClickOutsideRenderStep(boolean isDoubleClick, int mouseX, int mouseY, int blockX, int blockZ) {

@@ -34,11 +34,11 @@
  * For more details, see https://docs.gradle.org/8.0.1/userguide/java_library_plugin.html#sec:java_library_configurations_graph
  */
 dependencies {
-    api("com.github.GTNewHorizons:GTNHLib:0.3.2:dev")
-    runtimeOnlyNonPublishable("com.github.GTNewHorizons:NotEnoughItems:2.5.4-GTNH:dev")
+    api("com.github.GTNewHorizons:GTNHLib:0.5.5:dev")
+    runtimeOnlyNonPublishable("com.github.GTNewHorizons:NotEnoughItems:2.6.34-GTNH:dev")
 
     compileOnlyApi(rfg.deobf('maven.modrinth:journeymap:5.2.5'))
-    compileOnlyApi(deobfCurse('xaeros-minimap-263420:5060684'))
-    compileOnlyApi(deobfCurse('xaeros-world-map-317780:5060733'))
+    compileOnlyApi(deobfCurse('xaeros-minimap-263420:5637000'))
+    compileOnlyApi(deobfCurse('xaeros-world-map-317780:5658209'))
     compileOnly(deobf('https://media.forgecdn.net/files/2462/146/mod_voxelMap_1.7.0b_for_1.7.10.litemod', 'mod_voxelMap_1.7.0b_for_1.7.10.jar'))
 }

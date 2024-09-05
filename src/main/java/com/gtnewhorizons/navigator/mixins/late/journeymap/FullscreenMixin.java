@@ -5,11 +5,7 @@ import static com.gtnewhorizons.navigator.api.model.SupportedMods.JourneyMap;
 import java.util.List;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiButton;
-import net.minecraft.client.renderer.RenderHelper;
 
-import org.apache.logging.log4j.Level;
-import org.lwjgl.input.Mouse;
 import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -27,15 +23,15 @@ import com.gtnewhorizons.navigator.api.journeymap.render.JMLayerRenderer;
 import com.gtnewhorizons.navigator.api.model.buttons.ButtonManager;
 import com.gtnewhorizons.navigator.api.model.layers.LayerManager;
 import com.gtnewhorizons.navigator.api.model.layers.LayerRenderer;
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
+import com.llamalad7.mixinextras.sugar.ref.LocalRef;
 
 import journeymap.client.io.ThemeFileHandler;
-import journeymap.client.log.LogFormatter;
 import journeymap.client.log.StatTimer;
 import journeymap.client.model.BlockCoordIntPair;
 import journeymap.client.render.map.GridRenderer;
-import journeymap.client.ui.UIManager;
-import journeymap.client.ui.component.Button;
 import journeymap.client.ui.component.ButtonList;
 import journeymap.client.ui.component.JmUI;
 import journeymap.client.ui.fullscreen.Fullscreen;
@@ -46,7 +42,7 @@ import journeymap.client.ui.theme.ThemeButton;
 import journeymap.client.ui.theme.ThemeToggle;
 import journeymap.client.ui.theme.ThemeToolbar;
 
-@Mixin(value = Fullscreen.class, remap = false)
+@Mixin(Fullscreen.class)
 public abstract class FullscreenMixin extends JmUI {
 
     @Unique
@@ -56,66 +52,57 @@ public abstract class FullscreenMixin extends JmUI {
     @Unique
     private long navigator$timeLastClick = 0;
 
+    @Unique
+    private int navigator$oldCenterX = 0;
+    @Unique
+    private int navigator$oldCenterZ = 0;
+    @Unique
+    private int navigator$oldWidth = 0;
+    @Unique
+    private int navigator$oldHeight = 0;
+
+    @Unique
+    private long navigator$lastRecache = 0;
+
     @Final
-    @Shadow
+    @Shadow(remap = false)
     static GridRenderer gridRenderer;
 
-    @Shadow
+    @Shadow(remap = false)
     ThemeToolbar mapTypeToolbar;
 
-    @Shadow
+    @Shadow(remap = false)
     ThemeButton buttonCaves;
 
-    @Shadow
+    @Shadow(remap = false)
     ThemeButton buttonNight;
 
-    @Shadow
+    @Shadow(remap = false)
     ThemeButton buttonDay;
 
-    @Shadow
-    StatTimer drawScreenTimer;
-
-    @Shadow()
+    @Shadow(remap = false)
     MapChat chat;
 
-    @Final
-    @Shadow
-    LayerDelegate layerDelegate;
-
-    @Shadow
-    boolean firstLayoutPass;
-
-    @Shadow
+    @Shadow(remap = false)
     int mx;
 
-    @Shadow
+    @Shadow(remap = false)
     int my;
 
     public FullscreenMixin() {
         super("");
     }
 
-    @Inject(method = "<init>*", at = @At("RETURN"), require = 1)
-    private void navigator$init(CallbackInfo ci) {
-        NavigatorApi.getEnabledLayers(JourneyMap)
-            .forEach(LayerManager::forceRefresh);
-    }
-
-    @Shadow
+    @Shadow(remap = false)
     protected abstract int getMapFontScale();
 
-    @Shadow
-    void drawMap() {
-        throw new IllegalStateException("Mixin failed to shadow drawMap()");
-    }
-
-    @Shadow
-    public abstract void drawBackground(int layer);
-
-    @Inject(method = "<init>*", at = @At("RETURN"), require = 1)
-    private void navigator$onConstructed(CallbackInfo ci) {
+    @Inject(method = "initGui", at = @At("RETURN"), require = 1)
+    private void navigator$onInit(CallbackInfo ci) {
         NavigatorApi.getEnabledLayers(JourneyMap)
-            .forEach(layerManager -> layerManager.onGuiOpened(JourneyMap));
+            .forEach(layerManager -> {
+                layerManager.onGuiOpened(JourneyMap);
+                layerManager.forceRefresh();
+            });
     }
 
     @Inject(
@@ -133,12 +120,12 @@ public abstract class FullscreenMixin extends JmUI {
         final int widthBlocks = minecraft.displayWidth >> gridRenderer.getZoom();
         final int heightBlocks = minecraft.displayHeight >> gridRenderer.getZoom();
         for (LayerManager layerManager : NavigatorApi.getEnabledLayers(JourneyMap)) {
-            if (layerManager.isLayerActive()) {
+            if (navigator$shouldRecache(centerBlockX, centerBlockZ, widthBlocks, heightBlocks, layerManager)) {
                 layerManager.recacheFullscreenMap(centerBlockX, centerBlockZ, widthBlocks, heightBlocks);
             }
         }
 
-        for (LayerRenderer layer : NavigatorApi.getActiveRenderersFor(JourneyMap)) {
+        for (LayerRenderer layer : NavigatorApi.getActiveRenderersByPriority(JourneyMap)) {
             if (layer instanceof JMLayerRenderer jmLayer) {
                 gridRenderer.draw(jmLayer.getRenderSteps(), xOffset, yOffset, drawScale, fontScale, 0.0);
             }
@@ -151,6 +138,7 @@ public abstract class FullscreenMixin extends JmUI {
             value = "FIELD",
             target = "Ljourneymap/client/ui/fullscreen/Fullscreen;mapTypeToolbar:Ljourneymap/client/ui/theme/ThemeToolbar;",
             opcode = Opcodes.PUTFIELD),
+        remap = false,
         require = 1)
     private void navigator$OnCreateMapTypeToolbar(Fullscreen owner, ThemeToolbar value) {
         final Theme theme = ThemeFileHandler.getCurrentTheme();
@@ -177,66 +165,46 @@ public abstract class FullscreenMixin extends JmUI {
         mapTypeToolbar = new ThemeToolbar(theme, buttonList);
     }
 
-    @Override
-    public void drawScreen(int width, int height, float f) {
-        try {
-            drawBackground(0);
-            drawMap();
-            drawScreenTimer.start();
-            layoutButtons();
-            List<String> tooltip = null;
-            if (firstLayoutPass) {
-                layoutButtons();
-                firstLayoutPass = false;
-            } else {
-                for (GuiButton guibutton : buttonList) {
-                    guibutton.drawButton(mc, width, height);
-                    if (tooltip == null && guibutton instanceof Button button) {
-                        if (button.mouseOver(mx, my)) {
-                            tooltip = button.getTooltip();
-                        }
-                    }
-                }
-            }
-
-            final int scaledMouseX = (mx * mc.displayWidth) / this.width;
-            final int scaledMouseY = (my * mc.displayHeight) / this.height;
+    @Inject(
+        method = "drawScreen",
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/client/renderer/RenderHelper;disableStandardItemLighting()V",
+            shift = At.Shift.BY,
+            by = 2))
+    private void navigator$drawCustomTooltip(CallbackInfo ci, @Local List<String> tooltip) {
+        if (tooltip == null || tooltip.isEmpty()) {
             for (LayerRenderer layer : NavigatorApi.getActiveRenderersFor(JourneyMap)) {
                 if (layer instanceof JMInteractableLayerRenderer waypointProviderLayer) {
-                    waypointProviderLayer.onMouseMove(scaledMouseX, scaledMouseY);
-                    if (tooltip == null) {
-                        tooltip = waypointProviderLayer.getTooltip();
-                    }
+                    waypointProviderLayer.drawCustomTooltip(getFontRenderer(), mx, my, this.width, this.height);
                 }
             }
-
-            if (chat != null) {
-                chat.drawScreen(width, height, f);
-            }
-
-            if (tooltip != null && !tooltip.isEmpty()) {
-                drawHoveringText(tooltip, mx, my, getFontRenderer());
-                RenderHelper.disableStandardItemLighting();
-            } else {
-                for (LayerRenderer layer : NavigatorApi.getActiveRenderersFor(JourneyMap)) {
-                    if (layer instanceof JMInteractableLayerRenderer waypointProviderLayer) {
-                        waypointProviderLayer.drawCustomTooltip(getFontRenderer(), mx, my, this.width, this.height);
-                    }
-                }
-            }
-
-        } catch (Throwable var11) {
-            logger.log(
-                Level.ERROR,
-                "Unexpected exception in jm.fullscreen.drawScreen(): " + LogFormatter.toString(var11));
-            UIManager.getInstance()
-                .closeAll();
-        } finally {
-            drawScreenTimer.stop();
         }
     }
 
-    @Inject(method = "keyTyped", at = @At(value = "HEAD"), remap = true, require = 1, cancellable = true)
+    @Inject(
+        method = "drawScreen",
+        at = @At(
+            value = "FIELD",
+            opcode = Opcodes.GETFIELD,
+            target = "Ljourneymap/client/ui/fullscreen/Fullscreen;chat:Ljourneymap/client/ui/fullscreen/MapChat;",
+            ordinal = 0,
+            shift = At.Shift.BEFORE,
+            remap = false))
+    private void navigator$getLayerTooltip(CallbackInfo ci, @Local LocalRef<List<String>> tooltip) {
+        final int scaledMouseX = (mx * mc.displayWidth) / this.width;
+        final int scaledMouseY = (my * mc.displayHeight) / this.height;
+        for (LayerRenderer layer : NavigatorApi.getActiveRenderersFor(JourneyMap)) {
+            if (layer instanceof JMInteractableLayerRenderer waypointProviderLayer) {
+                waypointProviderLayer.onMouseMove(scaledMouseX, scaledMouseY);
+                if (tooltip.get() == null) {
+                    tooltip.set(waypointProviderLayer.getTooltip());
+                }
+            }
+        }
+    }
+
+    @Inject(method = "keyTyped", at = @At(value = "HEAD"), require = 1, cancellable = true)
     private void navigator$onKeyPress(CallbackInfo ci, @Local(argsOnly = true) int keyCode) {
         if ((chat == null || chat.isHidden())) {
             for (LayerRenderer layer : NavigatorApi.getActiveRenderersFor(JourneyMap)) {
@@ -249,52 +217,59 @@ public abstract class FullscreenMixin extends JmUI {
         }
     }
 
-    @Inject(method = "onGuiClosed", at = @At("RETURN"), remap = true)
+    @Inject(method = "onGuiClosed", at = @At("RETURN"))
     private void navigator$onGuiClosed(CallbackInfo ci) {
         NavigatorApi.getEnabledLayers(JourneyMap)
             .forEach(layerManager -> layerManager.onGuiClosed(JourneyMap));
     }
 
-    @Override
-    protected void mouseClicked(int mouseX, int mouseY, int mouseButton) {
-        if (chat != null && !chat.isHidden()) {
-            chat.mouseClicked(mouseX, mouseY, mouseButton);
-        }
-
-        super.mouseClicked(mouseX, mouseY, mouseButton);
-        if (!this.isMouseOverButton(mouseX, mouseY)) {
-            final int scaledMouseX = mx * mc.displayWidth / width;
-            final int scaledMouseY = my * mc.displayHeight / height;
-            BlockCoordIntPair blockCoord = gridRenderer
-                .getBlockUnderMouse(Mouse.getEventX(), Mouse.getEventY(), mc.displayWidth, mc.displayHeight);
-            if (!navigator$onMapClicked(mouseButton, scaledMouseX, scaledMouseY, blockCoord)) {
-                layerDelegate.onMouseClicked(
-                    mc,
-                    Mouse.getEventX(),
-                    Mouse.getEventY(),
-                    gridRenderer.getWidth(),
-                    gridRenderer.getHeight(),
-                    blockCoord,
-                    mouseButton);
-            }
+    @WrapOperation(
+        method = "mouseClicked",
+        at = @At(
+            value = "INVOKE",
+            target = "Ljourneymap/client/ui/fullscreen/layer/LayerDelegate;onMouseClicked(Lnet/minecraft/client/Minecraft;DDIILjourneymap/client/model/BlockCoordIntPair;I)V",
+            remap = false))
+    private void navigator$mouseClicked(LayerDelegate instance, Minecraft mc, double mouseX, double mouseY,
+        int gridWidth, int gridHeight, BlockCoordIntPair clickedBlock, int mouseButton, Operation<Void> original) {
+        int scaledMouseX = mx * mc.displayWidth / width;
+        int scaledMouseY = my * mc.displayHeight / height;
+        if (!navigator$onMapClicked(mouseButton, scaledMouseX, scaledMouseY, clickedBlock)) {
+            original.call(instance, mc, mouseX, mouseY, gridWidth, gridHeight, clickedBlock, mouseButton);
         }
     }
 
     @Unique
     private boolean navigator$onMapClicked(int mouseButton, int mouseX, int mouseY, BlockCoordIntPair blockCoord) {
+        if (mouseButton != 0) return false;
         final long timestamp = System.currentTimeMillis();
         final boolean isDoubleClick = mouseX == navigator$oldMouseX && mouseY == navigator$oldMouseY
-            && timestamp - navigator$timeLastClick < 500;
+            && timestamp - navigator$timeLastClick < 250L;
         navigator$oldMouseX = mouseX;
         navigator$oldMouseY = mouseY;
-        navigator$timeLastClick = isDoubleClick ? 0 : timestamp;
-        if (mouseButton != 0) {
-            return false;
-        }
+        navigator$timeLastClick = timestamp;
         for (LayerRenderer layer : NavigatorApi.getActiveRenderersFor(JourneyMap)) {
             if (layer instanceof JMInteractableLayerRenderer waypointProviderLayer) {
                 return waypointProviderLayer.onMapClick(isDoubleClick, mouseX, mouseY, blockCoord.x, blockCoord.z);
             }
+        }
+        return false;
+    }
+
+    @Unique
+    private boolean navigator$shouldRecache(int centerX, int centerZ, int width, int height, LayerManager manager) {
+        if (!manager.isLayerActive()) return false;
+        long now = System.currentTimeMillis();
+        if (navigator$oldCenterX != centerX || navigator$oldCenterZ != centerZ
+            || navigator$oldWidth != width
+            || navigator$oldHeight != height
+            || manager.forceRefresh
+            || now - navigator$lastRecache >= 1000L) {
+            navigator$oldCenterX = centerX;
+            navigator$oldCenterZ = centerZ;
+            navigator$oldWidth = width;
+            navigator$oldHeight = height;
+            navigator$lastRecache = now;
+            return true;
         }
         return false;
     }

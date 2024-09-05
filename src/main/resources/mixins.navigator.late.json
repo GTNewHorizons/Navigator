@@ -4,5 +4,8 @@
   "package": "com.gtnewhorizons.navigator.mixins.late",
   "refmap": "mixins.navigator.refmap.json",
   "target": "@env(DEFAULT)",
-  "compatibilityLevel": "JAVA_8"
+  "compatibilityLevel": "JAVA_8",
+  "injectors": {
+    "maxShiftBy": 3
+  }
 }

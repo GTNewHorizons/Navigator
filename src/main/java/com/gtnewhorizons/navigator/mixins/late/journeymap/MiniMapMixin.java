@@ -55,7 +55,7 @@ public abstract class MiniMapMixin {
             }
         }
 
-        for (LayerRenderer layerRenderer : NavigatorApi.getActiveRenderersFor(JourneyMap)) {
+        for (LayerRenderer layerRenderer : NavigatorApi.getActiveRenderersByPriority(JourneyMap)) {
             for (RenderStep renderStep : layerRenderer.getRenderSteps()) {
                 if (renderStep instanceof DrawStep drawStep) {
                     drawStep.draw(

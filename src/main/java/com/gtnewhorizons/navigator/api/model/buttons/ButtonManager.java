@@ -11,6 +11,7 @@ public abstract class ButtonManager {
 
     protected boolean isActive = false;
     protected BooleanConsumer onToggle;
+    private BooleanConsumer notifyLayerToggled;
 
     /**
      * @param mod   the mod requesting the icon
@@ -25,16 +26,24 @@ public abstract class ButtonManager {
         this.onToggle = onToggle;
     }
 
+    public final void setLayerNotify(BooleanConsumer layerToggled) {
+        this.notifyLayerToggled = layerToggled;
+    }
+
     public boolean isActive() {
         return isActive;
     }
 
     public void activate() {
-        NavigatorApi.getDistinctButtons()
+        NavigatorApi.getDistinctButtons(this)
             .forEach(ButtonManager::deactivate);
         isActive = true;
         if (onToggle != null) {
             onToggle.accept(true);
+        }
+
+        if (notifyLayerToggled != null) {
+            notifyLayerToggled.accept(true);
         }
     }
 
@@ -42,6 +51,10 @@ public abstract class ButtonManager {
         isActive = false;
         if (onToggle != null) {
             onToggle.accept(false);
+        }
+
+        if (notifyLayerToggled != null) {
+            notifyLayerToggled.accept(false);
         }
     }
 
