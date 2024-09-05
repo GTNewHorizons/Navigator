@@ -5,6 +5,7 @@ import com.gtnewhorizons.navigator.config.GeneralConfig;
 import com.gtnewhorizons.navigator.impl.DirtyChunkLayerManager;
 
 import cpw.mods.fml.client.registry.ClientRegistry;
+import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.event.FMLPostInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
@@ -18,6 +19,9 @@ public class ClientProxy extends CommonProxy {
         if (GeneralConfig.enableDebugLayers) {
             NavigatorApi.registerLayerManager(DirtyChunkLayerManager.INSTANCE);
         }
+        FMLCommonHandler.instance()
+            .bus()
+            .register(new EventHandler());
     }
 
     @Override
