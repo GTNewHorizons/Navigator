@@ -13,6 +13,7 @@ import net.minecraft.util.ResourceLocation;
 
 import org.lwjgl.opengl.GL11;
 
+@SuppressWarnings("unused")
 public class DrawUtils {
 
     public static void drawGradientRect(double minPixelX, double minPixelY, double maxPixelX, double maxPixelY,
@@ -55,37 +56,30 @@ public class DrawUtils {
 
     public static void drawQuad(ResourceLocation texture, double x, double y, double width, double height, int color,
         int alpha) {
-
         GL11.glEnable(GL11.GL_BLEND);
         OpenGlHelper.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA, 1, 0);
-
         GL11.glEnable(GL11.GL_TEXTURE_2D);
         Minecraft.getMinecraft()
             .getTextureManager()
             .bindTexture(texture);
-
-        float[] c = floats(color);
-        GL11.glColor4f(c[0], c[1], c[2], alpha);
-
         Tessellator tessellator = Tessellator.instance;
         tessellator.startDrawingQuads();
         addRectToBufferWithUV(tessellator, x, y, width, height, color, alpha, 0, 0, 1, 1);
         tessellator.draw();
     }
 
-    public static void drawQuad(IIcon icon, double x, double y, double width, double height, int color, int alpha) {
+    public static void drawQuad(ResourceLocation texture, double x, double y, double width, double height, int color,
+        float alpha) {
+        drawQuad(texture, x, y, width, height, color, (int) alpha);
+    }
 
+    public static void drawQuad(IIcon icon, double x, double y, double width, double height, int color, int alpha) {
         GL11.glEnable(GL11.GL_BLEND);
         OpenGlHelper.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA, 1, 0);
-
         GL11.glEnable(GL11.GL_TEXTURE_2D);
         Minecraft.getMinecraft()
             .getTextureManager()
             .bindTexture(TextureMap.locationBlocksTexture);
-
-        float[] c = floats(color);
-        GL11.glColor4f(c[0], c[1], c[2], alpha);
-
         Tessellator tessellator = Tessellator.instance;
         tessellator.startDrawingQuads();
         addRectToBufferWithUV(
@@ -101,6 +95,10 @@ public class DrawUtils {
             icon.getMaxU(),
             icon.getMaxV());
         tessellator.draw();
+    }
+
+    public static void drawQuad(IIcon icon, double x, double y, double width, double height, int color, float alpha) {
+        drawQuad(icon, x, y, width, height, color, (int) alpha);
     }
 
     public static void addRectToBuffer(Tessellator tessellator, double x, double y, double w, double h, int color,
