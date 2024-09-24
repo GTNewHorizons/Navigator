@@ -54,9 +54,4 @@ public abstract class UniversalInteractableStep<T extends IWaypointAndLocationPr
 
     @Override
     public void onActionKeyPressed() {}
-
-    @Override
-    public boolean onActionWithKeyPressed(int keyCode) {
-        return false;
-    }
 }

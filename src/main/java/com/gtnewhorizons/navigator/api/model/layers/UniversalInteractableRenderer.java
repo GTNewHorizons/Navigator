@@ -9,11 +9,9 @@ import javax.annotation.Nonnull;
 
 import net.minecraft.client.gui.FontRenderer;
 
-import com.gtnewhorizons.navigator.api.NavigatorApi;
 import com.gtnewhorizons.navigator.api.model.steps.RenderStep;
 import com.gtnewhorizons.navigator.api.model.steps.UniversalInteractableStep;
 import com.gtnewhorizons.navigator.api.util.ClickPos;
-import com.gtnewhorizons.navigator.api.util.Util;
 
 public class UniversalInteractableRenderer extends UniversalLayerRenderer implements InteractableLayer {
 
@@ -104,16 +102,11 @@ public class UniversalInteractableRenderer extends UniversalLayerRenderer implem
             }
         }
 
-        if (hoveredRenderStep != null) {
-            if (Util.isKeyPressed(NavigatorApi.ACTION_KEY)) {
-                hoveredRenderStep.onActionKeyPressed();
-                manager.forceRefresh();
-                return true;
-            } else if (hoveredRenderStep.onActionWithKeyPressed(keyCode)) {
-                manager.forceRefresh();
-                return true;
-            }
+        if (hoveredRenderStep != null && hoveredRenderStep.onKeyPressed(keyCode)) {
+            manager.forceRefresh();
+            return true;
         }
+
         return false;
     }
 
