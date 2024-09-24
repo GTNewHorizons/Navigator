@@ -7,13 +7,11 @@ import javax.annotation.Nonnull;
 
 import net.minecraft.client.gui.FontRenderer;
 
-import com.gtnewhorizons.navigator.api.NavigatorApi;
 import com.gtnewhorizons.navigator.api.journeymap.drawsteps.JMInteractableStep;
 import com.gtnewhorizons.navigator.api.journeymap.drawsteps.JMRenderStep;
 import com.gtnewhorizons.navigator.api.model.layers.InteractableLayer;
 import com.gtnewhorizons.navigator.api.model.layers.InteractableLayerManager;
 import com.gtnewhorizons.navigator.api.model.steps.RenderStep;
-import com.gtnewhorizons.navigator.api.util.Util;
 
 public abstract class JMInteractableLayerRenderer extends JMLayerRenderer implements InteractableLayer {
 
@@ -97,8 +95,7 @@ public abstract class JMInteractableLayerRenderer extends JMLayerRenderer implem
      */
     @Override
     public boolean onKeyPressed(int keyCode) {
-        if (Util.isKeyPressed(NavigatorApi.ACTION_KEY) && hoveredDrawStep != null) {
-            hoveredDrawStep.onActionKeyPressed();
+        if (hoveredDrawStep != null && hoveredDrawStep.onKeyPressed(keyCode)) {
             manager.forceRefresh();
             return true;
         }
