@@ -10,6 +10,8 @@ public interface InteractableStep extends RenderStep {
 
     void onActionKeyPressed();
 
+    boolean onActionWithKeyPressed(int keyCode);
+
     @Override
     default IWaypointAndLocationProvider getLocation() {
         return getLocationProvider();

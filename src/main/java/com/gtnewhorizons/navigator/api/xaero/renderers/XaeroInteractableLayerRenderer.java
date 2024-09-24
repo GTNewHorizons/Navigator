@@ -94,10 +94,15 @@ public abstract class XaeroInteractableLayerRenderer extends XaeroLayerRenderer 
      * @return true if the key press was handled, false otherwise
      */
     public boolean onKeyPressed(int keyCode) {
-        if (Util.isKeyPressed(NavigatorApi.ACTION_KEY) && hovered != null) {
-            hovered.onActionKeyPressed();
-            manager.forceRefresh();
-            return true;
+        if (hovered != null) {
+            if (Util.isKeyPressed(NavigatorApi.ACTION_KEY)) {
+                hovered.onActionKeyPressed();
+                manager.forceRefresh();
+                return true;
+            } else if (hovered.onActionWithKeyPressed(keyCode)) {
+                manager.forceRefresh();
+                return true;
+            }
         }
         return false;
     }

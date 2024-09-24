@@ -97,10 +97,15 @@ public abstract class JMInteractableLayerRenderer extends JMLayerRenderer implem
      */
     @Override
     public boolean onKeyPressed(int keyCode) {
-        if (Util.isKeyPressed(NavigatorApi.ACTION_KEY) && hoveredDrawStep != null) {
-            hoveredDrawStep.onActionKeyPressed();
-            manager.forceRefresh();
-            return true;
+        if (hoveredDrawStep != null) {
+            if (Util.isKeyPressed(NavigatorApi.ACTION_KEY)) {
+                hoveredDrawStep.onActionKeyPressed();
+                manager.forceRefresh();
+                return true;
+            } else if (hoveredDrawStep.onActionWithKeyPressed(keyCode)) {
+                manager.forceRefresh();
+                return true;
+            }
         }
         return false;
     }

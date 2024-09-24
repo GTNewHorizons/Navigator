@@ -104,10 +104,15 @@ public class UniversalInteractableRenderer extends UniversalLayerRenderer implem
             }
         }
 
-        if (Util.isKeyPressed(NavigatorApi.ACTION_KEY) && hoveredRenderStep != null) {
-            hoveredRenderStep.onActionKeyPressed();
-            manager.forceRefresh();
-            return true;
+        if (hoveredRenderStep != null) {
+            if (Util.isKeyPressed(NavigatorApi.ACTION_KEY)) {
+                hoveredRenderStep.onActionKeyPressed();
+                manager.forceRefresh();
+                return true;
+            } else if (hoveredRenderStep.onActionWithKeyPressed(keyCode)) {
+                manager.forceRefresh();
+                return true;
+            }
         }
         return false;
     }
