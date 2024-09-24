@@ -8,10 +8,8 @@ import javax.annotation.Nonnull;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.GuiScreen;
 
-import com.gtnewhorizons.navigator.api.NavigatorApi;
 import com.gtnewhorizons.navigator.api.model.layers.InteractableLayer;
 import com.gtnewhorizons.navigator.api.model.layers.InteractableLayerManager;
-import com.gtnewhorizons.navigator.api.util.Util;
 import com.gtnewhorizons.navigator.api.xaero.rendersteps.XaeroInteractableStep;
 import com.gtnewhorizons.navigator.api.xaero.rendersteps.XaeroRenderStep;
 
@@ -94,8 +92,7 @@ public abstract class XaeroInteractableLayerRenderer extends XaeroLayerRenderer 
      * @return true if the key press was handled, false otherwise
      */
     public boolean onKeyPressed(int keyCode) {
-        if (Util.isKeyPressed(NavigatorApi.ACTION_KEY) && hovered != null) {
-            hovered.onActionKeyPressed();
+        if (hovered != null && hovered.onKeyPressed(keyCode)) {
             manager.forceRefresh();
             return true;
         }
