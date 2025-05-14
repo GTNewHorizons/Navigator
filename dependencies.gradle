@@ -36,9 +36,10 @@
 dependencies {
     api("com.github.GTNewHorizons:GTNHLib:0.6.22:dev")
     runtimeOnlyNonPublishable("com.github.GTNewHorizons:NotEnoughItems:2.7.44-GTNH:dev")
+    compileOnlyApi('org.jetbrains:annotations:25.0.0')
 
-    api(rfg.deobf('maven.modrinth:journeymap:5.2.9'))
-    api(deobfCurse('xaeros-minimap-263420:6012805'))
-    api(deobfCurse('xaeros-world-map-317780:5987124'))
+    compileOnlyApi(rfg.deobf('maven.modrinth:journeymap:5.2.9'))
+    compileOnly(deobfCurse('xaeros-minimap-263420:6012805'))
+    compileOnly(deobfCurse('xaeros-world-map-317780:5987124'))
     compileOnly(deobf('https://media.forgecdn.net/files/2462/146/mod_voxelMap_1.7.0b_for_1.7.10.litemod', 'mod_voxelMap_1.7.0b_for_1.7.10.jar'))
 }

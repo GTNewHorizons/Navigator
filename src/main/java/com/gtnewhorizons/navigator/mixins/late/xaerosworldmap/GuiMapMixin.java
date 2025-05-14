@@ -28,6 +28,7 @@ import com.gtnewhorizons.navigator.api.xaero.buttons.SizedGuiTexturedButton;
 import com.gtnewhorizons.navigator.api.xaero.renderers.XaeroInteractableLayerRenderer;
 import com.gtnewhorizons.navigator.api.xaero.renderers.XaeroLayerRenderer;
 import com.gtnewhorizons.navigator.api.xaero.rendersteps.XaeroRenderStep;
+import com.gtnewhorizons.navigator.internal.SearchBar;
 import com.llamalad7.mixinextras.sugar.Local;
 
 import xaero.map.gui.CursorBox;
@@ -87,6 +88,9 @@ public abstract class GuiMapMixin extends ScreenBase {
     @Shadow
     private int mouseBlockPosZ;
 
+    @Unique
+    private SearchBar navigator$searchBar;
+
     @Inject(method = "initGui", at = @At("RETURN"))
     private void navigator$injectConstruct(CallbackInfo ci) {
         NavigatorApi.getEnabledLayers(XaeroWorldMap)
@@ -94,6 +98,14 @@ public abstract class GuiMapMixin extends ScreenBase {
                 layerManager.onGuiOpened(XaeroWorldMap);
                 layerManager.forceRefresh();
             });
+        navigator$searchBar = new SearchBar(6, height - 21, Math.min(width / 2 - 50, 200), 12);
+        navigator$searchBar.setTextConsumer(
+            text -> NavigatorApi.getEnabledLayers(XaeroWorldMap)
+                .forEach(layerManager -> {
+                    if (layerManager.isLayerActive() && layerManager.hasSearchField()) {
+                        layerManager.onSearch(text);
+                    }
+                }));
     }
 
     @Inject(
@@ -119,6 +131,8 @@ public abstract class GuiMapMixin extends ScreenBase {
                 interactableLayer.onMouseMove((int) mousePosX, (int) mousePosZ);
             }
         }
+
+        navigator$searchBar.setVisible(false);
     }
 
     @Inject(
@@ -188,6 +202,13 @@ public abstract class GuiMapMixin extends ScreenBase {
                 }
             }
         }
+
+        for (LayerManager layerManager : NavigatorApi.getEnabledLayers(XaeroWorldMap)) {
+            if (layerManager.isLayerActive() && layerManager.hasSearchField()) {
+                navigator$searchBar.setVisible(true);
+                navigator$searchBar.drawTextBox();
+            }
+        }
     }
 
     @Inject(method = "initGui", at = @At(value = "TAIL"), remap = true)
@@ -221,6 +242,33 @@ public abstract class GuiMapMixin extends ScreenBase {
             if (layer instanceof InteractableLayer interactableLayer && interactableLayer.onKeyPressed(code)) {
                 cir.setReturnValue(true);
             }
+        }
+    }
+
+    @Inject(method = "mouseClicked", at = @At(value = "HEAD"), cancellable = true)
+    private void navigator$mouseClicked(int x, int y, int button, CallbackInfo ci) {
+        if (navigator$searchBar.getVisible()) {
+            navigator$searchBar.mouseClicked(x, y, button);
+            if (navigator$searchBar.isHovered(x, y)) {
+                ci.cancel();
+            }
+        }
+    }
+
+    @Inject(method = "keyTyped", at = @At(value = "HEAD"), cancellable = true)
+    private void navigator$keyTyped(char par1, int par2, CallbackInfo ci) {
+        for (LayerManager layerManager : NavigatorApi.getEnabledLayers(XaeroWorldMap)) {
+            if (layerManager.isLayerActive() && layerManager.hasSearchField()
+                && navigator$searchBar.textboxKeyTyped(par1, par2)) {
+                ci.cancel();
+            }
+        }
+    }
+
+    @Inject(method = "updateScreen", at = @At(value = "TAIL"), remap = true)
+    private void navigator$updateScreen(CallbackInfo ci) {
+        if (navigator$searchBar.getVisible()) {
+            navigator$searchBar.updateCursorCounter();
         }
     }
 
