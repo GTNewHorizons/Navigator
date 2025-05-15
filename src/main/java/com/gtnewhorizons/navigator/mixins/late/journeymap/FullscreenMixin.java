@@ -15,7 +15,6 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
 import com.gtnewhorizons.navigator.api.NavigatorApi;
 import com.gtnewhorizons.navigator.api.journeymap.render.JMLayerRenderer;
@@ -24,13 +23,13 @@ import com.gtnewhorizons.navigator.api.model.layers.InteractableLayer;
 import com.gtnewhorizons.navigator.api.model.layers.LayerManager;
 import com.gtnewhorizons.navigator.api.model.layers.LayerRenderer;
 import com.gtnewhorizons.navigator.api.model.layers.UniversalLayerRenderer;
+import com.gtnewhorizons.navigator.internal.SearchBar;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.llamalad7.mixinextras.sugar.ref.LocalRef;
 
 import journeymap.client.io.ThemeFileHandler;
-import journeymap.client.log.StatTimer;
 import journeymap.client.model.BlockCoordIntPair;
 import journeymap.client.render.draw.DrawStep;
 import journeymap.client.render.map.GridRenderer;
@@ -91,6 +90,9 @@ public abstract class FullscreenMixin extends JmUI {
     @Shadow(remap = false)
     int my;
 
+    @Unique
+    private SearchBar navigator$searchBar;
+
     public FullscreenMixin() {
         super("");
     }
@@ -105,17 +107,24 @@ public abstract class FullscreenMixin extends JmUI {
                 layerManager.onGuiOpened(JourneyMap);
                 layerManager.forceRefresh();
             });
+        navigator$searchBar = new SearchBar(6, height - 21, Math.min(width / 2 - 50, 200), 16);
+        navigator$searchBar.setTextConsumer(
+            text -> NavigatorApi.getEnabledLayers(JourneyMap)
+                .forEach(layerManager -> {
+                    if (layerManager.isLayerActive() && layerManager.hasSearchField()) {
+                        layerManager.onSearch(text);
+                    }
+                }));
     }
 
     @Inject(
         method = "drawMap",
         at = @At(value = "INVOKE", target = "Ljourneymap/client/model/MapState;getDrawWaypointSteps()Ljava/util/List;"),
         remap = false,
-        require = 1,
-        locals = LocalCapture.CAPTURE_FAILEXCEPTION)
+        require = 1)
     @SuppressWarnings("unchecked")
-    private void navigator$onBeforeDrawJourneyMapWaypoints(CallbackInfo ci, boolean refreshReady, StatTimer timer,
-        int xOffset, int yOffset, float drawScale) {
+    private void navigator$onBeforeDrawJourneyMapWaypoints(CallbackInfo ci, @Local(ordinal = 0) int xOffset,
+        @Local(ordinal = 1) int yOffset, @Local float drawScale) {
         final int fontScale = getMapFontScale();
         final Minecraft minecraft = Minecraft.getMinecraft();
         final int centerBlockX = (int) Math.round(gridRenderer.getCenterBlockX());
@@ -134,6 +143,8 @@ public abstract class FullscreenMixin extends JmUI {
                 gridRenderer.draw(steps, xOffset, yOffset, drawScale, fontScale, 0.0);
             }
         }
+
+        navigator$searchBar.setVisible(false);
     }
 
     @Redirect(
@@ -184,6 +195,14 @@ public abstract class FullscreenMixin extends JmUI {
                 }
             }
         }
+
+        for (LayerManager layerManager : NavigatorApi.getEnabledLayers(JourneyMap)) {
+            if (layerManager.isLayerActive() && layerManager.hasSearchField()) {
+                navigator$searchBar.setVisible(true);
+                navigator$searchBar.drawTextBox();
+                navigator$searchBar.updateCursorCounter();
+            }
+        }
     }
 
     @Inject(
@@ -209,7 +228,16 @@ public abstract class FullscreenMixin extends JmUI {
     }
 
     @Inject(method = "keyTyped", at = @At(value = "HEAD"), require = 1, cancellable = true)
-    private void navigator$onKeyPress(CallbackInfo ci, @Local(argsOnly = true) int keyCode) {
+    private void navigator$onKeyPress(CallbackInfo ci, @Local(argsOnly = true) int keyCode,
+        @Local(argsOnly = true) char typedChar) {
+        for (LayerManager layerManager : NavigatorApi.getEnabledLayers(JourneyMap)) {
+            if (layerManager.isLayerActive() && layerManager.hasSearchField()
+                && navigator$searchBar.textboxKeyTyped(typedChar, keyCode)) {
+                ci.cancel();
+                return;
+            }
+        }
+
         if ((chat == null || chat.isHidden())) {
             for (LayerRenderer layer : NavigatorApi.getActiveRenderersFor(JourneyMap)) {
                 if (layer instanceof InteractableLayer waypointProvider) {
@@ -234,9 +262,17 @@ public abstract class FullscreenMixin extends JmUI {
             target = "Ljourneymap/client/ui/fullscreen/layer/LayerDelegate;onMouseClicked(Lnet/minecraft/client/Minecraft;DDIILjourneymap/client/model/BlockCoordIntPair;I)V",
             remap = false))
     private void navigator$mouseClicked(LayerDelegate instance, Minecraft mc, double mouseX, double mouseY,
-        int gridWidth, int gridHeight, BlockCoordIntPair clickedBlock, int mouseButton, Operation<Void> original) {
+        int gridWidth, int gridHeight, BlockCoordIntPair clickedBlock, int mouseButton, Operation<Void> original,
+        @Local(ordinal = 0, argsOnly = true) int mx, @Local(ordinal = 1, argsOnly = true) int my) {
         int scaledMouseX = mx * mc.displayWidth / width;
         int scaledMouseY = my * mc.displayHeight / height;
+        if (navigator$searchBar.getVisible()) {
+            navigator$searchBar.mouseClicked(mx, my, mouseButton);
+            if (navigator$searchBar.isHovered(mx, my)) {
+                return;
+            }
+        }
+
         if (!navigator$onMapClicked(mouseButton, scaledMouseX, scaledMouseY, clickedBlock)) {
             original.call(instance, mc, mouseX, mouseY, gridWidth, gridHeight, clickedBlock, mouseButton);
         }

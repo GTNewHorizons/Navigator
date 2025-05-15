@@ -11,6 +11,8 @@ import javax.annotation.Nullable;
 
 import net.minecraft.client.Minecraft;
 
+import org.jetbrains.annotations.NotNull;
+
 import com.gtnewhorizons.navigator.api.model.SupportedMods;
 import com.gtnewhorizons.navigator.api.model.buttons.ButtonManager;
 import com.gtnewhorizons.navigator.api.model.locations.ILocationProvider;
@@ -39,6 +41,7 @@ public abstract class LayerManager {
     private SupportedMods openModGui;
     private boolean refreshDim = true;
     private boolean clearFull, clearCurrent;
+    private boolean hasSearchField;
 
     public LayerManager(ButtonManager buttonManager) {
         this.buttonManager = buttonManager;
@@ -337,6 +340,16 @@ public abstract class LayerManager {
         layerRenderer.values()
             .forEach(LayerRenderer::clearFullCache);
     }
+
+    protected void setHasSearchField(boolean hasSearchField) {
+        this.hasSearchField = hasSearchField;
+    }
+
+    public boolean hasSearchField() {
+        return hasSearchField;
+    }
+
+    public void onSearch(@NotNull String searchString) {}
 
     /**
      * @deprecated Use {@link #updateElement(ILocationProvider)} to update the info contained in a single
