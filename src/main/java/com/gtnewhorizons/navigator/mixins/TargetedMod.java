@@ -1,31 +1,26 @@
 package com.gtnewhorizons.navigator.mixins;
 
-public enum TargetedMod {
+import org.jetbrains.annotations.NotNull;
 
-    VANILLA("Minecraft", null),
-    JOURNEYMAP("JourneyMap", null, "journeymap"),
-    XAEROMINIMAP("Xaero's Minimap", "xaero.common.core.XaeroMinimapPlugin", "XaeroMinimap"),
-    XAEROWORLDMAP("Xaero's World Map", "xaero.map.core.XaeroWorldMapPlugin", "XaeroWorldMap");
+import com.gtnewhorizon.gtnhmixins.builders.ITargetMod;
+import com.gtnewhorizon.gtnhmixins.builders.TargetModBuilder;
 
-    /** The "name" in the @Mod annotation */
-    public final String modName;
-    /** Class that implements the IFMLLoadingPlugin interface */
-    public final String coreModClass;
-    /** The "modid" in the @Mod annotation */
-    public final String modId;
+public enum TargetedMod implements ITargetMod {
 
-    TargetedMod(String modName, String coreModClass) {
-        this(modName, coreModClass, null);
+    JOURNEYMAP(null, "journeymap"),
+    XAEROMINIMAP("xaero.common.core.XaeroMinimapPlugin", "XaeroMinimap"),
+    XAEROWORLDMAP("xaero.map.core.XaeroWorldMapPlugin", "XaeroWorldMap");
+
+    private final TargetModBuilder builder;
+
+    TargetedMod(String coreModClass, String modId) {
+        this.builder = new TargetModBuilder().setCoreModClass(coreModClass)
+            .setModId(modId);
     }
 
-    TargetedMod(String modName, String coreModClass, String modId) {
-        this.modName = modName;
-        this.coreModClass = coreModClass;
-        this.modId = modId;
-    }
-
+    @NotNull
     @Override
-    public String toString() {
-        return "TargetedMod{modName='" + modName + "', coreModClass='" + coreModClass + "', modId='" + modId + "'}";
+    public TargetModBuilder getBuilder() {
+        return builder;
     }
 }

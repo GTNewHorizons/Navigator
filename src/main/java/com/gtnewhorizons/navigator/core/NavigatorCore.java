@@ -7,6 +7,7 @@ import java.util.Set;
 import com.gtnewhorizon.gtnhlib.config.ConfigException;
 import com.gtnewhorizon.gtnhlib.config.ConfigurationManager;
 import com.gtnewhorizon.gtnhmixins.IEarlyMixinLoader;
+import com.gtnewhorizon.gtnhmixins.builders.IMixins;
 import com.gtnewhorizons.navigator.config.GeneralConfig;
 import com.gtnewhorizons.navigator.config.ModuleConfig;
 import com.gtnewhorizons.navigator.mixins.Mixins;
@@ -55,6 +56,6 @@ public class NavigatorCore implements IFMLLoadingPlugin, IEarlyMixinLoader {
 
     @Override
     public List<String> getMixins(Set<String> loadedCoreMods) {
-        return Mixins.getEarlyMixins(loadedCoreMods);
+        return IMixins.getEarlyMixins(Mixins.class, loadedCoreMods);
     }
 }
