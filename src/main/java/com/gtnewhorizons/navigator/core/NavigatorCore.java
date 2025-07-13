@@ -13,6 +13,7 @@ import com.gtnewhorizons.navigator.mixins.Mixins;
 
 import cpw.mods.fml.relauncher.IFMLLoadingPlugin;
 
+@IFMLLoadingPlugin.MCVersion("1.7.10")
 public class NavigatorCore implements IFMLLoadingPlugin, IEarlyMixinLoader {
 
     static {
