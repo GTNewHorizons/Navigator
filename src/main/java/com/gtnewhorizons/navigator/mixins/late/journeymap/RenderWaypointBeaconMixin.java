@@ -33,8 +33,7 @@ public abstract class RenderWaypointBeaconMixin {
         method = "renderAll(F)V",
         at = @At(
             value = "INVOKE",
-            target = "Ljourneymap/client/waypoint/WaypointStore;instance()Ljourneymap/client/waypoint/WaypointStore;"
-        ),
+            target = "Ljourneymap/client/waypoint/WaypointStore;instance()Ljourneymap/client/waypoint/WaypointStore;"),
         remap = false,
         require = 1)
     private static void navigator$onRenderAll(float partialTicks, CallbackInfo ci) {
@@ -42,7 +41,8 @@ public abstract class RenderWaypointBeaconMixin {
             WaypointManager waypointManager = layer.getWaypointManager(JourneyMap);
             if (waypointManager instanceof JMWaypointManager jmWaypointManager && waypointManager.hasWaypoint()) {
                 final Waypoint waypoint = jmWaypointManager.getJmWaypoint();
-                if (waypoint.getDimensions().contains(mc.thePlayer.dimension)) {
+                if (waypoint.getDimensions()
+                    .contains(mc.thePlayer.dimension)) {
                     doRender(waypoint);
                 }
             }
