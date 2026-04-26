@@ -25,12 +25,12 @@ public abstract class RenderWaypointBeaconMixin {
     static Minecraft mc;
 
     @Shadow(remap = false)
-    static void doRender(Waypoint waypoint) {
-        throw new IllegalStateException("Mixin failed to shadow doRender()");
+    static void doRenderNoFade(Waypoint waypoint) {
+        throw new IllegalStateException("Mixin failed to shadow doRenderNoFade()");
     }
 
     @Inject(
-        method = "renderAll",
+        method = "renderAll(F)V",
         at = @At(
             value = "INVOKE",
             target = "Ljourneymap/client/waypoint/WaypointStore;instance()Ljourneymap/client/waypoint/WaypointStore;"),
@@ -43,7 +43,7 @@ public abstract class RenderWaypointBeaconMixin {
                 final Waypoint waypoint = jmWaypointManager.getJmWaypoint();
                 if (waypoint.getDimensions()
                     .contains(mc.thePlayer.dimension)) {
-                    doRender(waypoint);
+                    doRenderNoFade(waypoint);
                 }
             }
         }
