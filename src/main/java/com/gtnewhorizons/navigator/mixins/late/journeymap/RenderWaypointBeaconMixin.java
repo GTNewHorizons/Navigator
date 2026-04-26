@@ -18,7 +18,7 @@ import com.gtnewhorizons.navigator.api.model.waypoints.WaypointManager;
 import journeymap.client.model.Waypoint;
 import journeymap.client.render.ingame.RenderWaypointBeacon;
 
-@Mixin(RenderWaypointBeacon.class)
+@Mixin(value = RenderWaypointBeacon.class, remap = false)
 public abstract class RenderWaypointBeaconMixin {
 
     @Shadow(remap = false)
@@ -36,7 +36,7 @@ public abstract class RenderWaypointBeaconMixin {
             target = "Ljourneymap/client/waypoint/WaypointStore;instance()Ljourneymap/client/waypoint/WaypointStore;"),
         remap = false,
         require = 1)
-    private static void navigator$onRenderAll(CallbackInfo ci) {
+    private static void navigator$onRenderAll(float partialTicks, CallbackInfo ci) {
         for (InteractableLayerManager layer : NavigatorApi.getInteractableLayers()) {
             WaypointManager waypointManager = layer.getWaypointManager(JourneyMap);
             if (waypointManager instanceof JMWaypointManager jmWaypointManager && waypointManager.hasWaypoint()) {
