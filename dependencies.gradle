@@ -38,7 +38,7 @@ dependencies {
     runtimeOnlyNonPublishable("com.github.GTNewHorizons:NotEnoughItems:2.8.93-GTNH:dev")
     compileOnlyApi('org.jetbrains:annotations:25.0.0')
 
-    compileOnlyApi(rfg.deobf('maven.modrinth:journeymap:5.2.9'))
+    compileOnlyApi(rfg.deobf('maven.modrinth:journeymap:v5.2.13'))
     compileOnly(deobfCurse('xaeros-minimap-263420:6012805'))
     compileOnly(deobfCurse('xaeros-world-map-317780:5987124'))
     compileOnly(deobfCurse('voxelmap-225179:2462146'))
