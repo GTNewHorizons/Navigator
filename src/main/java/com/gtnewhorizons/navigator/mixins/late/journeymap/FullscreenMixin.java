@@ -200,8 +200,14 @@ public abstract class FullscreenMixin extends JmUI {
             if (layerManager.isLayerActive() && layerManager.hasSearchField()) {
                 navigator$searchBar.setVisible(true);
                 navigator$searchBar.drawTextBox();
-                navigator$searchBar.updateCursorCounter();
             }
+        }
+    }
+
+    @Inject(method = "updateScreen", at = @At("RETURN"))
+    private void navigator$updateSearchBarCursor(CallbackInfo ci) {
+        if (navigator$searchBar != null && navigator$searchBar.getVisible()) {
+            navigator$searchBar.updateCursorCounter();
         }
     }
 
