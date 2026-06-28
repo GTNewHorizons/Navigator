@@ -3,9 +3,11 @@ package com.gtnewhorizons.navigator.internal;
 import java.util.function.Consumer;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiTextField;
 
-public class SearchBar extends GuiTextField {
+import com.gtnewhorizons.navigator.api.util.Util;
+import com.gtnewhorizons.navigator.internal.nei.NEISearchFormatter;
+
+public class SearchBar extends FormattedTextField {
 
     private Consumer<String> textConsumer;
 
@@ -13,6 +15,16 @@ public class SearchBar extends GuiTextField {
 
     public SearchBar(int x, int y, int width, int height) {
         super(Minecraft.getMinecraft().fontRenderer, x, y, width, height);
+        setFormatter(resolveFormatter());
+    }
+
+    private static TextFormatter resolveFormatter() {
+        if (Util.isNEIInstalled()) {
+            try {
+                return NEISearchFormatter.create();
+            } catch (Throwable ignored) {}
+        }
+        return TextFormatter.DEFAULT;
     }
 
     @Override
@@ -28,7 +40,7 @@ public class SearchBar extends GuiTextField {
     public void drawTextBox() {
         super.drawTextBox();
         if (!isFocused() && getText().isEmpty()) {
-            Minecraft.getMinecraft().fontRenderer.drawString("Search...", xPosition + 2, yPosition + 4, 0x808080);
+            fontRenderer.drawString("Search...", xPosition + 2, yPosition + 4, 0x808080);
         }
 
         if (!getText().equals(oldText)) {

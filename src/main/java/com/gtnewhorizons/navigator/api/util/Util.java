@@ -13,12 +13,14 @@ public class Util {
     private static final boolean isJourneyMapLoaded;
     private static final boolean isXaeroWorldMapLoaded;
     private static final boolean isXaeroMinimapLoaded;
+    private static final boolean isNEILoaded;
     private static boolean isVoxelMapLoaded;
 
     static {
         isJourneyMapLoaded = Loader.isModLoaded("journeymap");
         isXaeroWorldMapLoaded = Loader.isModLoaded("XaeroWorldMap");
         isXaeroMinimapLoaded = Loader.isModLoaded("XaeroMinimap");
+        isNEILoaded = Loader.isModLoaded("NotEnoughItems");
         isVoxelMapLoaded = false;
         try {
             Class.forName("com.thevoxelbox.voxelmap.litemod.LiteModVoxelMap");
@@ -42,6 +44,10 @@ public class Util {
 
     public static boolean isVoxelMapInstalled() {
         return isVoxelMapLoaded;
+    }
+
+    public static boolean isNEIInstalled() {
+        return isNEILoaded;
     }
 
     public static int coordBlockToChunk(int blockCoord) {
