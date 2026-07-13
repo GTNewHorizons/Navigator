@@ -17,10 +17,7 @@ import com.gtnewhorizons.navigator.api.model.buttons.ButtonManager;
 import com.gtnewhorizons.navigator.api.model.layers.InteractableLayerManager;
 import com.gtnewhorizons.navigator.api.model.layers.LayerManager;
 import com.gtnewhorizons.navigator.api.model.layers.LayerRenderer;
-import com.gtnewhorizons.navigator.api.util.Util;
-import com.gtnewhorizons.navigator.mixins.late.journeymap.FullscreenAccessor;
-
-import journeymap.client.render.map.GridRenderer;
+import com.gtnewhorizons.navigator.internal.journeymap.JourneyMapIntegration;
 
 public final class NavigatorApi {
 
@@ -86,13 +83,8 @@ public final class NavigatorApi {
     }
 
     public void openJourneyMapAt(@Nullable LayerManager layer, int blockX, int blockZ, int zoom) {
-        if (!Util.isJourneyMapV5Installed()) return;
-        final GridRenderer gridRenderer = FullscreenAccessor.getGridRenderer();
-        if (gridRenderer == null) return;
-
         if (layer != null) layer.activateLayer();
-        if (zoom == -1) zoom = gridRenderer.getZoom();
-        gridRenderer.center(gridRenderer.getMapType(), blockX, blockZ, zoom);
+        JourneyMapIntegration.centerOn(blockX, blockZ, zoom);
     }
 
     public void openJourneyMapAt(@Nullable LayerManager layer, int blockX, int blockZ) {

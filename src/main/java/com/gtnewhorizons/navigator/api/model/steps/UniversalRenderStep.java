@@ -5,22 +5,15 @@ import javax.annotation.Nullable;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiScreen;
 
-import org.joml.Vector2d;
 import org.lwjgl.opengl.GL11;
 
 import com.gtnewhorizons.navigator.api.NavigatorApi;
-import com.gtnewhorizons.navigator.api.journeymap.drawsteps.JMRenderStep;
 import com.gtnewhorizons.navigator.api.model.locations.ILocationProvider;
 import com.gtnewhorizons.navigator.api.util.DrawUtils;
 import com.gtnewhorizons.navigator.api.xaero.rendersteps.XaeroRenderStep;
 
-import cpw.mods.fml.common.Optional;
-import journeymap.client.render.map.GridRenderer;
+public abstract class UniversalRenderStep<T extends ILocationProvider> implements XaeroRenderStep {
 
-@Optional.Interface(iface = "com.gtnewhorizons.navigator.api.journeymap.drawsteps.JMRenderStep", modid = "journeymap")
-public abstract class UniversalRenderStep<T extends ILocationProvider> implements JMRenderStep, XaeroRenderStep {
-
-    private final Vector2d pos = new Vector2d();
     protected double fontScale = 1;
     protected double rotation = 0;
     protected double width = NavigatorApi.CHUNK_WIDTH;
@@ -68,21 +61,15 @@ public abstract class UniversalRenderStep<T extends ILocationProvider> implement
         GL11.glPopMatrix();
     }
 
-    @Override
-    public final void draw(double draggedPixelX, double draggedPixelY, GridRenderer gridRenderer, float drawScale,
+    public final void drawJourneyMap(double x, double y, float drawScale, double zoom, double blockSize,
         double fontScale, double rotation) {
         this.fontScale = fontScale;
         this.rotation = rotation;
         isJourneyMap = true;
-        zoom = gridRenderer.getZoom();
-        Vector2d blockPos = getBlockFromGrid(
-            gridRenderer,
-            draggedPixelX,
-            draggedPixelY,
-            location.getBlockX(),
-            location.getBlockZ());
-        x = blockPos.x;
-        y = blockPos.y;
+        this.zoom = zoom;
+        this.blockSize = blockSize;
+        this.x = x;
+        this.y = y;
         preRender(getX(), getY(), drawScale, zoom);
         GL11.glPushMatrix();
         DrawUtils.setupDrawing();
@@ -175,15 +162,6 @@ public abstract class UniversalRenderStep<T extends ILocationProvider> implement
     @Override
     public T getLocation() {
         return location;
-    }
-
-    private Vector2d getBlockFromGrid(GridRenderer gridRenderer, double pixelX, double pixelY, double x, double z) {
-        blockSize = (int) Math.pow(2.0, gridRenderer.getZoom());
-        double localBlockX = x - gridRenderer.getCenterBlockX();
-        double localBlockZ = z - gridRenderer.getCenterBlockZ();
-        double pixelOffsetX = (double) (gridRenderer.getWidth() / 2) + localBlockX * blockSize;
-        double pixelOffsetZ = (double) (gridRenderer.getHeight() / 2) + localBlockZ * blockSize;
-        return pos.set(pixelOffsetX + pixelX, pixelOffsetZ + pixelY);
     }
 
     private int getXaeroZoomAsSteps(double zoom) {
