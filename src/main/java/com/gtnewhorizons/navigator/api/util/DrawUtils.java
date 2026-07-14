@@ -13,9 +13,16 @@ import net.minecraft.util.ResourceLocation;
 
 import org.lwjgl.opengl.GL11;
 
+/**
+ * Immediate-mode drawing helpers used by Navigator render steps.
+ * <p>
+ * Colors are RGB integers unless documented otherwise; alpha arguments use {@code 0..255}. Methods configure the GL
+ * state they require but callers remain responsible for restoring any additional state they change.
+ */
 @SuppressWarnings("unused")
 public class DrawUtils {
 
+    /** Draws a vertical ARGB gradient rectangle at an explicit Z level. */
     public static void drawGradientRect(double minPixelX, double minPixelY, double maxPixelX, double maxPixelY,
         double z, int colorA, int colorB) {
         GL11.glDisable(GL11.GL_TEXTURE_2D);
@@ -49,11 +56,13 @@ public class DrawUtils {
         GL11.glEnable(GL11.GL_TEXTURE_2D);
     }
 
+    /** Draws a vertical ARGB gradient rectangle at Navigator's default tooltip Z level. */
     public static void drawGradientRect(double minPixelX, double minPixelY, double maxPixelX, double maxPixelY,
         int colorA, int colorB) {
         drawGradientRect(minPixelX, minPixelY, maxPixelX, maxPixelY, 300, colorA, colorB);
     }
 
+    /** Draws a full Minecraft texture resource as a tinted quad. */
     public static void drawQuad(ResourceLocation texture, double x, double y, double width, double height, int color,
         int alpha) {
         GL11.glEnable(GL11.GL_BLEND);
@@ -68,11 +77,13 @@ public class DrawUtils {
         tessellator.draw();
     }
 
+    /** Draws a full Minecraft texture resource as a tinted quad. */
     public static void drawQuad(ResourceLocation texture, double x, double y, double width, double height, int color,
         float alpha) {
         drawQuad(texture, x, y, width, height, color, (int) alpha);
     }
 
+    /** Draws a block/item icon from the block texture atlas. */
     public static void drawQuad(IIcon icon, double x, double y, double width, double height, int color, int alpha) {
         GL11.glEnable(GL11.GL_BLEND);
         OpenGlHelper.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA, 1, 0);
@@ -97,10 +108,12 @@ public class DrawUtils {
         tessellator.draw();
     }
 
+    /** Draws a block/item icon from the block texture atlas. */
     public static void drawQuad(IIcon icon, double x, double y, double width, double height, int color, float alpha) {
         drawQuad(icon, x, y, width, height, color, (int) alpha);
     }
 
+    /** Adds an untextured rectangle to an already-started tessellator buffer. */
     public static void addRectToBuffer(Tessellator tessellator, double x, double y, double w, double h, int color,
         int alpha) {
         int[] c = ints(color, alpha);
@@ -111,6 +124,7 @@ public class DrawUtils {
         tessellator.addVertex(x, y, 0D);
     }
 
+    /** Adds a textured rectangle to an already-started tessellator buffer. */
     public static void addRectToBufferWithUV(Tessellator tessellator, double x, double y, double w, double h, int color,
         int alpha, double u0, double v0, double u1, double v1) {
         int[] c = ints(color, alpha);
@@ -121,6 +135,7 @@ public class DrawUtils {
         tessellator.addVertexWithUV(x, y, 0D, u0, v0);
     }
 
+    /** Draws a solid untextured rectangle. */
     public static void drawRect(double x, double y, double w, double h, int color, int alpha) {
         GL11.glDisable(GL11.GL_TEXTURE_2D);
         Tessellator tessellator = Tessellator.instance;
@@ -130,6 +145,7 @@ public class DrawUtils {
         GL11.glEnable(GL11.GL_TEXTURE_2D);
     }
 
+    /** Configures white color, disabled lighting, alpha blending, and the standard blend function. */
     public static void setupDrawing() {
         GL11.glColor4f(1F, 1F, 1F, 1F);
         GL11.glDisable(GL11.GL_LIGHTING);
@@ -137,6 +153,7 @@ public class DrawUtils {
         OpenGlHelper.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA, 1, 0);
     }
 
+    /** Draws a one-line label using a supplied GUI. */
     public static void drawSimpleLabel(GuiScreen gui, String text, double textX, double textY, int fontColor,
         int bgColor, boolean centered) {
         GL11.glPushMatrix();
@@ -149,6 +166,7 @@ public class DrawUtils {
         GL11.glPopMatrix();
     }
 
+    /** Draws a one-line label using Minecraft's current font renderer. */
     public static void drawSimpleLabel(String text, double textX, double textY, int fontColor, int bgColor,
         boolean centered) {
         Minecraft mc = Minecraft.getMinecraft();
@@ -166,10 +184,12 @@ public class DrawUtils {
         GL11.glPopMatrix();
     }
 
+    /** Draws a one-pixel hollow rectangle. */
     public static void drawHollowRect(double x, double y, double w, double h, int col, int alpha) {
         drawHollowRect(x, y, w, h, col, alpha, 1);
     }
 
+    /** Draws a hollow rectangle with configurable line thickness. */
     public static void drawHollowRect(double x, double y, double w, double h, int col, int alpha, double thickness) {
         GL11.glDisable(GL11.GL_TEXTURE_2D);
         Tessellator tessellator = Tessellator.instance;
@@ -184,6 +204,7 @@ public class DrawUtils {
         GL11.glEnable(GL11.GL_TEXTURE_2D);
     }
 
+    /** Draws a simple multiline tooltip; an empty list is ignored. */
     public static void drawSimpleTooltip(GuiScreen gui, List<String> text, double x, double y, int fontColor,
         int bgColor) {
         if (text.isEmpty()) return;
@@ -216,16 +237,19 @@ public class DrawUtils {
         GL11.glPopMatrix();
     }
 
+    /** Draws a label at normal font scale with shadow. */
     public static void drawLabel(String text, double textX, double textY, int fontColor, int bgColor,
         boolean centered) {
         drawLabel(text, textX, textY, fontColor, bgColor, centered, 1.0);
     }
 
+    /** Draws a scaled label with shadow. */
     public static void drawLabel(String text, double textX, double textY, int fontColor, int bgColor, boolean centered,
         double fontScale) {
         drawLabel(text, textX, textY, fontColor, bgColor, centered, true, fontScale);
     }
 
+    /** Draws a scaled label with optional shadow. */
     public static void drawLabel(String text, double textX, double textY, int fontColor, int bgColor, boolean centered,
         boolean fontShadow, double fontScale) {
         final FontRenderer fontRenderer = Minecraft.getMinecraft().fontRenderer;
@@ -257,11 +281,13 @@ public class DrawUtils {
         GL11.glPopMatrix();
     }
 
+    /** Converts packed RGB to normalized float components. */
     public static float[] floats(int rgb) {
         return new float[] { (float) (rgb >> 16 & 255) / 255.0F, (float) (rgb >> 8 & 255) / 255.0F,
             (float) (rgb & 255) / 255.0F };
     }
 
+    /** Converts packed RGB and alpha to integer RGBA components. */
     public static int[] ints(int rgb, int alpha) {
         return new int[] { (rgb >> 16) & 255, (rgb >> 8) & 255, rgb & 255, alpha & 255 };
     }

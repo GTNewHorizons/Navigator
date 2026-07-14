@@ -23,6 +23,12 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 
+/**
+ * Owns one logical layer's location cache, viewport discovery, button state, search hook, and map renderers.
+ * <p>
+ * Locations are cached per dimension and discovered by chunk. A recache uses the larger of the active minimap and
+ * fullscreen viewports, calls the update hooks, and then gives every renderer the same visible location set.
+ */
 @SuppressWarnings({ "DeprecatedIsStillUsed", "unused" })
 public abstract class LayerManager {
 
@@ -44,6 +50,11 @@ public abstract class LayerManager {
     private boolean hasSearchField;
     private long refreshVersion;
 
+    /**
+     * Creates a layer and its renderers for currently enabled map integrations.
+     *
+     * @param buttonManager shared logical button controlling this layer
+     */
     public LayerManager(ButtonManager buttonManager) {
         this.buttonManager = buttonManager;
         buttonManager.setLayerNotify(this::onLayerToggled);
@@ -57,6 +68,10 @@ public abstract class LayerManager {
     }
 
     /**
+     * Creates the renderer used by one installed map integration.
+     * <p>
+     * Return a universal renderer for map-neutral behavior or {@code null} when this layer does not support the map.
+     *
      * @param manager This layer manager
      * @param mod     The mod to add the layer renderer for
      * @return The {@link LayerRenderer} implementation for the mod or null if none
@@ -64,6 +79,8 @@ public abstract class LayerManager {
     protected abstract @Nullable LayerRenderer addLayerRenderer(LayerManager manager, SupportedMods mod);
 
     /**
+     * Discovers one location for a chunk that is not already cached.
+     *
      * @param chunkX The chunk x coordinate
      * @param chunkZ The chunk z coordinate
      * @param dim    The dimension id
@@ -74,7 +91,10 @@ public abstract class LayerManager {
     }
 
     /**
+     * Alternative discovery hook using a packed chunk key.
+     *
      * @param packedChunk A long packed with {@link Util#packChunkToLocation(int, int)}
+     * @param dim         dimension id
      * @return The {@link ILocationProvider} for the chunk or null if none
      */
     protected @Nullable ILocationProvider generateLocation(long packedChunk, int dim) {
@@ -82,18 +102,18 @@ public abstract class LayerManager {
     }
 
     /**
-     * Update the information contained in the {@link ILocationProvider}
+     * Updates a cached visible location during each recache.
      * <p>
-     * If this information is updated outside of this method {@link #forceRefresh()} should be called
+     * If the information changes outside this method, call {@link #forceRefresh()}.
      *
      * @param location The location to update
      */
     public void updateElement(ILocationProvider location) {}
 
     /**
-     * Needed for layers where a location represents an area larger than a single chunk
+     * Expands discovery around the viewport for elements larger than one chunk.
      *
-     * @return The width/height of the element in chunks
+     * @return extra chunks added on every side of the discovery bounds
      */
     public int getElementSize() {
         return 0;
@@ -140,59 +160,105 @@ public abstract class LayerManager {
         return null;
     }
 
+    /** @return whether the shared layer button is active */
     public boolean isLayerActive() {
         return buttonManager.isActive();
     }
 
+    /** Activates this layer and deactivates other distinct Navigator buttons. */
     public void activateLayer() {
         buttonManager.activate();
     }
 
+    /** Deactivates this layer. */
     public void deactivateLayer() {
         buttonManager.deactivate();
     }
 
+    /** Toggles this layer. */
     public void toggleLayer() {
         buttonManager.toggle();
     }
 
+    /**
+     * Requests renderer/native-overlay synchronization after external data changes.
+     * <p>
+     * Repeated calls increment the refresh version and should be avoided when nothing changed.
+     */
     public void forceRefresh() {
         forceRefresh = true;
         refreshVersion++;
     }
 
+    /** @return monotonically increasing version incremented by {@link #forceRefresh()} */
     public long getRefreshVersion() {
         return refreshVersion;
     }
 
+    /**
+     * Records that a supported fullscreen map opened and calls {@link #onOpenMap()}.
+     *
+     * @param mod map integration that opened
+     */
     public final void onGuiOpened(SupportedMods mod) {
         openModGui = mod;
         onOpenMap();
     }
 
+    /**
+     * Records that a supported fullscreen map closed and calls {@link #onCloseMap()}.
+     *
+     * @param mod map integration that closed
+     */
     public final void onGuiClosed(SupportedMods mod) {
         openModGui = SupportedMods.NONE;
         onCloseMap();
     }
 
+    /** Consumer hook called after a supported fullscreen map opens. */
     public void onOpenMap() {}
 
+    /** Consumer hook called after a supported fullscreen map closes. */
     public void onCloseMap() {}
 
+    /** @return currently open map integration, or {@link SupportedMods#NONE} */
     public final SupportedMods getOpenModGui() {
         return openModGui;
     }
 
+    /**
+     * Recaches a square minimap viewport.
+     *
+     * @param centerBlockX viewport center X
+     * @param centerBlockZ viewport center Z
+     * @param blockRadius  viewport radius in blocks
+     */
     public void recacheMiniMap(int centerBlockX, int centerBlockZ, int blockRadius) {
         recacheMiniMap(centerBlockX, centerBlockZ, blockRadius, blockRadius);
     }
 
+    /**
+     * Recaches a rectangular minimap viewport.
+     *
+     * @param centerBlockX viewport center X
+     * @param centerBlockZ viewport center Z
+     * @param blockWidth   viewport width in blocks
+     * @param blockHeight  viewport height in blocks
+     */
     public void recacheMiniMap(int centerBlockX, int centerBlockZ, int blockWidth, int blockHeight) {
         miniMapWidth = blockWidth;
         miniMapHeight = blockHeight;
         recacheVisibleElements(centerBlockX, centerBlockZ);
     }
 
+    /**
+     * Recaches a fullscreen viewport.
+     *
+     * @param centerBlockX viewport center X
+     * @param centerBlockZ viewport center Z
+     * @param blockWidth   viewport width in blocks
+     * @param blockHeight  viewport height in blocks
+     */
     public void recacheFullscreenMap(int centerBlockX, int centerBlockZ, int blockWidth, int blockHeight) {
         fullscreenMapWidth = blockWidth;
         fullscreenMapHeight = blockHeight;
@@ -251,22 +317,53 @@ public abstract class LayerManager {
         onUpdatePost(chunkMinX, chunkMaxX, chunkMinZ, chunkMaxZ);
     }
 
+    /**
+     * Called when the shared layer button changes.
+     * <p>
+     * The default implementation clears all caches when disabled. Overrides should call {@code super} unless they
+     * deliberately retain renderer state.
+     *
+     * @param toEnable new active state
+     */
     public void onLayerToggled(boolean toEnable) {
         if (!toEnable) {
             clearFull();
         }
     }
 
+    /**
+     * Runs before chunk discovery/update for a viewport recache.
+     *
+     * @param minX inclusive minimum chunk X
+     * @param maxX inclusive maximum chunk X
+     * @param minZ inclusive minimum chunk Z
+     * @param maxZ inclusive maximum chunk Z
+     */
     public void onUpdatePre(int minX, int maxX, int minZ, int maxZ) {}
 
+    /**
+     * Runs after visible locations and renderer steps have been refreshed.
+     *
+     * @param minX inclusive minimum chunk X
+     * @param maxX inclusive maximum chunk X
+     * @param minZ inclusive minimum chunk Z
+     * @param maxZ inclusive maximum chunk Z
+     */
     public void onUpdatePost(int minX, int maxX, int minZ, int maxZ) {}
 
+    /**
+     * Queues a cached location and its render steps for removal on the next recache.
+     *
+     * @param location location to remove
+     */
     public final void removeLocation(ILocationProvider location) {
         removeQueue.add(location);
         forceRefresh();
     }
 
     /**
+     * Queues a cached location for removal by identity.
+     *
      * @param location must be a long packed with {@link Util#packChunkToLocation(int, int)}
      */
     public final void removeLocation(long location) {
@@ -275,30 +372,50 @@ public abstract class LayerManager {
         removeLocation(loc);
     }
 
+    /** Queues the location cached under a chunk coordinate for removal. */
     public final void removeLocation(int chunkX, int chunkZ) {
         removeLocation(Util.packChunkToLocation(chunkX, chunkZ));
     }
 
+    /**
+     * Inserts an already-created location into the current dimension cache.
+     *
+     * @param location location whose {@link ILocationProvider#toLong()} is its cache key
+     */
     public final void addExtraLocation(ILocationProvider location) {
         currentDimCache.put(location.toLong(), location);
     }
 
+    /** @return shared logical button */
     public ButtonManager getButtonManager() {
         return buttonManager;
     }
 
+    /**
+     * @param map map integration
+     * @return renderer registered for that integration, or {@code null}
+     */
     public LayerRenderer getLayerRenderer(SupportedMods map) {
         return layerRenderer.get(map);
     }
 
+    /**
+     * @return manager-owned set of locations visible in the latest combined viewport
+     */
     public Collection<ILocationProvider> getVisibleLocations() {
         return visibleLocations;
     }
 
+    /** @return manager-owned cached locations for the current dimension */
     public Collection<? extends ILocationProvider> getCachedLocations() {
         return getCurrentDimCache().values();
     }
 
+    /**
+     * Returns or initializes the current dimension cache.
+     *
+     * @return mutable location map keyed by stable location identity
+     */
     public Long2ObjectMap<ILocationProvider> getCurrentDimCache() {
         if (currentDimCache == null) {
             currentDimCache = dimCachedLocations.computeIfAbsent(currentDim, k -> new Long2ObjectOpenHashMap<>());
@@ -323,11 +440,13 @@ public abstract class LayerManager {
             .forEach(renderer -> renderer.setDimCache(currentDim));
     }
 
+    /** Schedules the current dimension's locations and render steps for clearing. */
     public void clearCurrentCache() {
         clearCurrent = true;
         forceRefresh();
     }
 
+    /** Schedules every dimension's locations and render steps for clearing. */
     public void clearFullCache() {
         clearFull = true;
         forceRefresh();
@@ -350,14 +469,25 @@ public abstract class LayerManager {
             .forEach(LayerRenderer::clearFullCache);
     }
 
+    /**
+     * Enables or disables Navigator's search field for this layer.
+     *
+     * @param hasSearchField whether the layer accepts search text
+     */
     protected void setHasSearchField(boolean hasSearchField) {
         this.hasSearchField = hasSearchField;
     }
 
+    /** @return whether this layer requests the map search field */
     public boolean hasSearchField() {
         return hasSearchField;
     }
 
+    /**
+     * Receives search text changes from a supported fullscreen map.
+     *
+     * @param searchString current non-null search text
+     */
     public void onSearch(@NotNull String searchString) {}
 
     /**

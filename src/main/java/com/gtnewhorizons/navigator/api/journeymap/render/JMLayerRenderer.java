@@ -9,6 +9,7 @@ import com.gtnewhorizons.navigator.api.model.SupportedMods;
 import com.gtnewhorizons.navigator.api.model.layers.LayerManager;
 import com.gtnewhorizons.navigator.api.model.layers.LayerRenderer;
 
+/** JourneyMap 5-specific renderer. Prefer {@code UniversalLayerRenderer} for new layers. */
 public abstract class JMLayerRenderer extends LayerRenderer {
 
     public JMLayerRenderer(@Nonnull LayerManager manager) {

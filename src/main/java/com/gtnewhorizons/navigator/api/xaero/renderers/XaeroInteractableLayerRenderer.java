@@ -13,6 +13,11 @@ import com.gtnewhorizons.navigator.api.model.layers.InteractableLayerManager;
 import com.gtnewhorizons.navigator.api.xaero.rendersteps.XaeroInteractableStep;
 import com.gtnewhorizons.navigator.api.xaero.rendersteps.XaeroRenderStep;
 
+/**
+ * Xaero-specific renderer with hover, tooltip, action-key, and default waypoint double-click handling.
+ * <p>
+ * Prefer {@link com.gtnewhorizons.navigator.api.model.layers.UniversalInteractableRenderer} for new layers.
+ */
 public abstract class XaeroInteractableLayerRenderer extends XaeroLayerRenderer implements InteractableLayer {
 
     protected InteractableLayerManager manager;
@@ -23,6 +28,7 @@ public abstract class XaeroInteractableLayerRenderer extends XaeroLayerRenderer 
         this.manager = manager;
     }
 
+    /** Updates the hovered step from Xaero map-space coordinates and scale. */
     public void updateHovered(double mouseX, double mouseY, double scale) {
         for (XaeroRenderStep step : getReversedRenderSteps()) {
             if (step instanceof XaeroInteractableStep interactableRenderStep
@@ -34,6 +40,7 @@ public abstract class XaeroInteractableLayerRenderer extends XaeroLayerRenderer 
         hovered = null;
     }
 
+    /** Draws the hovered step's Xaero-specific custom tooltip. */
     public void drawCustomTooltip(GuiScreen gui, double mouseX, double mouseY, double scale, int scaleAdj) {
         if (hovered != null) {
             hovered.drawCustomTooltip(gui, mouseX, mouseY, scale, scaleAdj);
@@ -71,6 +78,7 @@ public abstract class XaeroInteractableLayerRenderer extends XaeroLayerRenderer 
 
     }
 
+    /** Applies the default double-click waypoint toggle to the hovered step. */
     public void onClick(boolean isDoubleClick, int mouseX, int mouseY, int mouseBlockX, int mouseBlockZ) {
         if (isDoubleClick) {
             if (hovered.getLocation()
@@ -84,6 +92,7 @@ public abstract class XaeroInteractableLayerRenderer extends XaeroLayerRenderer 
         }
     }
 
+    /** Hook for clicks outside all render steps. */
     public void onClickOutsideRenderStep(boolean isDoubleClick, int mouseX, int mouseY, int mouseBlockX,
         int mouseBlockZ) {}
 

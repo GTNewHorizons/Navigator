@@ -16,6 +16,12 @@ import com.gtnewhorizons.navigator.api.model.steps.UniversalInteractableStep;
 import com.gtnewhorizons.navigator.api.model.steps.UniversalLocationInteractableStep;
 import com.gtnewhorizons.navigator.api.util.ClickPos;
 
+/**
+ * Universal renderer that adds hover, tooltip, click, action-key, and optional waypoint behavior.
+ * <p>
+ * A configured click callback runs before the default behavior. If it does not consume a double-click, waypoint-
+ * capable locations toggle the manager's active waypoint; plain locations do nothing by default.
+ */
 public class UniversalInteractableRenderer extends UniversalLayerRenderer implements InteractableLayer {
 
     private final ClickPos clickPos = new ClickPos();
@@ -25,6 +31,7 @@ public class UniversalInteractableRenderer extends UniversalLayerRenderer implem
     private Predicate<ClickPos> clickAction;
     private IntPredicate keyPressAction;
 
+    /** @param manager owning interactable layer manager */
     public UniversalInteractableRenderer(@Nonnull InteractableLayerManager manager) {
         super(manager);
         this.manager = manager;
@@ -59,6 +66,11 @@ public class UniversalInteractableRenderer extends UniversalLayerRenderer implem
         return onClickOutsideRenderStep(isDoubleClick, mouseX, mouseY, blockX, blockZ);
     }
 
+    /**
+     * Handles a click on the currently hovered step using default waypoint behavior.
+     *
+     * @return {@code true} when a waypoint was set or cleared
+     */
     public boolean onClick(boolean isDoubleClick, int mouseX, int mouseY, int blockX, int blockZ) {
         if (isDoubleClick
             && hoveredLocationRenderStep.getLocation() instanceof IWaypointAndLocationProvider waypointLocation) {
@@ -72,6 +84,11 @@ public class UniversalInteractableRenderer extends UniversalLayerRenderer implem
         return false;
     }
 
+    /**
+     * Hook for clicks that do not target a render step.
+     *
+     * @return {@code true} when consumed
+     */
     public boolean onClickOutsideRenderStep(boolean isDoubleClick, int mouseX, int mouseY, int blockX, int blockZ) {
         return false;
     }
@@ -113,16 +130,35 @@ public class UniversalInteractableRenderer extends UniversalLayerRenderer implem
         return false;
     }
 
+    /**
+     * Installs a callback that runs before default step/outside click behavior.
+     * <p>
+     * The supplied {@link ClickPos} is mutable and reused; do not retain it.
+     *
+     * @param action callback returning {@code true} when it consumes a click
+     * @return this renderer
+     */
     public UniversalInteractableRenderer withClickAction(@Nonnull Predicate<ClickPos> action) {
         this.clickAction = action;
         return this;
     }
 
+    /**
+     * Installs a callback that runs before the hovered step's action-key handler.
+     *
+     * @param keyPressAction callback returning {@code true} when it consumes a key
+     * @return this renderer
+     */
     public UniversalInteractableRenderer withKeyPressAction(@Nonnull IntPredicate keyPressAction) {
         this.keyPressAction = keyPressAction;
         return this;
     }
 
+    /**
+     * Dispatches a click from a native overlay associated with a known step.
+     *
+     * @return whether the click was consumed
+     */
     public boolean onRenderStepClick(UniversalLocationInteractableStep<?> step, boolean isDoubleClick, int mouseX,
         int mouseY, int blockX, int blockZ) {
         setHoveredRenderStep(step);
@@ -131,15 +167,22 @@ public class UniversalInteractableRenderer extends UniversalLayerRenderer implem
         return handled;
     }
 
+    /**
+     * Dispatches a key from a native overlay associated with a known step.
+     *
+     * @return whether the key was consumed
+     */
     public boolean onRenderStepKeyPressed(UniversalLocationInteractableStep<?> step, int keyCode) {
         setHoveredRenderStep(step);
         return onKeyPressed(keyCode);
     }
 
+    /** Clears native-overlay hover only if it still points at {@code step}. */
     public void clearRenderStepHover(UniversalLocationInteractableStep<?> step) {
         if (hoveredLocationRenderStep == step) setHoveredRenderStep(null);
     }
 
+    /** Clears all cached hover state. */
     public void clearRenderStepHover() {
         setHoveredRenderStep(null);
     }

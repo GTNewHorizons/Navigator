@@ -13,6 +13,11 @@ import com.gtnewhorizons.navigator.api.model.layers.InteractableLayer;
 import com.gtnewhorizons.navigator.api.model.layers.InteractableLayerManager;
 import com.gtnewhorizons.navigator.api.model.steps.RenderStep;
 
+/**
+ * JourneyMap 5-specific renderer with hover, tooltip, action-key, and default waypoint double-click handling.
+ * <p>
+ * Prefer {@link com.gtnewhorizons.navigator.api.model.layers.UniversalInteractableRenderer} for new layers.
+ */
 public abstract class JMInteractableLayerRenderer extends JMLayerRenderer implements InteractableLayer {
 
     protected InteractableLayerManager manager;
@@ -53,6 +58,11 @@ public abstract class JMInteractableLayerRenderer extends JMLayerRenderer implem
         return onClickOutsideRenderStep(isDoubleClick, mouseX, mouseY, blockX, blockZ);
     }
 
+    /**
+     * Applies the default double-click waypoint toggle to the hovered step.
+     *
+     * @return whether the click was consumed
+     */
     public boolean onClick(boolean isDoubleClick, int mouseX, int mouseY, int blockX, int blockZ) {
         if (isDoubleClick) {
             if (hoveredDrawStep.getLocation()
@@ -68,6 +78,7 @@ public abstract class JMInteractableLayerRenderer extends JMLayerRenderer implem
         return false;
     }
 
+    /** @return whether a click outside all steps was consumed */
     public boolean onClickOutsideRenderStep(boolean isDoubleClick, int mouseX, int mouseY, int blockX, int blockZ) {
         return false;
     }

@@ -12,6 +12,7 @@ import org.lwjgl.opengl.GL11;
 import xaero.map.gui.CursorBox;
 import xaero.map.gui.GuiTexturedButton;
 
+/** Xaero textured layer button with Navigator's fixed 20x20 frame, centered 16x16 icon, and active tint. */
 public class SizedGuiTexturedButton extends GuiTexturedButton {
 
     private static final int BUTTON_WIDTH = 20;
@@ -56,10 +57,12 @@ public class SizedGuiTexturedButton extends GuiTexturedButton {
         Gui.func_146110_a(iconX, iconY, textureX, textureY, textureW, textureH, textureW, textureH);
     }
 
+    /** @return whether the pointer is inside the full button frame */
     public boolean isMouseOver(int mouseX, int mouseY) {
         return mouseX >= xPosition && mouseY >= yPosition && mouseX < xPosition + width && mouseY < yPosition + height;
     }
 
+    /** Sets the visual active tint independently from the inherited enabled state. */
     public void setActive(boolean active) {
         this.active = active;
     }
