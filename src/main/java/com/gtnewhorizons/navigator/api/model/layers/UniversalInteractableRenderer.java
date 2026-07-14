@@ -6,11 +6,14 @@ import java.util.function.IntPredicate;
 import java.util.function.Predicate;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import net.minecraft.client.gui.FontRenderer;
 
+import com.gtnewhorizons.navigator.api.model.locations.IWaypointAndLocationProvider;
 import com.gtnewhorizons.navigator.api.model.steps.RenderStep;
 import com.gtnewhorizons.navigator.api.model.steps.UniversalInteractableStep;
+import com.gtnewhorizons.navigator.api.model.steps.UniversalLocationInteractableStep;
 import com.gtnewhorizons.navigator.api.util.ClickPos;
 
 public class UniversalInteractableRenderer extends UniversalLayerRenderer implements InteractableLayer {
@@ -18,6 +21,7 @@ public class UniversalInteractableRenderer extends UniversalLayerRenderer implem
     private final ClickPos clickPos = new ClickPos();
     protected InteractableLayerManager manager;
     protected UniversalInteractableStep<?> hoveredRenderStep = null;
+    private UniversalLocationInteractableStep<?> hoveredLocationRenderStep = null;
     private Predicate<ClickPos> clickAction;
     private IntPredicate keyPressAction;
 
@@ -28,11 +32,11 @@ public class UniversalInteractableRenderer extends UniversalLayerRenderer implem
 
     @Override
     public void onMouseMove(int mouseX, int mouseY) {
-        hoveredRenderStep = null;
+        setHoveredRenderStep(null);
         for (RenderStep drawStep : getRenderStepsForInteraction()) {
-            if (drawStep instanceof UniversalInteractableStep<?>step) {
+            if (drawStep instanceof UniversalLocationInteractableStep<?>step) {
                 if (step.mouseOver(mouseX, mouseY)) {
-                    hoveredRenderStep = step;
+                    setHoveredRenderStep(step);
                     return;
                 }
             }
@@ -42,12 +46,13 @@ public class UniversalInteractableRenderer extends UniversalLayerRenderer implem
     @Override
     public final boolean onMapClick(boolean isDoubleClick, int mouseX, int mouseY, int blockX, int blockZ) {
         if (clickAction != null) {
-            if (clickAction.test(clickPos.set(hoveredRenderStep, isDoubleClick, mouseX, mouseY, blockX, blockZ))) {
+            if (clickAction
+                .test(clickPos.set(hoveredLocationRenderStep, isDoubleClick, mouseX, mouseY, blockX, blockZ))) {
                 return true;
             }
         }
 
-        if (hoveredRenderStep != null) {
+        if (hoveredLocationRenderStep != null) {
             return onClick(isDoubleClick, mouseX, mouseY, blockX, blockZ);
         }
 
@@ -55,14 +60,12 @@ public class UniversalInteractableRenderer extends UniversalLayerRenderer implem
     }
 
     public boolean onClick(boolean isDoubleClick, int mouseX, int mouseY, int blockX, int blockZ) {
-        if (isDoubleClick) {
-            if (hoveredRenderStep.getLocation()
-                .isActiveAsWaypoint()) {
+        if (isDoubleClick
+            && hoveredLocationRenderStep.getLocation() instanceof IWaypointAndLocationProvider waypointLocation) {
+            if (waypointLocation.isActiveAsWaypoint()) {
                 manager.clearActiveWaypoint();
             } else {
-                manager.setActiveWaypoint(
-                    hoveredRenderStep.getLocation()
-                        .toWaypoint());
+                manager.setActiveWaypoint(waypointLocation.toWaypoint());
             }
             return true;
         }
@@ -76,8 +79,8 @@ public class UniversalInteractableRenderer extends UniversalLayerRenderer implem
     @Override
     public List<String> getTooltip() {
         List<String> tooltip = new ArrayList<>();
-        if (hoveredRenderStep != null) {
-            hoveredRenderStep.getTooltip(tooltip);
+        if (hoveredLocationRenderStep != null) {
+            hoveredLocationRenderStep.getTooltip(tooltip);
         }
         return tooltip;
     }
@@ -85,8 +88,8 @@ public class UniversalInteractableRenderer extends UniversalLayerRenderer implem
     @Override
     public void drawCustomTooltip(FontRenderer fontRenderer, int mouseX, int mouseY, int displayWidth,
         int displayHeight) {
-        if (hoveredRenderStep != null) {
-            hoveredRenderStep.drawCustomTooltip(fontRenderer, mouseX, mouseY, displayWidth, displayHeight);
+        if (hoveredLocationRenderStep != null) {
+            hoveredLocationRenderStep.drawCustomTooltip(fontRenderer, mouseX, mouseY, displayWidth, displayHeight);
         }
     }
 
@@ -102,7 +105,7 @@ public class UniversalInteractableRenderer extends UniversalLayerRenderer implem
             }
         }
 
-        if (hoveredRenderStep != null && hoveredRenderStep.onKeyPressed(keyCode)) {
+        if (hoveredLocationRenderStep != null && hoveredLocationRenderStep.onKeyPressed(keyCode)) {
             manager.forceRefresh();
             return true;
         }
@@ -120,17 +123,30 @@ public class UniversalInteractableRenderer extends UniversalLayerRenderer implem
         return this;
     }
 
-    public boolean onRenderStepClick(UniversalInteractableStep<?> step, boolean isDoubleClick, int mouseX, int mouseY,
-        int blockX, int blockZ) {
-        hoveredRenderStep = step;
+    public boolean onRenderStepClick(UniversalLocationInteractableStep<?> step, boolean isDoubleClick, int mouseX,
+        int mouseY, int blockX, int blockZ) {
+        setHoveredRenderStep(step);
         boolean handled = onMapClick(isDoubleClick, mouseX, mouseY, blockX, blockZ);
         if (handled) manager.forceRefresh();
         return handled;
     }
 
-    public boolean onRenderStepKeyPressed(UniversalInteractableStep<?> step, int keyCode) {
-        hoveredRenderStep = step;
+    public boolean onRenderStepKeyPressed(UniversalLocationInteractableStep<?> step, int keyCode) {
+        setHoveredRenderStep(step);
         return onKeyPressed(keyCode);
+    }
+
+    public void clearRenderStepHover(UniversalLocationInteractableStep<?> step) {
+        if (hoveredLocationRenderStep == step) setHoveredRenderStep(null);
+    }
+
+    public void clearRenderStepHover() {
+        setHoveredRenderStep(null);
+    }
+
+    private void setHoveredRenderStep(@Nullable UniversalLocationInteractableStep<?> step) {
+        hoveredLocationRenderStep = step;
+        hoveredRenderStep = step instanceof UniversalInteractableStep<?>waypointStep ? waypointStep : null;
     }
 
 }

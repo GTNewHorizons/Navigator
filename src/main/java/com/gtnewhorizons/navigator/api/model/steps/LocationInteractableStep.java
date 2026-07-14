@@ -3,10 +3,9 @@ package com.gtnewhorizons.navigator.api.model.steps;
 import java.util.List;
 
 import com.gtnewhorizons.navigator.api.NavigatorApi;
-import com.gtnewhorizons.navigator.api.model.locations.IWaypointAndLocationProvider;
 import com.gtnewhorizons.navigator.api.util.Util;
 
-public interface InteractableStep extends LocationInteractableStep {
+public interface LocationInteractableStep extends RenderStep {
 
     void getTooltip(List<String> list);
 
@@ -18,18 +17,5 @@ public interface InteractableStep extends LocationInteractableStep {
             return true;
         }
         return false;
-    }
-
-    @Override
-    default IWaypointAndLocationProvider getLocation() {
-        return getLocationProvider();
-    }
-
-    /**
-     * @deprecated Use {@link #getLocation()} instead
-     */
-    @Deprecated
-    default IWaypointAndLocationProvider getLocationProvider() {
-        return null;
     }
 }

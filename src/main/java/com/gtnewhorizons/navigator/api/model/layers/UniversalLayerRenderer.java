@@ -18,6 +18,7 @@ public class UniversalLayerRenderer extends LayerRenderer {
     private Function<ILocationProvider, UniversalRenderStep<?>> stepCreator;
     private Function<ILocationProvider, MapMarker> markerCreator;
     private Function<ILocationProvider, Collection<?>> journeyMapV6OverlayCreator;
+    private boolean journeyMapV6OverlaysReplaceRenderSteps;
     private int renderPriority = 0;
 
     public UniversalLayerRenderer(@Nonnull LayerManager manager) {
@@ -53,7 +54,16 @@ public class UniversalLayerRenderer extends LayerRenderer {
      */
     public UniversalLayerRenderer withJourneyMapV6Overlays(
         @Nonnull Function<ILocationProvider, Collection<?>> creator) {
+        return withJourneyMapV6Overlays(creator, false);
+    }
+
+    /**
+     * Adds native JourneyMap 6 displayables and optionally replaces this renderer's fullscreen render steps there.
+     */
+    public UniversalLayerRenderer withJourneyMapV6Overlays(@Nonnull Function<ILocationProvider, Collection<?>> creator,
+        boolean replaceRenderSteps) {
         journeyMapV6OverlayCreator = creator;
+        journeyMapV6OverlaysReplaceRenderSteps = replaceRenderSteps;
         return this;
     }
 
@@ -63,6 +73,10 @@ public class UniversalLayerRenderer extends LayerRenderer {
 
     public Collection<?> createJourneyMapV6Overlays(ILocationProvider location) {
         return journeyMapV6OverlayCreator.apply(location);
+    }
+
+    public boolean journeyMapV6OverlaysReplaceRenderSteps() {
+        return journeyMapV6OverlaysReplaceRenderSteps;
     }
 
     @Nullable

@@ -3,15 +3,21 @@ package com.gtnewhorizons.navigator.api.util;
 import javax.annotation.Nullable;
 
 import com.gtnewhorizons.navigator.api.model.steps.InteractableStep;
+import com.gtnewhorizons.navigator.api.model.steps.LocationInteractableStep;
 
 public class ClickPos {
 
     private boolean doubleClick;
     private int mouseX, mouseY, blockX, blockZ;
-    private InteractableStep renderStep;
+    private LocationInteractableStep renderStep;
 
     public ClickPos set(@Nullable InteractableStep renderStep, boolean doubleClick, int mouseX, int mouseY, int blockX,
         int blockZ) {
+        return set((LocationInteractableStep) renderStep, doubleClick, mouseX, mouseY, blockX, blockZ);
+    }
+
+    public ClickPos set(@Nullable LocationInteractableStep renderStep, boolean doubleClick, int mouseX, int mouseY,
+        int blockX, int blockZ) {
         this.renderStep = renderStep;
         this.doubleClick = doubleClick;
         this.mouseX = mouseX;
@@ -50,6 +56,10 @@ public class ClickPos {
     }
 
     public @Nullable InteractableStep getRenderStep() {
+        return renderStep instanceof InteractableStep interactableStep ? interactableStep : null;
+    }
+
+    public @Nullable LocationInteractableStep getLocationRenderStep() {
         return renderStep;
     }
 

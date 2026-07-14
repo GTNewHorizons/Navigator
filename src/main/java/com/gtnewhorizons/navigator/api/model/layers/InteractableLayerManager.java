@@ -1,6 +1,5 @@
 package com.gtnewhorizons.navigator.api.model.layers;
 
-import java.util.Collection;
 import java.util.EnumMap;
 import java.util.Map;
 
@@ -64,14 +63,22 @@ public abstract class InteractableLayerManager extends LayerManager {
 
     public void setActiveWaypoint(Waypoint waypoint) {
         activeWaypoint = waypoint;
-        getVisibleLocations().forEach(element -> element.onWaypointUpdated(waypoint));
+        getVisibleLocations().forEach(element -> {
+            if (element instanceof IWaypointAndLocationProvider waypointLoc) {
+                waypointLoc.onWaypointUpdated(waypoint);
+            }
+        });
         waypointManagers.values()
             .forEach(translator -> translator.updateActiveWaypoint(waypoint));
     }
 
     public void clearActiveWaypoint() {
         activeWaypoint = null;
-        getVisibleLocations().forEach(IWaypointAndLocationProvider::onWaypointCleared);
+        getVisibleLocations().forEach(element -> {
+            if (element instanceof IWaypointAndLocationProvider waypointLoc) {
+                waypointLoc.onWaypointCleared();
+            }
+        });
         waypointManagers.values()
             .forEach(WaypointManager::clearActiveWaypoint);
     }
@@ -94,9 +101,4 @@ public abstract class InteractableLayerManager extends LayerManager {
         }
     }
 
-    @Override
-    @SuppressWarnings("unchecked")
-    public Collection<IWaypointAndLocationProvider> getVisibleLocations() {
-        return (Collection<IWaypointAndLocationProvider>) super.getVisibleLocations();
-    }
 }

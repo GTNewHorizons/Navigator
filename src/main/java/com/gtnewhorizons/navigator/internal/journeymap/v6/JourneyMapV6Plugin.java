@@ -1,5 +1,6 @@
 package com.gtnewhorizons.navigator.internal.journeymap.v6;
 
+import java.awt.Polygon;
 import java.awt.geom.Point2D;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -30,7 +31,7 @@ import com.gtnewhorizons.navigator.api.model.layers.UniversalInteractableRendere
 import com.gtnewhorizons.navigator.api.model.layers.UniversalLayerRenderer;
 import com.gtnewhorizons.navigator.api.model.locations.ILocationProvider;
 import com.gtnewhorizons.navigator.api.model.markers.MapMarker;
-import com.gtnewhorizons.navigator.api.model.steps.UniversalInteractableStep;
+import com.gtnewhorizons.navigator.api.model.steps.UniversalLocationInteractableStep;
 import com.gtnewhorizons.navigator.api.model.steps.UniversalRenderStep;
 import com.gtnewhorizons.navigator.api.util.DrawUtils;
 import com.gtnewhorizons.navigator.internal.SearchBar;
@@ -43,6 +44,8 @@ import journeymap.api.v2.client.IClientPlugin;
 import journeymap.api.v2.client.display.Displayable;
 import journeymap.api.v2.client.display.IOverlayListener;
 import journeymap.api.v2.client.display.MarkerOverlay;
+import journeymap.api.v2.client.display.Overlay;
+import journeymap.api.v2.client.display.PolygonOverlay;
 import journeymap.api.v2.client.event.DisplayUpdateEvent;
 import journeymap.api.v2.client.event.FullscreenDisplayEvent;
 import journeymap.api.v2.client.event.FullscreenMapEvent;
@@ -50,6 +53,7 @@ import journeymap.api.v2.client.event.FullscreenRenderEvent;
 import journeymap.api.v2.client.fullscreen.IFullscreen;
 import journeymap.api.v2.client.fullscreen.IThemeButton;
 import journeymap.api.v2.client.model.MapImage;
+import journeymap.api.v2.client.model.MapPolygon;
 import journeymap.api.v2.client.util.UIState;
 import journeymap.api.v2.common.Context;
 import journeymap.api.v2.common.JourneyMapPlugin;
@@ -73,7 +77,7 @@ public final class JourneyMapV6Plugin implements IClientPlugin {
 
     private final Map<UniversalLayerRenderer, Map<ILocationProvider, List<Displayable>>> overlays = new IdentityHashMap<>();
     private final Map<LayerManager, Long> overlayRefreshVersions = new IdentityHashMap<>();
-    private @Nullable MarkerListener hoveredMarker;
+    private @Nullable OverlayListener hoveredOverlay;
     private boolean actionKeyDown;
     private boolean fullscreenActive;
     private long lastOverlayUpdate;
@@ -188,7 +192,8 @@ public final class JourneyMapV6Plugin implements IClientPlugin {
         double blockSize = state.blockSize / guiScale;
         double zoomStep = Math.log(state.blockSize) / Math.log(2.0);
         for (LayerRenderer renderer : NavigatorApi.getActiveRenderersByPriority(MOD)) {
-            if (!(renderer instanceof UniversalLayerRenderer universal) || universal.hasMapMarker()) {
+            if (!(renderer instanceof UniversalLayerRenderer universal) || universal.hasMapMarker()
+                || universal.journeyMapV6OverlaysReplaceRenderSteps()) {
                 continue;
             }
             for (UniversalRenderStep<?> step : universal.getRenderSteps()) {
@@ -338,6 +343,7 @@ public final class JourneyMapV6Plugin implements IClientPlugin {
             }
             for (Object candidate : candidates) {
                 if (!(candidate instanceof Displayable displayable)) continue;
+                if (displayable instanceof Overlay overlay) attachInteraction(overlay, renderer, step, null);
                 overlays.add(displayable);
             }
             showOverlays(overlays);
@@ -398,20 +404,28 @@ public final class JourneyMapV6Plugin implements IClientPlugin {
             .setActiveUIs(Context.UI.Fullscreen);
 
         List<String> tooltip = marker.getTooltip();
-        if (tooltip == null && step instanceof UniversalInteractableStep<?>interactableStep) {
+        if (tooltip == null && step instanceof UniversalLocationInteractableStep<?>interactableStep) {
             tooltip = new ArrayList<>();
             interactableStep.getTooltip(tooltip);
         }
 
-        if (renderer instanceof UniversalInteractableRenderer interactableRenderer
-            && step instanceof UniversalInteractableStep<?>interactableStep) {
-            MarkerListener listener = overlay.getOverlayListener() instanceof MarkerListener markerListener
-                ? markerListener
-                : new MarkerListener(interactableRenderer, interactableStep);
-            listener.setTooltip(tooltip);
-            overlay.setOverlayListener(listener);
-        }
+        attachInteraction(overlay, renderer, step, tooltip);
         return overlay;
+    }
+
+    private void attachInteraction(Overlay overlay, UniversalLayerRenderer renderer, UniversalRenderStep<?> step,
+        @Nullable List<String> tooltip) {
+        if (overlay.getOverlayListener() != null
+            || !(renderer instanceof UniversalInteractableRenderer interactableRenderer)
+            || !(step instanceof UniversalLocationInteractableStep<?>interactableStep)) return;
+
+        if (tooltip == null) {
+            tooltip = new ArrayList<>();
+            interactableStep.getTooltip(tooltip);
+        }
+        OverlayListener listener = new OverlayListener(overlay, interactableRenderer, interactableStep);
+        listener.setTooltip(tooltip);
+        overlay.setOverlayListener(listener);
     }
 
     private int toJourneyMapZoom(int zoomStep) {
@@ -431,14 +445,14 @@ public final class JourneyMapV6Plugin implements IClientPlugin {
     private void handleMarkerActionKey() {
         int keyCode = NavigatorApi.ACTION_KEY.getKeyCode();
         boolean down = keyCode >= 0 && keyCode < 256 && Keyboard.isKeyDown(keyCode);
-        if (down && !actionKeyDown && hoveredMarker != null) {
-            hoveredMarker.renderer.onRenderStepKeyPressed(hoveredMarker.step, keyCode);
+        if (down && !actionKeyDown && hoveredOverlay != null) {
+            hoveredOverlay.renderer.onRenderStepKeyPressed(hoveredOverlay.step, keyCode);
         }
         actionKeyDown = down;
     }
 
     private void removeOverlays(UniversalLayerRenderer renderer) {
-        if (hoveredMarker != null && hoveredMarker.renderer == renderer) clearHoveredMarker();
+        if (hoveredOverlay != null && hoveredOverlay.renderer == renderer) clearHoveredOverlay();
         Map<ILocationProvider, List<Displayable>> shown = overlays.remove(renderer);
         if (shown != null) shown.values()
             .forEach(this::removeOverlays);
@@ -447,8 +461,8 @@ public final class JourneyMapV6Plugin implements IClientPlugin {
     private void removeOverlays(@Nullable Collection<Displayable> displayables) {
         if (displayables == null) return;
         for (Displayable displayable : displayables) {
-            if (displayable instanceof MarkerOverlay marker && marker.getOverlayListener() == hoveredMarker) {
-                clearHoveredMarker();
+            if (displayable instanceof Overlay overlay && overlay.getOverlayListener() == hoveredOverlay) {
+                clearHoveredOverlay();
             }
             api.remove(displayable);
         }
@@ -461,20 +475,23 @@ public final class JourneyMapV6Plugin implements IClientPlugin {
                     .forEach(this::removeOverlays));
         overlays.clear();
         overlayRefreshVersions.clear();
-        clearHoveredMarker();
+        clearHoveredOverlay();
     }
 
-    private void clearHoveredMarker() {
-        hoveredMarker = null;
+    private void clearHoveredOverlay() {
+        if (hoveredOverlay != null) hoveredOverlay.clearHover();
     }
 
-    private final class MarkerListener implements IOverlayListener {
+    private final class OverlayListener implements IOverlayListener {
 
+        private final Overlay overlay;
         private final UniversalInteractableRenderer renderer;
-        private final UniversalInteractableStep<?> step;
+        private final UniversalLocationInteractableStep<?> step;
         private List<String> tooltip = new ArrayList<>();
 
-        private MarkerListener(UniversalInteractableRenderer renderer, UniversalInteractableStep<?> step) {
+        private OverlayListener(Overlay overlay, UniversalInteractableRenderer renderer,
+            UniversalLocationInteractableStep<?> step) {
+            this.overlay = overlay;
             this.renderer = renderer;
             this.step = step;
         }
@@ -486,7 +503,7 @@ public final class JourneyMapV6Plugin implements IClientPlugin {
 
         @Override
         public void onMouseMove(UIState mapState, Point2D.Double mousePosition, BlockPos blockPosition) {
-            hoveredMarker = this;
+            hoveredOverlay = this;
         }
 
         @Override
@@ -498,6 +515,10 @@ public final class JourneyMapV6Plugin implements IClientPlugin {
         public boolean onMouseClick(UIState mapState, Point2D.Double mousePosition, BlockPos blockPosition, int button,
             boolean doubleClick) {
             if (button != 0) return true;
+            if (!contains(blockPosition, (int) mousePosition.x, (int) mousePosition.y)) {
+                clearHover();
+                return true;
+            }
 
             boolean handled = renderer.onRenderStepClick(
                 step,
@@ -510,12 +531,55 @@ public final class JourneyMapV6Plugin implements IClientPlugin {
         }
 
         private void clearHover() {
-            if (hoveredMarker == this) clearHoveredMarker();
+            renderer.clearRenderStepHover(step);
+            if (hoveredOverlay == this) hoveredOverlay = null;
         }
 
         private void setTooltip(@Nullable List<String> tooltip) {
             this.tooltip = tooltip == null ? new ArrayList<>() : new ArrayList<>(tooltip);
         }
+
+        private boolean contains(BlockPos position, int mouseX, int mouseY) {
+            if (overlay instanceof MarkerOverlay marker) {
+                return JourneyMapV6Plugin.this.contains(marker, mouseX, mouseY);
+            }
+            if (overlay instanceof PolygonOverlay polygon) {
+                if (!JourneyMapV6Plugin.contains(polygon.getOuterArea(), position)) return false;
+                return polygon.getHoles() == null || polygon.getHoles()
+                    .stream()
+                    .noneMatch(hole -> JourneyMapV6Plugin.contains(hole, position));
+            }
+            return true;
+        }
+    }
+
+    private boolean contains(MarkerOverlay marker, int mouseX, int mouseY) {
+        Minecraft minecraft = fullscreen.getMinecraft();
+        int guiScale = new ScaledResolution(minecraft, minecraft.displayWidth, minecraft.displayHeight)
+            .getScaleFactor();
+        UIState state = fullscreen.getUiState();
+        Point2D.Double position = getBlockPixel(
+            marker.getPoint()
+                .getX(),
+            marker.getPoint()
+                .getZ());
+        double centerX = position == null ? state.displayBounds.getCenterX() / guiScale + (marker.getPoint()
+            .getX() - fullscreen.getCenterBlockX(true)) * state.blockSize / guiScale : position.x / guiScale;
+        double centerY = position == null ? state.displayBounds.getCenterY() / guiScale + (marker.getPoint()
+            .getZ() - fullscreen.getCenterBlockZ(true)) * state.blockSize / guiScale : position.y / guiScale;
+        MapImage icon = marker.getIcon();
+        centerX += (int) state.blockSize / 2.0 / guiScale;
+        centerY += (int) state.blockSize / 2.0 / guiScale;
+        return mouseX >= centerX - icon.getAnchorX() / guiScale
+            && mouseX < centerX + (icon.getDisplayWidth() - icon.getAnchorX()) / guiScale
+            && mouseY >= centerY - icon.getAnchorY() / guiScale
+            && mouseY < centerY + (icon.getDisplayHeight() - icon.getAnchorY()) / guiScale;
+    }
+
+    private static boolean contains(MapPolygon mapPolygon, BlockPos position) {
+        Polygon polygon = new Polygon();
+        for (BlockPos point : mapPolygon.getPoints()) polygon.addPoint(point.getX(), point.getZ());
+        return polygon.contains(position.getX() + 0.5, position.getZ() + 0.5);
     }
 
     private void recache(int centerX, int centerZ, int width, int height) {
@@ -538,12 +602,16 @@ public final class JourneyMapV6Plugin implements IClientPlugin {
     }
 
     private void drawTooltip(FullscreenRenderEvent event) {
-        if (hoveredMarker != null) {
-            if (!hoveredMarker.tooltip.isEmpty()) {
+        if (hoveredOverlay != null
+            && !hoveredOverlay.contains(getMouseBlock(event), event.getMouseX(), event.getMouseY())) {
+            clearHoveredOverlay();
+        }
+        if (hoveredOverlay != null) {
+            if (!hoveredOverlay.tooltip.isEmpty()) {
                 DrawUtils.drawSimpleTooltip(
                     event.getFullscreen()
                         .getScreen(),
-                    hoveredMarker.tooltip,
+                    hoveredOverlay.tooltip,
                     event.getMouseX() + 16,
                     event.getMouseY() - 12,
                     0xFFFFFFFF,
@@ -580,6 +648,20 @@ public final class JourneyMapV6Plugin implements IClientPlugin {
             }
             return;
         }
+    }
+
+    private BlockPos getMouseBlock(FullscreenRenderEvent event) {
+        Minecraft minecraft = event.getFullscreen()
+            .getMinecraft();
+        int guiScale = new ScaledResolution(minecraft, minecraft.displayWidth, minecraft.displayHeight)
+            .getScaleFactor();
+        UIState state = event.getFullscreen()
+            .getUiState();
+        double x = event.getFullscreen()
+            .getCenterBlockX(true) + (event.getMouseX() * guiScale - minecraft.displayWidth / 2.0) / state.blockSize;
+        double z = event.getFullscreen()
+            .getCenterBlockZ(true) + (event.getMouseY() * guiScale - minecraft.displayHeight / 2.0) / state.blockSize;
+        return new BlockPos(x, 0, z);
     }
 
     private void drawSearchBar(FullscreenRenderEvent event) {
@@ -622,14 +704,20 @@ public final class JourneyMapV6Plugin implements IClientPlugin {
         timeLastClick = now;
 
         BlockPos location = event.getLocation();
-        if (hoveredMarker != null && hoveredMarker.renderer
-            .onRenderStepClick(hoveredMarker.step, doubleClick, mouseX, mouseY, location.getX(), location.getZ())) {
+        if (hoveredOverlay != null && !hoveredOverlay.contains(location, mouseX, mouseY)) clearHoveredOverlay();
+        if (hoveredOverlay != null && hoveredOverlay.renderer
+            .onRenderStepClick(hoveredOverlay.step, doubleClick, mouseX, mouseY, location.getX(), location.getZ())) {
             event.cancel();
             return;
         }
 
         for (LayerRenderer renderer : NavigatorApi.getActiveRenderersFor(MOD)) {
-            if (renderer instanceof UniversalLayerRenderer universal && universal.hasJourneyMapV6Overlays()) continue;
+            if (hoveredOverlay != null && renderer instanceof UniversalLayerRenderer universal
+                && universal.hasJourneyMapV6Overlays()) continue;
+            if (renderer instanceof UniversalInteractableRenderer nativeInteractable
+                && nativeInteractable.hasJourneyMapV6Overlays()) {
+                nativeInteractable.clearRenderStepHover();
+            }
             if (renderer instanceof InteractableLayer interactable
                 && interactable.onMapClick(doubleClick, mouseX, mouseY, location.getX(), location.getZ())) {
                 event.cancel();

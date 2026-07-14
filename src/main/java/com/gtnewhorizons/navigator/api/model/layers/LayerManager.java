@@ -291,7 +291,7 @@ public abstract class LayerManager {
         return layerRenderer.get(map);
     }
 
-    public Collection<? extends ILocationProvider> getVisibleLocations() {
+    public Collection<ILocationProvider> getVisibleLocations() {
         return visibleLocations;
     }
 
