@@ -120,4 +120,17 @@ public class UniversalInteractableRenderer extends UniversalLayerRenderer implem
         return this;
     }
 
+    public boolean onRenderStepClick(UniversalInteractableStep<?> step, boolean isDoubleClick, int mouseX, int mouseY,
+        int blockX, int blockZ) {
+        hoveredRenderStep = step;
+        boolean handled = onMapClick(isDoubleClick, mouseX, mouseY, blockX, blockZ);
+        if (handled) manager.forceRefresh();
+        return handled;
+    }
+
+    public boolean onRenderStepKeyPressed(UniversalInteractableStep<?> step, int keyCode) {
+        hoveredRenderStep = step;
+        return onKeyPressed(keyCode);
+    }
+
 }

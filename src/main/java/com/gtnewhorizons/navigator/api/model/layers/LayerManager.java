@@ -42,6 +42,7 @@ public abstract class LayerManager {
     private boolean refreshDim = true;
     private boolean clearFull, clearCurrent;
     private boolean hasSearchField;
+    private long refreshVersion;
 
     public LayerManager(ButtonManager buttonManager) {
         this.buttonManager = buttonManager;
@@ -157,6 +158,11 @@ public abstract class LayerManager {
 
     public void forceRefresh() {
         forceRefresh = true;
+        refreshVersion++;
+    }
+
+    public long getRefreshVersion() {
+        return refreshVersion;
     }
 
     public final void onGuiOpened(SupportedMods mod) {
@@ -194,6 +200,9 @@ public abstract class LayerManager {
     }
 
     private void recacheVisibleElements(int centerBlockX, int centerBlockZ) {
+        Minecraft minecraft = Minecraft.getMinecraft();
+        if (minecraft.thePlayer == null || minecraft.theWorld == null) return;
+
         int radiusBlockX = (Math.max(miniMapWidth, fullscreenMapWidth) + 1) >> 1;
         int radiusBlockZ = (Math.max(miniMapHeight, fullscreenMapHeight) + 1) >> 1;
         int minBlockX = centerBlockX - radiusBlockX;
@@ -204,7 +213,7 @@ public abstract class LayerManager {
         if (clearCurrent) clearCurrent();
         if (clearFull) clearFull();
 
-        int dim = Minecraft.getMinecraft().thePlayer.dimension;
+        int dim = minecraft.thePlayer.dimension;
         if (refreshDim || currentDim != dim) {
             currentDim = dim;
             refreshDimCache();

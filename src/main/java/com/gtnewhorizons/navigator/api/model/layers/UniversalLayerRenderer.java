@@ -1,5 +1,6 @@
 package com.gtnewhorizons.navigator.api.model.layers;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.function.Function;
 
@@ -8,12 +9,15 @@ import javax.annotation.Nullable;
 
 import com.gtnewhorizons.navigator.api.model.SupportedMods;
 import com.gtnewhorizons.navigator.api.model.locations.ILocationProvider;
+import com.gtnewhorizons.navigator.api.model.markers.MapMarker;
 import com.gtnewhorizons.navigator.api.model.steps.RenderStep;
 import com.gtnewhorizons.navigator.api.model.steps.UniversalRenderStep;
 
 public class UniversalLayerRenderer extends LayerRenderer {
 
     private Function<ILocationProvider, UniversalRenderStep<?>> stepCreator;
+    private Function<ILocationProvider, MapMarker> markerCreator;
+    private Function<ILocationProvider, Collection<?>> journeyMapV6OverlayCreator;
     private int renderPriority = 0;
 
     public UniversalLayerRenderer(@Nonnull LayerManager manager) {
@@ -29,6 +33,36 @@ public class UniversalLayerRenderer extends LayerRenderer {
     public UniversalLayerRenderer withRenderPriority(int renderPriority) {
         this.renderPriority = renderPriority;
         return this;
+    }
+
+    public UniversalLayerRenderer withMapMarker(@Nonnull Function<ILocationProvider, MapMarker> creator) {
+        markerCreator = creator;
+        return this;
+    }
+
+    public boolean hasMapMarker() {
+        return markerCreator != null;
+    }
+
+    public MapMarker createMapMarker(ILocationProvider location) {
+        return markerCreator.apply(location);
+    }
+
+    /**
+     * Adds native JourneyMap 6 displayables without making its optional API a runtime dependency of Navigator's API.
+     */
+    public UniversalLayerRenderer withJourneyMapV6Overlays(
+        @Nonnull Function<ILocationProvider, Collection<?>> creator) {
+        journeyMapV6OverlayCreator = creator;
+        return this;
+    }
+
+    public boolean hasJourneyMapV6Overlays() {
+        return markerCreator != null || journeyMapV6OverlayCreator != null;
+    }
+
+    public Collection<?> createJourneyMapV6Overlays(ILocationProvider location) {
+        return journeyMapV6OverlayCreator.apply(location);
     }
 
     @Nullable

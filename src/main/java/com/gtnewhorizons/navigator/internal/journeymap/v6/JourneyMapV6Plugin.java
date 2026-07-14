@@ -1,11 +1,23 @@
 package com.gtnewhorizons.navigator.internal.journeymap.v6;
 
+import java.awt.geom.Point2D;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import javax.annotation.Nullable;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ScaledResolution;
+
+import org.lwjgl.input.Keyboard;
 
 import com.gtnewhorizons.navigator.Navigator;
 import com.gtnewhorizons.navigator.api.NavigatorApi;
@@ -14,18 +26,30 @@ import com.gtnewhorizons.navigator.api.model.buttons.ButtonManager;
 import com.gtnewhorizons.navigator.api.model.layers.InteractableLayer;
 import com.gtnewhorizons.navigator.api.model.layers.LayerManager;
 import com.gtnewhorizons.navigator.api.model.layers.LayerRenderer;
+import com.gtnewhorizons.navigator.api.model.layers.UniversalInteractableRenderer;
 import com.gtnewhorizons.navigator.api.model.layers.UniversalLayerRenderer;
+import com.gtnewhorizons.navigator.api.model.locations.ILocationProvider;
+import com.gtnewhorizons.navigator.api.model.markers.MapMarker;
+import com.gtnewhorizons.navigator.api.model.steps.UniversalInteractableStep;
 import com.gtnewhorizons.navigator.api.model.steps.UniversalRenderStep;
 import com.gtnewhorizons.navigator.api.util.DrawUtils;
+import com.gtnewhorizons.navigator.internal.SearchBar;
 
+import cpw.mods.fml.common.FMLCommonHandler;
+import cpw.mods.fml.common.eventhandler.SubscribeEvent;
+import cpw.mods.fml.common.gameevent.TickEvent;
 import journeymap.api.v2.client.IClientAPI;
 import journeymap.api.v2.client.IClientPlugin;
+import journeymap.api.v2.client.display.Displayable;
+import journeymap.api.v2.client.display.IOverlayListener;
+import journeymap.api.v2.client.display.MarkerOverlay;
 import journeymap.api.v2.client.event.DisplayUpdateEvent;
 import journeymap.api.v2.client.event.FullscreenDisplayEvent;
 import journeymap.api.v2.client.event.FullscreenMapEvent;
 import journeymap.api.v2.client.event.FullscreenRenderEvent;
 import journeymap.api.v2.client.fullscreen.IFullscreen;
 import journeymap.api.v2.client.fullscreen.IThemeButton;
+import journeymap.api.v2.client.model.MapImage;
 import journeymap.api.v2.client.util.UIState;
 import journeymap.api.v2.common.Context;
 import journeymap.api.v2.common.JourneyMapPlugin;
@@ -40,18 +64,29 @@ public final class JourneyMapV6Plugin implements IClientPlugin {
 
     private static IClientAPI api;
     private static IFullscreen fullscreen;
+    private static @Nullable SearchBar searchBar;
+    private static @Nullable Object mapRenderer;
+    private static @Nullable Method getBlockPixelInGrid;
+    private static @Nullable Method committedDragOffsetX;
+    private static @Nullable Method committedDragOffsetZ;
+    private static boolean mapRendererLookupFailed;
 
+    private final Map<UniversalLayerRenderer, Map<ILocationProvider, List<Displayable>>> overlays = new IdentityHashMap<>();
+    private final Map<LayerManager, Long> overlayRefreshVersions = new IdentityHashMap<>();
+    private @Nullable MarkerListener hoveredMarker;
+    private boolean actionKeyDown;
     private boolean fullscreenActive;
+    private long lastOverlayUpdate;
     private long lastRecache;
     private int oldCenterX = Integer.MIN_VALUE;
     private int oldCenterZ = Integer.MIN_VALUE;
     private int oldWidth = -1;
     private int oldHeight = -1;
     private long timeLastClick;
-    private int oldMouseX;
-    private int oldMouseY;
     private ButtonManager lastPressedButton;
     private long lastButtonPress;
+    private int searchScreenWidth = -1;
+    private int searchScreenHeight = -1;
 
     @Override
     public String getModId() {
@@ -65,6 +100,9 @@ public final class JourneyMapV6Plugin implements IClientPlugin {
         FullscreenEventRegistry.FULLSCREEN_RENDER_EVENT.subscribe(Navigator.MODID, this::onRender);
         FullscreenEventRegistry.FULLSCREEN_MAP_CLICK_EVENT.subscribe(Navigator.MODID, this::onClick);
         FullscreenEventRegistry.ADDON_BUTTON_DISPLAY_EVENT.subscribe(Navigator.MODID, this::onButtons);
+        FMLCommonHandler.instance()
+            .bus()
+            .register(this);
     }
 
     public static @Nullable IClientAPI getApi() {
@@ -75,6 +113,21 @@ public final class JourneyMapV6Plugin implements IClientPlugin {
         if (fullscreen != null && fullscreen.getUiState().active) {
             fullscreen.centerOn(blockX, blockZ);
         }
+    }
+
+    public static boolean onSearchKeyTyped(char typedChar, int keyCode) {
+        return searchBar != null && searchBar.getVisible() && searchBar.textboxKeyTyped(typedChar, keyCode);
+    }
+
+    public static boolean isSearchFocused() {
+        return searchBar != null && searchBar.getVisible() && searchBar.isFocused();
+    }
+
+    public static boolean onSearchMouseClicked(int mouseX, int mouseY, int button) {
+        if (searchBar == null || !searchBar.getVisible()) return false;
+
+        searchBar.mouseClicked(mouseX, mouseY, button);
+        return searchBar.isHovered(mouseX, mouseY);
     }
 
     private void onDisplayUpdate(DisplayUpdateEvent event) {
@@ -89,7 +142,10 @@ public final class JourneyMapV6Plugin implements IClientPlugin {
                 manager.onGuiClosed(MOD);
             }
         }
-        if (!fullscreenActive) fullscreen = null;
+        if (!fullscreenActive) {
+            fullscreen = null;
+            searchBar = null;
+        }
     }
 
     private void onButtons(FullscreenDisplayEvent.AddonButtonDisplayEvent event) {
@@ -130,21 +186,336 @@ public final class JourneyMapV6Plugin implements IClientPlugin {
         int guiScale = new ScaledResolution(minecraft, minecraft.displayWidth, minecraft.displayHeight)
             .getScaleFactor();
         double blockSize = state.blockSize / guiScale;
-        double mapCenterX = fullscreen.getCenterBlockX(true);
-        double mapCenterZ = fullscreen.getCenterBlockZ(true);
         double zoomStep = Math.log(state.blockSize) / Math.log(2.0);
         for (LayerRenderer renderer : NavigatorApi.getActiveRenderersByPriority(MOD)) {
-            if (!(renderer instanceof UniversalLayerRenderer)) continue;
-            for (UniversalRenderStep<?> step : ((UniversalLayerRenderer) renderer).getRenderSteps()) {
-                double x = state.displayBounds.getCenterX() / guiScale + (step.getLocation()
-                    .getBlockX() - mapCenterX) * blockSize;
-                double y = state.displayBounds.getCenterY() / guiScale + (step.getLocation()
-                    .getBlockZ() - mapCenterZ) * blockSize;
-                step.drawJourneyMap(x, y, 1.0F / guiScale, zoomStep, blockSize, 1.0, 0.0);
+            if (!(renderer instanceof UniversalLayerRenderer universal) || universal.hasMapMarker()) {
+                continue;
+            }
+            for (UniversalRenderStep<?> step : universal.getRenderSteps()) {
+                Point2D.Double pixel = getBlockPixel(
+                    step.getLocation()
+                        .getBlockX(),
+                    step.getLocation()
+                        .getBlockZ());
+                double x;
+                double y;
+                if (pixel != null) {
+                    x = pixel.x / guiScale;
+                    y = pixel.y / guiScale;
+                } else {
+                    x = state.displayBounds.getCenterX() / guiScale + (step.getLocation()
+                        .getBlockX() - fullscreen.getCenterBlockX(true)) * blockSize;
+                    y = state.displayBounds.getCenterY() / guiScale + (step.getLocation()
+                        .getBlockZ() - fullscreen.getCenterBlockZ(true)) * blockSize;
+                }
+                step.drawJourneyMap(x, y, 1.0F / guiScale, zoomStep, blockSize, 1.0 / guiScale, 0.0);
             }
         }
 
+        drawSearchBar(event);
         drawTooltip(event);
+    }
+
+    private @Nullable Point2D.Double getBlockPixel(double blockX, double blockZ) {
+        if (mapRendererLookupFailed) return null;
+
+        try {
+            if (mapRenderer == null) {
+                Field field = fullscreen.getClass()
+                    .getDeclaredField("mapRenderer");
+                field.setAccessible(true);
+                mapRenderer = field.get(null);
+                Class<?> rendererClass = mapRenderer.getClass();
+                getBlockPixelInGrid = rendererClass.getMethod("getBlockPixelInGrid", double.class, double.class);
+                committedDragOffsetX = rendererClass.getMethod("committedDragOffsetX", double.class);
+                committedDragOffsetZ = rendererClass.getMethod("committedDragOffsetZ", double.class);
+            }
+
+            Point2D.Double pixel = (Point2D.Double) getBlockPixelInGrid.invoke(mapRenderer, blockX, blockZ);
+            double dragX = fullscreen.getCenterBlockX(false) - fullscreen.getCenterBlockX(true);
+            double dragZ = fullscreen.getCenterBlockZ(false) - fullscreen.getCenterBlockZ(true);
+            if (dragX != 0 || dragZ != 0) {
+                double blockSize = fullscreen.getUiState().blockSize;
+                pixel.x += (double) committedDragOffsetX.invoke(mapRenderer, dragX) * blockSize;
+                pixel.y += (double) committedDragOffsetZ.invoke(mapRenderer, dragZ) * blockSize;
+            }
+            return pixel;
+        } catch (Exception e) {
+            mapRendererLookupFailed = true;
+            Navigator.LOG.warn("Could not use JourneyMap 6's block-to-pixel conversion", e);
+            return null;
+        }
+    }
+
+    @SubscribeEvent
+    public void onClientTick(TickEvent.ClientTickEvent event) {
+        if (event.phase != TickEvent.Phase.END) return;
+
+        handleMarkerActionKey();
+        if (searchBar != null && searchBar.getVisible()) searchBar.updateCursorCounter();
+
+        // Navigator caches locations by viewport; poll until that cache can publish change events.
+        if (System.currentTimeMillis() - lastOverlayUpdate < 250L) return;
+
+        lastOverlayUpdate = System.currentTimeMillis();
+        Minecraft minecraft = Minecraft.getMinecraft();
+        if (minecraft.thePlayer == null || minecraft.theWorld == null) {
+            removeAllOverlays();
+            return;
+        }
+
+        UIState state = getActiveMapState();
+        for (LayerManager manager : NavigatorApi.getEnabledLayers(MOD)) {
+            LayerRenderer layer = manager.getLayerRenderer(MOD);
+            if (!(layer instanceof UniversalLayerRenderer renderer) || !renderer.hasJourneyMapV6Overlays()) {
+                continue;
+            }
+            if (!manager.isLayerActive()) {
+                removeOverlays(renderer);
+                continue;
+            }
+            if (state == null) continue;
+
+            long refreshVersion = manager.getRefreshVersion();
+            boolean refresh = overlayRefreshVersions.getOrDefault(manager, -1L) != refreshVersion;
+            int width = (int) Math.ceil(state.blockBounds.maxX - state.blockBounds.minX);
+            int height = (int) Math.ceil(state.blockBounds.maxZ - state.blockBounds.minZ);
+            if (state.ui == Context.UI.Fullscreen) {
+                manager.recacheFullscreenMap(state.mapCenter.getX(), state.mapCenter.getZ(), width, height);
+            } else {
+                manager.recacheMiniMap(state.mapCenter.getX(), state.mapCenter.getZ(), width, height);
+            }
+            syncOverlays(renderer, refresh);
+            overlayRefreshVersions.put(manager, refreshVersion);
+        }
+    }
+
+    private @Nullable UIState getActiveMapState() {
+        UIState state = api.getUIState(Context.UI.Fullscreen);
+        if (isUsable(state)) return state;
+
+        state = api.getUIState(Context.UI.Minimap);
+        return isUsable(state) ? state : null;
+    }
+
+    private boolean isUsable(@Nullable UIState state) {
+        return state != null && state.active && state.blockBounds != null && state.mapCenter != null;
+    }
+
+    private void syncOverlays(UniversalLayerRenderer renderer, boolean refresh) {
+        Map<ILocationProvider, List<Displayable>> shown = overlays
+            .computeIfAbsent(renderer, ignored -> new HashMap<>());
+        Set<ILocationProvider> visible = new HashSet<>();
+        for (UniversalRenderStep<?> step : renderer.getRenderSteps()) {
+            ILocationProvider location = step.getLocation();
+            visible.add(location);
+            if (renderer.hasMapMarker()) {
+                List<Displayable> current = shown.get(location);
+                if (current != null && !refresh) continue;
+
+                MarkerOverlay marker = createMarker(renderer, step);
+                if (marker == null) {
+                    removeOverlays(current);
+                    shown.put(location, new ArrayList<>());
+                } else {
+                    List<Displayable> updated = new ArrayList<>();
+                    updated.add(marker);
+                    showOverlays(updated);
+                    removeOverlays(current);
+                    shown.put(location, updated);
+                }
+                continue;
+            }
+
+            if (refresh) removeOverlays(shown.remove(location));
+            if (shown.containsKey(location)) continue;
+
+            List<Displayable> overlays = new ArrayList<>();
+            Collection<?> candidates = renderer.createJourneyMapV6Overlays(location);
+            if (candidates == null) {
+                shown.put(location, overlays);
+                continue;
+            }
+            for (Object candidate : candidates) {
+                if (!(candidate instanceof Displayable displayable)) continue;
+                overlays.add(displayable);
+            }
+            showOverlays(overlays);
+            shown.put(location, overlays);
+        }
+
+        if (refresh) {
+            shown.entrySet()
+                .removeIf(entry -> {
+                    if (visible.contains(entry.getKey())) return false;
+                    removeOverlays(entry.getValue());
+                    return true;
+                });
+        }
+    }
+
+    private @Nullable MarkerOverlay createMarker(UniversalLayerRenderer renderer, UniversalRenderStep<?> step) {
+        MapMarker marker = renderer.createMapMarker(step.getLocation());
+        if (marker == null) return null;
+
+        MapImage image;
+        if (marker.getImage() != null) {
+            image = new MapImage(marker.getImage());
+        } else if (marker.getImageLocation() != null) {
+            image = new MapImage(marker.getImageLocation(), marker.getTextureWidth(), marker.getTextureHeight());
+        } else {
+            return null;
+        }
+        image.setDisplayWidth(marker.getDisplayWidth())
+            .setDisplayHeight(marker.getDisplayHeight())
+            .centerAnchors()
+            .setBlur(false);
+
+        ILocationProvider location = step.getLocation();
+        BlockPos point = new BlockPos(
+            (int) Math.floor(location.getBlockX()),
+            64,
+            (int) Math.floor(location.getBlockZ()));
+        MarkerOverlay overlay = new MarkerOverlay(Navigator.MODID, point, image);
+        overlay.setDimension(location.getDimensionId())
+            .setOverlayGroupName(
+                location.getClass()
+                    .getName())
+            .setActiveUIs(Context.UI.Fullscreen, Context.UI.Minimap)
+            .setDisplayOrder(100 + renderer.getRenderPriority());
+
+        overlay.setLabel(marker.getLabel())
+            .setTitle(null);
+        int labelMinZoom = marker.getLabelMinZoom() == null ? UIState.FULLSCREEN_ZOOM_MIN
+            : toJourneyMapZoom(marker.getLabelMinZoom());
+        overlay.getTextProperties()
+            .setColor(marker.getLabelColor())
+            .setScale(marker.getLabelScale())
+            .setBackgroundOpacity(marker.getLabelBackgroundOpacity())
+            .setOffsetY(marker.getLabelOffsetY())
+            .setMinZoom(labelMinZoom);
+        if (!marker.isLabelOnMinimap()) overlay.getTextProperties()
+            .setActiveUIs(Context.UI.Fullscreen);
+
+        List<String> tooltip = marker.getTooltip();
+        if (tooltip == null && step instanceof UniversalInteractableStep<?>interactableStep) {
+            tooltip = new ArrayList<>();
+            interactableStep.getTooltip(tooltip);
+        }
+
+        if (renderer instanceof UniversalInteractableRenderer interactableRenderer
+            && step instanceof UniversalInteractableStep<?>interactableStep) {
+            MarkerListener listener = overlay.getOverlayListener() instanceof MarkerListener markerListener
+                ? markerListener
+                : new MarkerListener(interactableRenderer, interactableStep);
+            listener.setTooltip(tooltip);
+            overlay.setOverlayListener(listener);
+        }
+        return overlay;
+    }
+
+    private int toJourneyMapZoom(int zoomStep) {
+        return (int) Math.max(UIState.FULLSCREEN_ZOOM_MIN, Math.min(UIState.ZOOM_IN_MAX, 512 * Math.pow(2, zoomStep)));
+    }
+
+    private void showOverlays(Collection<Displayable> displayables) {
+        for (Displayable displayable : displayables) {
+            try {
+                api.show(displayable);
+            } catch (Exception e) {
+                Navigator.LOG.error("Could not show JourneyMap 6 overlay", e);
+            }
+        }
+    }
+
+    private void handleMarkerActionKey() {
+        int keyCode = NavigatorApi.ACTION_KEY.getKeyCode();
+        boolean down = keyCode >= 0 && keyCode < 256 && Keyboard.isKeyDown(keyCode);
+        if (down && !actionKeyDown && hoveredMarker != null) {
+            hoveredMarker.renderer.onRenderStepKeyPressed(hoveredMarker.step, keyCode);
+        }
+        actionKeyDown = down;
+    }
+
+    private void removeOverlays(UniversalLayerRenderer renderer) {
+        if (hoveredMarker != null && hoveredMarker.renderer == renderer) clearHoveredMarker();
+        Map<ILocationProvider, List<Displayable>> shown = overlays.remove(renderer);
+        if (shown != null) shown.values()
+            .forEach(this::removeOverlays);
+    }
+
+    private void removeOverlays(@Nullable Collection<Displayable> displayables) {
+        if (displayables == null) return;
+        for (Displayable displayable : displayables) {
+            if (displayable instanceof MarkerOverlay marker && marker.getOverlayListener() == hoveredMarker) {
+                clearHoveredMarker();
+            }
+            api.remove(displayable);
+        }
+    }
+
+    private void removeAllOverlays() {
+        overlays.values()
+            .forEach(
+                shown -> shown.values()
+                    .forEach(this::removeOverlays));
+        overlays.clear();
+        overlayRefreshVersions.clear();
+        clearHoveredMarker();
+    }
+
+    private void clearHoveredMarker() {
+        hoveredMarker = null;
+    }
+
+    private final class MarkerListener implements IOverlayListener {
+
+        private final UniversalInteractableRenderer renderer;
+        private final UniversalInteractableStep<?> step;
+        private List<String> tooltip = new ArrayList<>();
+
+        private MarkerListener(UniversalInteractableRenderer renderer, UniversalInteractableStep<?> step) {
+            this.renderer = renderer;
+            this.step = step;
+        }
+
+        @Override
+        public void onDeactivate(UIState mapState) {
+            clearHover();
+        }
+
+        @Override
+        public void onMouseMove(UIState mapState, Point2D.Double mousePosition, BlockPos blockPosition) {
+            hoveredMarker = this;
+        }
+
+        @Override
+        public void onMouseOut(UIState mapState, Point2D.Double mousePosition, BlockPos blockPosition) {
+            clearHover();
+        }
+
+        @Override
+        public boolean onMouseClick(UIState mapState, Point2D.Double mousePosition, BlockPos blockPosition, int button,
+            boolean doubleClick) {
+            if (button != 0) return true;
+
+            boolean handled = renderer.onRenderStepClick(
+                step,
+                doubleClick,
+                (int) mousePosition.x,
+                (int) mousePosition.y,
+                blockPosition.getX(),
+                blockPosition.getZ());
+            return !handled;
+        }
+
+        private void clearHover() {
+            if (hoveredMarker == this) clearHoveredMarker();
+        }
+
+        private void setTooltip(@Nullable List<String> tooltip) {
+            this.tooltip = tooltip == null ? new ArrayList<>() : new ArrayList<>(tooltip);
+        }
     }
 
     private void recache(int centerX, int centerZ, int width, int height) {
@@ -167,7 +538,22 @@ public final class JourneyMapV6Plugin implements IClientPlugin {
     }
 
     private void drawTooltip(FullscreenRenderEvent event) {
+        if (hoveredMarker != null) {
+            if (!hoveredMarker.tooltip.isEmpty()) {
+                DrawUtils.drawSimpleTooltip(
+                    event.getFullscreen()
+                        .getScreen(),
+                    hoveredMarker.tooltip,
+                    event.getMouseX() + 16,
+                    event.getMouseY() - 12,
+                    0xFFFFFFFF,
+                    0x86000000);
+            }
+            return;
+        }
+
         for (LayerRenderer renderer : NavigatorApi.getActiveRenderersFor(MOD)) {
+            if (renderer instanceof UniversalLayerRenderer universal && universal.hasJourneyMapV6Overlays()) continue;
             if (!(renderer instanceof InteractableLayer interactable)) continue;
 
             interactable.onMouseMove(event.getMouseX(), event.getMouseY());
@@ -196,19 +582,54 @@ public final class JourneyMapV6Plugin implements IClientPlugin {
         }
     }
 
+    private void drawSearchBar(FullscreenRenderEvent event) {
+        boolean visible = NavigatorApi.getEnabledLayers(MOD)
+            .stream()
+            .anyMatch(manager -> manager.isLayerActive() && manager.hasSearchField());
+        if (!visible) {
+            if (searchBar != null) searchBar.setVisible(false);
+            return;
+        }
+
+        int width = event.getFullscreen()
+            .getScreen().width;
+        int height = event.getFullscreen()
+            .getScreen().height;
+        if (searchBar == null || width != searchScreenWidth || height != searchScreenHeight) {
+            searchScreenWidth = width;
+            searchScreenHeight = height;
+            searchBar = new SearchBar(6, height - 51, Math.min(width / 2 - 50, 200) * 2 / 3, 16);
+            searchBar.setTextConsumer(
+                text -> NavigatorApi.getEnabledLayers(MOD)
+                    .forEach(manager -> {
+                        if (manager.isLayerActive() && manager.hasSearchField()) {
+                            manager.onSearch(text);
+                            manager.forceRefresh();
+                        }
+                    }));
+        }
+        searchBar.setVisible(true);
+        searchBar.drawTextBox();
+    }
+
     private void onClick(FullscreenMapEvent.ClickEvent event) {
         if (event.getStage() != FullscreenMapEvent.Stage.PRE || event.getButton() != 0) return;
 
         int mouseX = (int) event.getMouseX();
         int mouseY = (int) event.getMouseY();
         long now = System.currentTimeMillis();
-        boolean doubleClick = mouseX == oldMouseX && mouseY == oldMouseY && now - timeLastClick < 250L;
-        oldMouseX = mouseX;
-        oldMouseY = mouseY;
+        boolean doubleClick = now - timeLastClick < 200L;
         timeLastClick = now;
 
         BlockPos location = event.getLocation();
+        if (hoveredMarker != null && hoveredMarker.renderer
+            .onRenderStepClick(hoveredMarker.step, doubleClick, mouseX, mouseY, location.getX(), location.getZ())) {
+            event.cancel();
+            return;
+        }
+
         for (LayerRenderer renderer : NavigatorApi.getActiveRenderersFor(MOD)) {
+            if (renderer instanceof UniversalLayerRenderer universal && universal.hasJourneyMapV6Overlays()) continue;
             if (renderer instanceof InteractableLayer interactable
                 && interactable.onMapClick(doubleClick, mouseX, mouseY, location.getX(), location.getZ())) {
                 event.cancel();
