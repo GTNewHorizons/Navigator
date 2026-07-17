@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 
 import com.gtnewhorizon.gtnhmixins.builders.IMixins;
 import com.gtnewhorizon.gtnhmixins.builders.MixinBuilder;
+import com.gtnewhorizons.navigator.api.util.Util;
 import com.gtnewhorizons.navigator.config.ModuleConfig;
 
 public enum Mixins implements IMixins {
@@ -15,10 +16,10 @@ public enum Mixins implements IMixins {
         .setPhase(Phase.EARLY)
         .setApplyIf(() -> ModuleConfig.enableXaeroMinimapModule)
         .addClientMixins("minecraft.ForgeHooksClientMixin")),
-    JOURNEYMAP_API(new MixinBuilder()
+    JOURNEYMAP_V5(new MixinBuilder()
         .addRequiredMod(TargetedMod.JOURNEYMAP)
         .setPhase(Phase.LATE)
-        .setApplyIf(() -> ModuleConfig.enableJourneyMapModule)
+        .setApplyIf(() -> ModuleConfig.enableJourneyMapModule && Util.isJourneyMapV5Installed())
         .addClientMixins(
             "journeymap.DisplayVarsAccessor",
             "journeymap.FullscreenAccessor",

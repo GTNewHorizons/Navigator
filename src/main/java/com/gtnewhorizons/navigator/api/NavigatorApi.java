@@ -86,7 +86,7 @@ public final class NavigatorApi {
     }
 
     public void openJourneyMapAt(@Nullable LayerManager layer, int blockX, int blockZ, int zoom) {
-        if (!Util.isJourneyMapInstalled()) return;
+        if (!Util.isJourneyMapV5Installed()) return;
         final GridRenderer gridRenderer = FullscreenAccessor.getGridRenderer();
         if (gridRenderer == null) return;
 
