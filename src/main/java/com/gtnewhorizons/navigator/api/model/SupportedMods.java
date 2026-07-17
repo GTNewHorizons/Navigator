@@ -5,7 +5,7 @@ import com.gtnewhorizons.navigator.config.ModuleConfig;
 
 public enum SupportedMods {
 
-    JourneyMap(Util.isJourneyMapInstalled() && ModuleConfig.enableJourneyMapModule),
+    JourneyMap(Util.isJourneyMapV5Installed() && ModuleConfig.enableJourneyMapModule),
     XaeroWorldMap(Util.isXaerosWorldMapInstalled() && ModuleConfig.enableXaeroWorldMapModule),
     XaeroMiniMap(Util.isXaerosMinimapInstalled() && ModuleConfig.enableXaeroMinimapModule),
     NONE(false);

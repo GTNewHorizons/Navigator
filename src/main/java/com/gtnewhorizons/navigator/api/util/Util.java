@@ -5,19 +5,20 @@ import net.minecraft.client.settings.KeyBinding;
 import org.lwjgl.input.Keyboard;
 
 import com.gtnewhorizon.gtnhlib.util.CoordinatePacker;
+import com.gtnewhorizons.navigator.api.journeymap.JourneyMapVersion;
 
 import cpw.mods.fml.common.Loader;
 
 public class Util {
 
-    private static final boolean isJourneyMapLoaded;
+    private static final JourneyMapVersion journeyMapVersion;
     private static final boolean isXaeroWorldMapLoaded;
     private static final boolean isXaeroMinimapLoaded;
     private static final boolean isNEILoaded;
     private static boolean isVoxelMapLoaded;
 
     static {
-        isJourneyMapLoaded = Loader.isModLoaded("journeymap");
+        journeyMapVersion = JourneyMapVersion.get();
         isXaeroWorldMapLoaded = Loader.isModLoaded("XaeroWorldMap");
         isXaeroMinimapLoaded = Loader.isModLoaded("XaeroMinimap");
         isNEILoaded = Loader.isModLoaded("NotEnoughItems");
@@ -31,7 +32,19 @@ public class Util {
     }
 
     public static boolean isJourneyMapInstalled() {
-        return isJourneyMapLoaded;
+        return journeyMapVersion != JourneyMapVersion.NONE;
+    }
+
+    public static boolean isJourneyMapV5Installed() {
+        return journeyMapVersion == JourneyMapVersion.V5;
+    }
+
+    public static boolean isJourneyMapV6Installed() {
+        return journeyMapVersion == JourneyMapVersion.V6;
+    }
+
+    public static JourneyMapVersion getJourneyMapVersion() {
+        return journeyMapVersion;
     }
 
     public static boolean isXaerosWorldMapInstalled() {
