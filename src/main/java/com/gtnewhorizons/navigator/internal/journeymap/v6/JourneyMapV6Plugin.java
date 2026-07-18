@@ -1,6 +1,5 @@
 package com.gtnewhorizons.navigator.internal.journeymap.v6;
 
-import java.awt.Polygon;
 import java.awt.geom.Point2D;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -45,7 +44,6 @@ import journeymap.api.v2.client.display.Displayable;
 import journeymap.api.v2.client.display.IOverlayListener;
 import journeymap.api.v2.client.display.MarkerOverlay;
 import journeymap.api.v2.client.display.Overlay;
-import journeymap.api.v2.client.display.PolygonOverlay;
 import journeymap.api.v2.client.event.DisplayUpdateEvent;
 import journeymap.api.v2.client.event.FullscreenDisplayEvent;
 import journeymap.api.v2.client.event.FullscreenMapEvent;
@@ -53,7 +51,6 @@ import journeymap.api.v2.client.event.FullscreenRenderEvent;
 import journeymap.api.v2.client.fullscreen.IFullscreen;
 import journeymap.api.v2.client.fullscreen.IThemeButton;
 import journeymap.api.v2.client.model.MapImage;
-import journeymap.api.v2.client.model.MapPolygon;
 import journeymap.api.v2.client.util.UIState;
 import journeymap.api.v2.common.Context;
 import journeymap.api.v2.common.JourneyMapPlugin;
@@ -87,8 +84,6 @@ public final class JourneyMapV6Plugin implements IClientPlugin {
     private int oldWidth = -1;
     private int oldHeight = -1;
     private long timeLastClick;
-    private ButtonManager lastPressedButton;
-    private long lastButtonPress;
     private int searchScreenWidth = -1;
     private int searchScreenHeight = -1;
 
@@ -160,19 +155,9 @@ public final class JourneyMapV6Plugin implements IClientPlugin {
                     manager.getButtonText(),
                     manager.getIcon(MOD, ""),
                     manager.isActive(),
-                    ignored -> toggleButton(manager));
+                    ignored -> manager.toggle());
             manager.setOnToggle(button::setToggled);
         }
-    }
-
-    private void toggleButton(ButtonManager manager) {
-        long now = System.nanoTime();
-        // JM 6.0.0-beta.1 adds addon buttons to the fullscreen twice and invokes both entries on one click.
-        if (manager == lastPressedButton && now - lastButtonPress < 50_000_000L) return;
-
-        lastPressedButton = manager;
-        lastButtonPress = now;
-        manager.toggle();
     }
 
     private void onRender(FullscreenRenderEvent event) {
@@ -423,7 +408,10 @@ public final class JourneyMapV6Plugin implements IClientPlugin {
             tooltip = new ArrayList<>();
             interactableStep.getTooltip(tooltip);
         }
-        OverlayListener listener = new OverlayListener(overlay, interactableRenderer, interactableStep);
+        OverlayListener listener = new OverlayListener(
+            overlay instanceof MarkerOverlay marker ? marker : null,
+            interactableRenderer,
+            interactableStep);
         listener.setTooltip(tooltip);
         overlay.setOverlayListener(listener);
     }
@@ -484,14 +472,14 @@ public final class JourneyMapV6Plugin implements IClientPlugin {
 
     private final class OverlayListener implements IOverlayListener {
 
-        private final Overlay overlay;
+        private final @Nullable MarkerOverlay marker;
         private final UniversalInteractableRenderer renderer;
         private final UniversalLocationInteractableStep<?> step;
         private List<String> tooltip = new ArrayList<>();
 
-        private OverlayListener(Overlay overlay, UniversalInteractableRenderer renderer,
+        private OverlayListener(@Nullable MarkerOverlay marker, UniversalInteractableRenderer renderer,
             UniversalLocationInteractableStep<?> step) {
-            this.overlay = overlay;
+            this.marker = marker;
             this.renderer = renderer;
             this.step = step;
         }
@@ -503,6 +491,11 @@ public final class JourneyMapV6Plugin implements IClientPlugin {
 
         @Override
         public void onMouseMove(UIState mapState, Point2D.Double mousePosition, BlockPos blockPosition) {
+            if (!contains((int) mousePosition.x, (int) mousePosition.y)) {
+                clearHover();
+                return;
+            }
+            renderer.setRenderStepHover(step);
             hoveredOverlay = this;
         }
 
@@ -515,11 +508,10 @@ public final class JourneyMapV6Plugin implements IClientPlugin {
         public boolean onMouseClick(UIState mapState, Point2D.Double mousePosition, BlockPos blockPosition, int button,
             boolean doubleClick) {
             if (button != 0) return true;
-            if (!contains(blockPosition, (int) mousePosition.x, (int) mousePosition.y)) {
+            if (!contains((int) mousePosition.x, (int) mousePosition.y)) {
                 clearHover();
                 return true;
             }
-
             boolean handled = renderer.onRenderStepClick(
                 step,
                 doubleClick,
@@ -539,47 +531,28 @@ public final class JourneyMapV6Plugin implements IClientPlugin {
             this.tooltip = tooltip == null ? new ArrayList<>() : new ArrayList<>(tooltip);
         }
 
-        private boolean contains(BlockPos position, int mouseX, int mouseY) {
-            if (overlay instanceof MarkerOverlay marker) {
-                return JourneyMapV6Plugin.this.contains(marker, mouseX, mouseY);
-            }
-            if (overlay instanceof PolygonOverlay polygon) {
-                if (!JourneyMapV6Plugin.contains(polygon.getOuterArea(), position)) return false;
-                return polygon.getHoles() == null || polygon.getHoles()
-                    .stream()
-                    .noneMatch(hole -> JourneyMapV6Plugin.contains(hole, position));
-            }
-            return true;
+        private boolean contains(int mouseX, int mouseY) {
+            return marker == null || JourneyMapV6Plugin.this.contains(marker, mouseX, mouseY);
         }
     }
 
     private boolean contains(MarkerOverlay marker, int mouseX, int mouseY) {
-        Minecraft minecraft = fullscreen.getMinecraft();
-        int guiScale = new ScaledResolution(minecraft, minecraft.displayWidth, minecraft.displayHeight)
-            .getScaleFactor();
         UIState state = fullscreen.getUiState();
         Point2D.Double position = getBlockPixel(
             marker.getPoint()
                 .getX(),
             marker.getPoint()
                 .getZ());
-        double centerX = position == null ? state.displayBounds.getCenterX() / guiScale + (marker.getPoint()
-            .getX() - fullscreen.getCenterBlockX(true)) * state.blockSize / guiScale : position.x / guiScale;
-        double centerY = position == null ? state.displayBounds.getCenterY() / guiScale + (marker.getPoint()
-            .getZ() - fullscreen.getCenterBlockZ(true)) * state.blockSize / guiScale : position.y / guiScale;
+        double centerX = position == null ? state.displayBounds.getCenterX() + (marker.getPoint()
+            .getX() - fullscreen.getCenterBlockX(true)) * state.blockSize : position.x;
+        double centerY = position == null ? state.displayBounds.getCenterY() + (marker.getPoint()
+            .getZ() - fullscreen.getCenterBlockZ(true)) * state.blockSize : position.y;
         MapImage icon = marker.getIcon();
-        centerX += (int) state.blockSize / 2.0 / guiScale;
-        centerY += (int) state.blockSize / 2.0 / guiScale;
-        return mouseX >= centerX - icon.getAnchorX() / guiScale
-            && mouseX < centerX + (icon.getDisplayWidth() - icon.getAnchorX()) / guiScale
-            && mouseY >= centerY - icon.getAnchorY() / guiScale
-            && mouseY < centerY + (icon.getDisplayHeight() - icon.getAnchorY()) / guiScale;
-    }
-
-    private static boolean contains(MapPolygon mapPolygon, BlockPos position) {
-        Polygon polygon = new Polygon();
-        for (BlockPos point : mapPolygon.getPoints()) polygon.addPoint(point.getX(), point.getZ());
-        return polygon.contains(position.getX() + 0.5, position.getZ() + 0.5);
+        centerX += (int) state.blockSize / 2.0;
+        centerY += (int) state.blockSize / 2.0;
+        return mouseX >= centerX - icon.getAnchorX() && mouseX < centerX + icon.getDisplayWidth() - icon.getAnchorX()
+            && mouseY >= centerY - icon.getAnchorY()
+            && mouseY < centerY + icon.getDisplayHeight() - icon.getAnchorY();
     }
 
     private void recache(int centerX, int centerZ, int width, int height) {
@@ -602,10 +575,6 @@ public final class JourneyMapV6Plugin implements IClientPlugin {
     }
 
     private void drawTooltip(FullscreenRenderEvent event) {
-        if (hoveredOverlay != null
-            && !hoveredOverlay.contains(getMouseBlock(event), event.getMouseX(), event.getMouseY())) {
-            clearHoveredOverlay();
-        }
         if (hoveredOverlay != null) {
             if (!hoveredOverlay.tooltip.isEmpty()) {
                 DrawUtils.drawSimpleTooltip(
@@ -616,6 +585,16 @@ public final class JourneyMapV6Plugin implements IClientPlugin {
                     event.getMouseY() - 12,
                     0xFFFFFFFF,
                     0x86000000);
+            } else {
+                hoveredOverlay.renderer.drawCustomTooltip(
+                    event.getFullscreen()
+                        .getMinecraft().fontRenderer,
+                    event.getMouseX(),
+                    event.getMouseY(),
+                    event.getFullscreen()
+                        .getScreen().width,
+                    event.getFullscreen()
+                        .getScreen().height);
             }
             return;
         }
@@ -648,20 +627,6 @@ public final class JourneyMapV6Plugin implements IClientPlugin {
             }
             return;
         }
-    }
-
-    private BlockPos getMouseBlock(FullscreenRenderEvent event) {
-        Minecraft minecraft = event.getFullscreen()
-            .getMinecraft();
-        int guiScale = new ScaledResolution(minecraft, minecraft.displayWidth, minecraft.displayHeight)
-            .getScaleFactor();
-        UIState state = event.getFullscreen()
-            .getUiState();
-        double x = event.getFullscreen()
-            .getCenterBlockX(true) + (event.getMouseX() * guiScale - minecraft.displayWidth / 2.0) / state.blockSize;
-        double z = event.getFullscreen()
-            .getCenterBlockZ(true) + (event.getMouseY() * guiScale - minecraft.displayHeight / 2.0) / state.blockSize;
-        return new BlockPos(x, 0, z);
     }
 
     private void drawSearchBar(FullscreenRenderEvent event) {
@@ -704,7 +669,7 @@ public final class JourneyMapV6Plugin implements IClientPlugin {
         timeLastClick = now;
 
         BlockPos location = event.getLocation();
-        if (hoveredOverlay != null && !hoveredOverlay.contains(location, mouseX, mouseY)) clearHoveredOverlay();
+        if (hoveredOverlay != null && !hoveredOverlay.contains(mouseX, mouseY)) clearHoveredOverlay();
         if (hoveredOverlay != null && hoveredOverlay.renderer
             .onRenderStepClick(hoveredOverlay.step, doubleClick, mouseX, mouseY, location.getX(), location.getZ())) {
             event.cancel();

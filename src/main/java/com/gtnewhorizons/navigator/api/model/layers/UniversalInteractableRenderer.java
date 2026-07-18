@@ -177,6 +177,11 @@ public class UniversalInteractableRenderer extends UniversalLayerRenderer implem
         return onKeyPressed(keyCode);
     }
 
+    /** Sets native-overlay hover to the associated render step. */
+    public void setRenderStepHover(UniversalLocationInteractableStep<?> step) {
+        setHoveredRenderStep(step);
+    }
+
     /** Clears native-overlay hover only if it still points at {@code step}. */
     public void clearRenderStepHover(UniversalLocationInteractableStep<?> step) {
         if (hoveredLocationRenderStep == step) setHoveredRenderStep(null);

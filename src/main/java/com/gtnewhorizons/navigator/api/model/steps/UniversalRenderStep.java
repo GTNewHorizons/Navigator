@@ -201,6 +201,15 @@ public abstract class UniversalRenderStep<T extends ILocationProvider> implement
      * @param minScale scale at which the step stops shrinking
      */
     public void setMinScale(int minScale) {
+        setMinScale((double) minScale);
+    }
+
+    /**
+     * Sets the lower Xaero scale bound used to keep an element legible while zooming out.
+     *
+     * @param minScale scale at which the step stops shrinking
+     */
+    public void setMinScale(double minScale) {
         this.minScale = minScale;
         shouldScale = true;
     }
