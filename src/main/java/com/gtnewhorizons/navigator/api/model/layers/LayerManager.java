@@ -26,8 +26,9 @@ import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 /**
  * Owns one logical layer's location cache, viewport discovery, button state, search hook, and map renderers.
  * <p>
- * Locations are cached per dimension and discovered by chunk. A recache uses the larger of the active minimap and
- * fullscreen viewports, calls the update hooks, and then gives every renderer the same visible location set.
+ * Locations are cached per dimension and discovered by chunk or as a viewport collection. A recache uses the larger
+ * of the active minimap and fullscreen viewports, calls the update hooks, and then gives every renderer the same
+ * visible location set.
  */
 @SuppressWarnings({ "DeprecatedIsStillUsed", "unused" })
 public abstract class LayerManager {
@@ -98,6 +99,26 @@ public abstract class LayerManager {
      * @return The {@link ILocationProvider} for the chunk or null if none
      */
     protected @Nullable ILocationProvider generateLocation(long packedChunk, int dim) {
+        return null;
+    }
+
+    /**
+     * Discovers every location in the current viewport when a layer can contain multiple elements per chunk.
+     * <p>
+     * Return {@code null} to use the normal chunk-by-chunk {@link #generateLocation(int, int, int)} path. Each
+     * returned location must provide a stable, layer-unique {@link ILocationProvider#toLong()} identity. Navigator
+     * retains the first object for an identity and calls {@link #updateElement(ILocationProvider)} on it during later
+     * recaches.
+     *
+     * @param minBlockX inclusive minimum block X
+     * @param minBlockZ inclusive minimum block Z
+     * @param maxBlockX inclusive maximum block X
+     * @param maxBlockZ inclusive maximum block Z
+     * @param dimension current dimension
+     * @return visible locations, an empty collection for none, or {@code null} to use chunk discovery
+     */
+    protected @Nullable Collection<? extends ILocationProvider> generateVisibleLocations(int minBlockX, int minBlockZ,
+        int maxBlockX, int maxBlockZ, int dimension) {
         return null;
     }
 
@@ -302,13 +323,32 @@ public abstract class LayerManager {
         onUpdatePre(chunkMinX, chunkMaxX, chunkMinZ, chunkMaxZ);
 
         visibleLocations.clear();
-        for (int chunkX = chunkMinX; chunkX <= chunkMaxX; chunkX++) {
-            for (int chunkZ = chunkMinZ; chunkZ <= chunkMaxZ; chunkZ++) {
-                ILocationProvider location = getOrCreateLocation(chunkX, chunkZ);
-                if (location == null) continue;
-
+        Collection<? extends ILocationProvider> generatedLocations = generateVisibleLocations(
+            minBlockX,
+            minBlockZ,
+            maxBlockX,
+            maxBlockZ,
+            currentDim);
+        if (generatedLocations != null) {
+            for (ILocationProvider generated : generatedLocations) {
+                if (generated == null || generated.getDimensionId() != currentDim) continue;
+                ILocationProvider location = currentDimCache.get(generated.toLong());
+                if (location == null) {
+                    location = generated;
+                    currentDimCache.put(location.toLong(), location);
+                }
                 updateElement(location);
                 visibleLocations.add(location);
+            }
+        } else {
+            for (int chunkX = chunkMinX; chunkX <= chunkMaxX; chunkX++) {
+                for (int chunkZ = chunkMinZ; chunkZ <= chunkMaxZ; chunkZ++) {
+                    ILocationProvider location = getOrCreateLocation(chunkX, chunkZ);
+                    if (location == null) continue;
+
+                    updateElement(location);
+                    visibleLocations.add(location);
+                }
             }
         }
 

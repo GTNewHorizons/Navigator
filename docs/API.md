@@ -14,9 +14,9 @@ A layer has four parts:
 | `ILocationProvider` | Identifies one logical element and supplies its dimension and world position. |
 | `LayerRenderer` + `RenderStep` | Converts cached locations into visible map output. |
 
-Navigator calls the manager for every chunk covered by the largest active fullscreen/minimap viewport. The manager
-caches returned locations per dimension. Each renderer then caches one render step per location identity and receives
-only the currently visible set.
+Navigator either calls the manager for every chunk covered by the largest active fullscreen/minimap viewport or asks
+for one collection covering that viewport. The manager caches returned locations per dimension. Each renderer then
+caches one render step per location identity and receives only the currently visible set.
 
 Register each manager once, on the client, during an initialization phase:
 
@@ -61,9 +61,7 @@ public final class MyLocation implements ILocationProvider {
 ```
 
 The default identity, `toLong()`, is the packed chunk position. This is correct for chunk-grid data and for one point
-per chunk. Override it when a larger element uses another stable identity. Navigator's current manager cache still
-discovers at most one new location from each chunk lookup; arbitrary multiple points in one chunk need a consumer-owned
-aggregation or a future location-cache API.
+per chunk. Override it with a stable layer-unique key when using multiple points per chunk or another logical identity.
 
 Coordinates may be fractional. Negative coordinates are converted with floor-compatible chunk semantics.
 
@@ -140,12 +138,30 @@ public final class MyLayerManager extends LayerManager {
 `addLayerRenderer` is called once for each installed and enabled map integration. Return `null` for an integration the
 layer does not support. A universal renderer can be returned for every integration.
 
+For multiple independently interactive points in one chunk, override the collection hook instead of
+`generateLocation`:
+
+```java
+@Override
+protected Collection<? extends ILocationProvider> generateVisibleLocations(
+        int minBlockX, int minBlockZ, int maxBlockX, int maxBlockZ, int dimension) {
+    return MyDataStore.findAll(minBlockX, minBlockZ, maxBlockX, maxBlockZ, dimension);
+}
+```
+
+Return an empty collection when the viewport contains nothing. The default `null` return keeps chunk discovery active.
+Every returned location must override `toLong()` when more than one element may occupy a chunk. Navigator retains the
+first object for each identity; update mutable cached fields through `updateElement` or invalidate the location when
+its source data changes.
+
 ## Cache and refresh lifecycle
 
 ### Discovery
 
 - `generateLocation(chunkX, chunkZ, dimension)` is called when a chunk key is absent from the current dimension cache.
 - Returning `null` means there is no element for that chunk.
+- `generateVisibleLocations(...)` replaces chunk lookup for collection-backed layers and may return multiple stable
+  identities from one chunk. Returning `null` selects chunk lookup; an empty collection means no visible elements.
 - `getElementSize()` expands viewport discovery by that many chunks on every side. Override it for elements whose
   visual bounds extend beyond their identifying chunk.
 - `onUpdatePre` and `onUpdatePost` receive inclusive chunk bounds around a recache. They are appropriate for batched
