@@ -8,6 +8,7 @@ import java.util.Objects;
 
 import javax.annotation.Nullable;
 
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.util.ResourceLocation;
 
 /**
@@ -20,6 +21,8 @@ public final class MapMarker {
 
     private final @Nullable BufferedImage image;
     private final @Nullable ResourceLocation imageLocation;
+    private final int textureX;
+    private final int textureY;
     private final int textureWidth;
     private final int textureHeight;
     private double displayWidth;
@@ -41,6 +44,8 @@ public final class MapMarker {
     public MapMarker(BufferedImage image) {
         this.image = Objects.requireNonNull(image);
         imageLocation = null;
+        textureX = 0;
+        textureY = 0;
         textureWidth = image.getWidth();
         textureHeight = image.getHeight();
         displayWidth = textureWidth;
@@ -55,8 +60,33 @@ public final class MapMarker {
      * @param textureHeight source texture height in pixels
      */
     public MapMarker(ResourceLocation imageLocation, int textureWidth, int textureHeight) {
+        this(imageLocation, 0, 0, textureWidth, textureHeight);
+    }
+
+    /**
+     * Creates a marker from a sprite already stitched into a Minecraft texture atlas.
+     *
+     * @param atlasLocation texture atlas resource
+     * @param sprite        stitched sprite; animated atlas updates remain visible
+     */
+    public MapMarker(ResourceLocation atlasLocation, TextureAtlasSprite sprite) {
+        this(atlasLocation, sprite.getOriginX(), sprite.getOriginY(), sprite.getIconWidth(), sprite.getIconHeight());
+    }
+
+    /**
+     * Creates a marker from a region of a Minecraft texture, such as an animated block-atlas sprite.
+     *
+     * @param imageLocation texture resource
+     * @param textureX      source region X in pixels
+     * @param textureY      source region Y in pixels
+     * @param textureWidth  source region width in pixels
+     * @param textureHeight source region height in pixels
+     */
+    public MapMarker(ResourceLocation imageLocation, int textureX, int textureY, int textureWidth, int textureHeight) {
         image = null;
         this.imageLocation = Objects.requireNonNull(imageLocation);
+        this.textureX = Math.max(0, textureX);
+        this.textureY = Math.max(0, textureY);
         this.textureWidth = Math.max(1, textureWidth);
         this.textureHeight = Math.max(1, textureHeight);
         displayWidth = this.textureWidth;
@@ -146,6 +176,16 @@ public final class MapMarker {
     /** @return texture resource, or {@code null} when backed by an in-memory image */
     public @Nullable ResourceLocation getImageLocation() {
         return imageLocation;
+    }
+
+    /** @return source texture X */
+    public int getTextureX() {
+        return textureX;
+    }
+
+    /** @return source texture Y */
+    public int getTextureY() {
+        return textureY;
     }
 
     /** @return source texture width */

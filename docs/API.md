@@ -313,8 +313,8 @@ Do not implement the waypoint interface merely to reuse double-click handling, a
 ## JourneyMap 6 point markers
 
 `MapMarker` is Navigator's map-neutral description of a native JourneyMap 6 `MarkerOverlay`. It supports a buffered
-image or Minecraft `ResourceLocation`, independent texture/display sizes, label styling, tooltip text, a label zoom
-threshold, and fullscreen-only labels.
+image or Minecraft `ResourceLocation`, source regions within sprite sheets or the animated block atlas, independent
+texture/display sizes, label styling, tooltip text, a label zoom threshold, and fullscreen-only labels.
 
 ```java
 UniversalInteractableRenderer renderer = new UniversalInteractableRenderer(manager);
@@ -336,6 +336,8 @@ Important lifecycle rules:
 - Marker clicks and action keys are forwarded to `UniversalInteractableRenderer`.
 - `setLabelMinZoom` uses Navigator's normalized zoom steps, not JourneyMap's internal zoom value.
 - `setLabelOnMinimap(false)` hides only the text; the icon remains visible in both contexts.
+- Use `new MapMarker(TextureMap.locationBlocksTexture, sprite)` to reuse a stitched `TextureAtlasSprite` directly
+  without copying it or losing its animation.
 
 On JourneyMap 5 and Xaero, the universal render step remains the visual implementation. `MapMarker` itself is ignored.
 

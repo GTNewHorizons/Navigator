@@ -3,6 +3,7 @@ package com.gtnewhorizons.navigator.api.model.layers;
 import java.util.Collection;
 import java.util.EnumMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -37,7 +38,7 @@ public abstract class LayerManager {
     public boolean forceRefresh = false;
     private final Int2ObjectMap<Long2ObjectMap<ILocationProvider>> dimCachedLocations = new Int2ObjectOpenHashMap<>();
     private Long2ObjectMap<ILocationProvider> currentDimCache;
-    private final Set<ILocationProvider> visibleLocations = new HashSet<>();
+    private final Set<ILocationProvider> visibleLocations = new LinkedHashSet<>();
     private final Set<ILocationProvider> removeQueue = new HashSet<>();
     protected final Map<SupportedMods, LayerRenderer> layerRenderer = new EnumMap<>(SupportedMods.class);
     private int miniMapWidth = 0;
@@ -404,9 +405,10 @@ public abstract class LayerManager {
     /**
      * Queues a cached location for removal by identity.
      *
-     * @param location must be a long packed with {@link Util#packChunkToLocation(int, int)}
+     * @param location stable location identity, normally from {@link ILocationProvider#toLong()}
      */
     public final void removeLocation(long location) {
+        if (currentDimCache == null) return;
         ILocationProvider loc = currentDimCache.get(location);
         if (loc == null) return;
         removeLocation(loc);

@@ -353,7 +353,14 @@ public final class JourneyMapV6Plugin implements IClientPlugin {
         if (marker.getImage() != null) {
             image = new MapImage(marker.getImage());
         } else if (marker.getImageLocation() != null) {
-            image = new MapImage(marker.getImageLocation(), marker.getTextureWidth(), marker.getTextureHeight());
+            image = new MapImage(
+                marker.getImageLocation(),
+                marker.getTextureX(),
+                marker.getTextureY(),
+                marker.getTextureWidth(),
+                marker.getTextureHeight(),
+                0xFFFFFF,
+                1.0F);
         } else {
             return null;
         }
