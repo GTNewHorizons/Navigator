@@ -68,13 +68,15 @@ public abstract class LayerRenderer {
 
         renderStep = generateRenderStep(location);
         if (renderStep != null) {
-            return currentDimSteps.put(key, renderStep);
+            currentDimSteps.put(key, renderStep);
+            return renderStep;
         }
 
         List<? extends RenderStep> renderSteps = generateRenderSteps(Collections.singletonList(location));
         if (renderSteps != null) {
             for (RenderStep step : renderSteps) {
-                return currentDimSteps.put(key, step);
+                currentDimSteps.put(key, step);
+                return step;
             }
         }
         return null;

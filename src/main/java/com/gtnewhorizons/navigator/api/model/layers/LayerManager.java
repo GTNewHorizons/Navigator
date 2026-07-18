@@ -46,7 +46,7 @@ public abstract class LayerManager {
     private int fullscreenMapWidth = 0;
     private int fullscreenMapHeight = 0;
     private int currentDim;
-    private SupportedMods openModGui;
+    private SupportedMods openModGui = SupportedMods.NONE;
     private boolean refreshDim = true;
     private boolean clearFull, clearCurrent;
     private boolean hasSearchField;
@@ -205,7 +205,8 @@ public abstract class LayerManager {
     /**
      * Requests renderer/native-overlay synchronization after external data changes.
      * <p>
-     * Repeated calls increment the refresh version and should be avoided when nothing changed.
+     * The legacy flag is consumed by the next successful recache. Repeated calls increment the refresh version and
+     * should be avoided when nothing changed.
      */
     public void forceRefresh() {
         forceRefresh = true;
@@ -290,6 +291,7 @@ public abstract class LayerManager {
     private void recacheVisibleElements(int centerBlockX, int centerBlockZ) {
         Minecraft minecraft = Minecraft.getMinecraft();
         if (minecraft.thePlayer == null || minecraft.theWorld == null) return;
+        forceRefresh = false;
 
         int radiusBlockX = (Math.max(miniMapWidth, fullscreenMapWidth) + 1) >> 1;
         int radiusBlockZ = (Math.max(miniMapHeight, fullscreenMapHeight) + 1) >> 1;

@@ -58,6 +58,7 @@ public final class NavigatorApi {
      */
     public static List<LayerRenderer> getActiveRenderersFor(SupportedMods mod) {
         return layerManagers.stream()
+            .filter(layerManager -> layerManager.isEnabled(mod))
             .filter(LayerManager::isLayerActive)
             .map(layerManager -> layerManager.getLayerRenderer(mod))
             .collect(Collectors.toList());

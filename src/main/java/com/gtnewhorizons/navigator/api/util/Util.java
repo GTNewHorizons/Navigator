@@ -12,14 +12,12 @@ import cpw.mods.fml.common.Loader;
 /** Cached optional-mod detection, coordinate conversion, packing, zoom, and key helpers. */
 public class Util {
 
-    private static final JourneyMapVersion journeyMapVersion;
     private static final boolean isXaeroWorldMapLoaded;
     private static final boolean isXaeroMinimapLoaded;
     private static final boolean isNEILoaded;
     private static boolean isVoxelMapLoaded;
 
     static {
-        journeyMapVersion = JourneyMapVersion.get();
         isXaeroWorldMapLoaded = Loader.isModLoaded("XaeroWorldMap");
         isXaeroMinimapLoaded = Loader.isModLoaded("XaeroMinimap");
         isNEILoaded = Loader.isModLoaded("NotEnoughItems");
@@ -34,22 +32,22 @@ public class Util {
 
     /** @return whether any supported JourneyMap generation is installed */
     public static boolean isJourneyMapInstalled() {
-        return journeyMapVersion != JourneyMapVersion.NONE;
+        return JourneyMapVersion.get() != JourneyMapVersion.NONE;
     }
 
     /** @return whether the installed JourneyMap uses the legacy v5 API */
     public static boolean isJourneyMapV5Installed() {
-        return journeyMapVersion == JourneyMapVersion.V5;
+        return JourneyMapVersion.get() == JourneyMapVersion.V5;
     }
 
     /** @return whether the installed JourneyMap exposes the v2 API used by the 1.7.10 v6 backport */
     public static boolean isJourneyMapV6Installed() {
-        return journeyMapVersion == JourneyMapVersion.V6;
+        return JourneyMapVersion.get() == JourneyMapVersion.V6;
     }
 
     /** @return cached JourneyMap generation */
     public static JourneyMapVersion getJourneyMapVersion() {
-        return journeyMapVersion;
+        return JourneyMapVersion.get();
     }
 
     /** @return whether Xaero's World Map is installed */
