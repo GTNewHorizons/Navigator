@@ -1,8 +1,6 @@
 package com.gtnewhorizons.navigator.internal.journeymap.v6;
 
 import java.awt.geom.Point2D;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -66,11 +64,6 @@ public final class JourneyMapV6Plugin implements IClientPlugin {
     private static IClientAPI api;
     private static IFullscreen fullscreen;
     private static @Nullable SearchBar searchBar;
-    private static @Nullable Object mapRenderer;
-    private static @Nullable Method getBlockPixelInGrid;
-    private static @Nullable Method committedDragOffsetX;
-    private static @Nullable Method committedDragOffsetZ;
-    private static boolean mapRendererLookupFailed;
 
     private final Map<UniversalLayerRenderer, Map<ILocationProvider, List<Displayable>>> overlays = new IdentityHashMap<>();
     private final Map<LayerManager, Long> overlayRefreshVersions = new IdentityHashMap<>();
@@ -187,18 +180,14 @@ public final class JourneyMapV6Plugin implements IClientPlugin {
                         .getBlockX(),
                     step.getLocation()
                         .getBlockZ());
-                double x;
-                double y;
-                if (pixel != null) {
-                    x = pixel.x / guiScale;
-                    y = pixel.y / guiScale;
-                } else {
-                    x = state.displayBounds.getCenterX() / guiScale + (step.getLocation()
-                        .getBlockX() - fullscreen.getCenterBlockX(true)) * blockSize;
-                    y = state.displayBounds.getCenterY() / guiScale + (step.getLocation()
-                        .getBlockZ() - fullscreen.getCenterBlockZ(true)) * blockSize;
-                }
-                step.drawJourneyMap(x, y, 1.0F / guiScale, zoomStep, blockSize, 1.0 / guiScale, 0.0);
+                step.drawJourneyMap(
+                    pixel.x / guiScale,
+                    pixel.y / guiScale,
+                    1.0F / guiScale,
+                    zoomStep,
+                    blockSize,
+                    1.0 / guiScale,
+                    0.0);
             }
         }
 
@@ -206,35 +195,26 @@ public final class JourneyMapV6Plugin implements IClientPlugin {
         drawTooltip(event);
     }
 
-    private @Nullable Point2D.Double getBlockPixel(double blockX, double blockZ) {
-        if (mapRendererLookupFailed) return null;
+    /** Mirrors JourneyMap's pixel-snapped grid position using public fullscreen state. */
+    private Point2D.Double getBlockPixel(double blockX, double blockZ) {
+        double blockSize = fullscreen.getUiState().blockSize;
+        double centerX = fullscreen.getCenterBlockX(false);
+        double centerZ = fullscreen.getCenterBlockZ(false);
+        Minecraft minecraft = fullscreen.getMinecraft();
+        double x = minecraft.displayWidth / 2 + (snapToScreenPixel(blockX, blockSize) - centerX) * blockSize;
+        double y = minecraft.displayHeight / 2 + (snapToScreenPixel(blockZ, blockSize) - centerZ) * blockSize;
 
-        try {
-            if (mapRenderer == null) {
-                Field field = fullscreen.getClass()
-                    .getDeclaredField("mapRenderer");
-                field.setAccessible(true);
-                mapRenderer = field.get(null);
-                Class<?> rendererClass = mapRenderer.getClass();
-                getBlockPixelInGrid = rendererClass.getMethod("getBlockPixelInGrid", double.class, double.class);
-                committedDragOffsetX = rendererClass.getMethod("committedDragOffsetX", double.class);
-                committedDragOffsetZ = rendererClass.getMethod("committedDragOffsetZ", double.class);
-            }
-
-            Point2D.Double pixel = (Point2D.Double) getBlockPixelInGrid.invoke(mapRenderer, blockX, blockZ);
-            double dragX = fullscreen.getCenterBlockX(false) - fullscreen.getCenterBlockX(true);
-            double dragZ = fullscreen.getCenterBlockZ(false) - fullscreen.getCenterBlockZ(true);
-            if (dragX != 0 || dragZ != 0) {
-                double blockSize = fullscreen.getUiState().blockSize;
-                pixel.x += (double) committedDragOffsetX.invoke(mapRenderer, dragX) * blockSize;
-                pixel.y += (double) committedDragOffsetZ.invoke(mapRenderer, dragZ) * blockSize;
-            }
-            return pixel;
-        } catch (Exception e) {
-            mapRendererLookupFailed = true;
-            Navigator.LOG.warn("Could not use JourneyMap 6's block-to-pixel conversion", e);
-            return null;
+        double dragX = centerX - fullscreen.getCenterBlockX(true);
+        double dragZ = centerZ - fullscreen.getCenterBlockZ(true);
+        if (dragX != 0 || dragZ != 0) {
+            x += (centerX - snapToScreenPixel(centerX - dragX, blockSize)) * blockSize;
+            y += (centerZ - snapToScreenPixel(centerZ - dragZ, blockSize)) * blockSize;
         }
+        return new Point2D.Double(x, y);
+    }
+
+    private static double snapToScreenPixel(double blockCoordinate, double blockSize) {
+        return Math.floor(blockCoordinate * blockSize) / blockSize;
     }
 
     @SubscribeEvent
@@ -514,19 +494,8 @@ public final class JourneyMapV6Plugin implements IClientPlugin {
         @Override
         public boolean onMouseClick(UIState mapState, Point2D.Double mousePosition, BlockPos blockPosition, int button,
             boolean doubleClick) {
-            if (button != 0) return true;
-            if (!contains((int) mousePosition.x, (int) mousePosition.y)) {
-                clearHover();
-                return true;
-            }
-            boolean handled = renderer.onRenderStepClick(
-                step,
-                doubleClick,
-                (int) mousePosition.x,
-                (int) mousePosition.y,
-                blockPosition.getX(),
-                blockPosition.getZ());
-            return !handled;
+            // Fullscreen clicks are dispatched by the PRE map-click event before JourneyMap's own layers run.
+            return true;
         }
 
         private void clearHover() {
@@ -544,19 +513,17 @@ public final class JourneyMapV6Plugin implements IClientPlugin {
     }
 
     private boolean contains(MarkerOverlay marker, int mouseX, int mouseY) {
+        if (fullscreen == null) return false;
+
         UIState state = fullscreen.getUiState();
         Point2D.Double position = getBlockPixel(
             marker.getPoint()
                 .getX(),
             marker.getPoint()
                 .getZ());
-        double centerX = position == null ? state.displayBounds.getCenterX() + (marker.getPoint()
-            .getX() - fullscreen.getCenterBlockX(true)) * state.blockSize : position.x;
-        double centerY = position == null ? state.displayBounds.getCenterY() + (marker.getPoint()
-            .getZ() - fullscreen.getCenterBlockZ(true)) * state.blockSize : position.y;
         MapImage icon = marker.getIcon();
-        centerX += (int) state.blockSize / 2.0;
-        centerY += (int) state.blockSize / 2.0;
+        double centerX = position.x + (int) state.blockSize / 2.0;
+        double centerY = position.y + (int) state.blockSize / 2.0;
         return mouseX >= centerX - icon.getAnchorX() && mouseX < centerX + icon.getDisplayWidth() - icon.getAnchorX()
             && mouseY >= centerY - icon.getAnchorY()
             && mouseY < centerY + icon.getDisplayHeight() - icon.getAnchorY();
@@ -606,33 +573,38 @@ public final class JourneyMapV6Plugin implements IClientPlugin {
             return;
         }
 
+        List<InteractableLayer> interactables = new ArrayList<>();
+        List<String> tooltip = null;
         for (LayerRenderer renderer : NavigatorApi.getActiveRenderersFor(MOD)) {
             if (renderer instanceof UniversalLayerRenderer universal && universal.hasJourneyMapV6Overlays()) continue;
             if (!(renderer instanceof InteractableLayer interactable)) continue;
 
+            interactables.add(interactable);
             interactable.onMouseMove(event.getMouseX(), event.getMouseY());
-            List<String> tooltip = interactable.getTooltip();
-            if (!tooltip.isEmpty()) {
-                DrawUtils.drawSimpleTooltip(
-                    event.getFullscreen()
-                        .getScreen(),
-                    tooltip,
-                    event.getMouseX() + 16,
-                    event.getMouseY() - 12,
-                    0xFFFFFFFF,
-                    0x86000000);
-            } else {
-                interactable.drawCustomTooltip(
-                    event.getFullscreen()
-                        .getMinecraft().fontRenderer,
-                    event.getMouseX(),
-                    event.getMouseY(),
-                    event.getFullscreen()
-                        .getScreen().width,
-                    event.getFullscreen()
-                        .getScreen().height);
-            }
+            if (tooltip == null || tooltip.isEmpty()) tooltip = interactable.getTooltip();
+        }
+
+        if (tooltip != null && !tooltip.isEmpty()) {
+            DrawUtils.drawSimpleTooltip(
+                event.getFullscreen()
+                    .getScreen(),
+                tooltip,
+                event.getMouseX() + 16,
+                event.getMouseY() - 12,
+                0xFFFFFFFF,
+                0x86000000);
             return;
+        }
+        for (InteractableLayer interactable : interactables) {
+            interactable.drawCustomTooltip(
+                event.getFullscreen()
+                    .getMinecraft().fontRenderer,
+                event.getMouseX(),
+                event.getMouseY(),
+                event.getFullscreen()
+                    .getScreen().width,
+                event.getFullscreen()
+                    .getScreen().height);
         }
     }
 

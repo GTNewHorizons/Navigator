@@ -316,6 +316,9 @@ Do not implement the waypoint interface merely to reuse double-click handling, a
 image or Minecraft `ResourceLocation`, source regions within sprite sheets or the animated block atlas, independent
 texture/display sizes, label styling, tooltip text, a label zoom threshold, and fullscreen-only labels.
 
+On JourneyMap 6, universal render steps draw only on the fullscreen map. A layer appears on the minimap only through a
+`MapMarker` or raw native overlay.
+
 ```java
 UniversalInteractableRenderer renderer = new UniversalInteractableRenderer(manager);
 renderer.withRenderStep(location -> new OreRenderStep((OreLocation) location));

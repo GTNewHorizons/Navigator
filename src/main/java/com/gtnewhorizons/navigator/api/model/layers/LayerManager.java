@@ -254,10 +254,10 @@ public abstract class LayerManager {
      *
      * @param centerBlockX viewport center X
      * @param centerBlockZ viewport center Z
-     * @param blockRadius  viewport radius in blocks
+     * @param blockWidth   viewport width and height in blocks
      */
-    public void recacheMiniMap(int centerBlockX, int centerBlockZ, int blockRadius) {
-        recacheMiniMap(centerBlockX, centerBlockZ, blockRadius, blockRadius);
+    public void recacheMiniMap(int centerBlockX, int centerBlockZ, int blockWidth) {
+        recacheMiniMap(centerBlockX, centerBlockZ, blockWidth, blockWidth);
     }
 
     /**

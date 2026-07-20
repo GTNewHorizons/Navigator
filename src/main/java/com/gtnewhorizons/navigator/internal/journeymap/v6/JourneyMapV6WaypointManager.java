@@ -1,5 +1,7 @@
 package com.gtnewhorizons.navigator.internal.journeymap.v6;
 
+import java.util.Objects;
+
 import com.gtnewhorizons.navigator.Navigator;
 import com.gtnewhorizons.navigator.api.model.SupportedMods;
 import com.gtnewhorizons.navigator.api.model.layers.InteractableLayerManager;
@@ -56,7 +58,7 @@ public final class JourneyMapV6WaypointManager extends WaypointManager {
             && waypoint.blockZ == journeyMapWaypoint.getZ()
             && journeyMapWaypoint.getDimensions()
                 .contains(String.valueOf(waypoint.dimensionId))
-            && waypoint.label.equals(journeyMapWaypoint.getName())
+            && Objects.equals(waypoint.label, journeyMapWaypoint.getName())
             && waypoint.color == journeyMapWaypoint.getColor();
     }
 }

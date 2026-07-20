@@ -22,7 +22,8 @@ public abstract class ButtonManager {
 
     /**
      * @param mod   the mod requesting the icon
-     * @param theme current map UI theme; JourneyMap supplies its theme name and Xaero normally supplies an empty string
+     * @param theme current map UI theme; JourneyMap 5 supplies its name, while JourneyMap 6 and Xaero supply an empty
+     *              string
      * @return the {@link ResourceLocation} of the icon to be displayed on the button
      */
     public abstract ResourceLocation getIcon(SupportedMods mod, String theme);
