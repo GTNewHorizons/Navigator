@@ -27,8 +27,9 @@ The preferred implementation path is map-neutral:
 NavigatorApi.registerLayerManager(MyLayerManager.INSTANCE);
 ```
 
-Use the old JourneyMap- or Xaero-specific renderer APIs only when a universal render step cannot express the required
-behavior.
+The JourneyMap-specific renderer and render-step APIs are deprecated because they support only JourneyMap 5. Use the
+universal APIs for JourneyMap 5, JourneyMap 6, and Xaero; map-specific APIs remain escape hatches only where the
+universal model cannot express required behavior.
 
 ## Dependency
 

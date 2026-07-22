@@ -17,7 +17,11 @@ import com.gtnewhorizons.navigator.api.model.steps.RenderStep;
  * JourneyMap 5-specific renderer with hover, tooltip, action-key, and default waypoint double-click handling.
  * <p>
  * Prefer {@link com.gtnewhorizons.navigator.api.model.layers.UniversalInteractableRenderer} for new layers.
+ *
+ * @deprecated Use {@link com.gtnewhorizons.navigator.api.model.layers.UniversalInteractableRenderer}. This class is
+ *             retained for JourneyMap 5-only integrations.
  */
+@Deprecated
 public abstract class JMInteractableLayerRenderer extends JMLayerRenderer implements InteractableLayer {
 
     protected InteractableLayerManager manager;

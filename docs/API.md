@@ -402,8 +402,9 @@ custom renderer.
 The preferred path is universal. The following APIs remain for compatibility or behavior that cannot be expressed by
 a universal step:
 
-- `JMRenderStep`, `JMInteractableStep`, `JMLayerRenderer`, and `JMInteractableLayerRenderer` target the JourneyMap 5
-  draw-step API. They directly reference JourneyMap client classes.
+- `JMRenderStep`, `JMInteractableStep`, `JMLayerRenderer`, and `JMInteractableLayerRenderer` are deprecated JourneyMap
+  5-only APIs. New and migrated layers should use their universal equivalents so the same implementation also works
+  with JourneyMap 6 and Xaero.
 - `XaeroRenderStep`, `XaeroInteractableStep`, `XaeroLayerRenderer`, and `XaeroInteractableLayerRenderer` target Xaero's
   renderer API directly.
 - `JMWaypointManager` selects the JourneyMap 5 implementation or delegates to JourneyMap 6 internally.
