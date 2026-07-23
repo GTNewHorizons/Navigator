@@ -114,9 +114,11 @@ public abstract class LayerRenderer {
         return reversed;
     }
 
-    void removeRenderStep(long key) {
-        RenderStep renderStep = currentDimSteps.remove(key);
-        renderSteps.remove(renderStep);
+    void removeRenderStep(int dimension, long key) {
+        Long2ObjectMap<RenderStep> steps = dimCachedRenderSteps.get(dimension);
+        if (steps == null) return;
+        RenderStep removed = steps.remove(key);
+        if (steps == currentDimSteps) renderSteps.remove(removed);
     }
 
     void setDimCache(int dim) {

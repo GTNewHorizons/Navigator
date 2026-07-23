@@ -102,7 +102,7 @@ public abstract class GuiMapMixin extends ScreenBase {
         navigator$searchBar.setTextConsumer(
             text -> NavigatorApi.getEnabledLayers(XaeroWorldMap)
                 .forEach(layerManager -> {
-                    if (layerManager.isLayerActive() && layerManager.hasSearchField()) {
+                    if (layerManager.hasSearchField()) {
                         layerManager.onSearch(text);
                     }
                 }));

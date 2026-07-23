@@ -172,17 +172,18 @@ its source data changes.
 
 ### Invalidating data
 
-Call `forceRefresh()` after data changes outside `updateElement`. It schedules a redraw and increments the refresh
-version used by the JourneyMap 6 native-overlay synchronizer.
+Call `forceRefresh()` after data changes outside `updateElement`. It schedules a redraw and publishes one layer-change
+notification. JourneyMap 6 coalesces repeated notifications and recreates retained native overlays on the client
+thread; viewport changes are synchronized separately without recreating unchanged overlays.
 
 Use the narrowest cache operation that matches the change:
 
 | Operation | Effect |
 | --- | --- |
-| `removeLocation(...)` | Queues one location and its render step for removal. |
+| `removeLocation(...)` | Invalidates one location and its render step, optionally in an explicit dimension. |
 | `clearCurrentCache()` | Clears the current dimension on the next recache. |
 | `clearFullCache()` | Clears every dimension and every renderer cache. |
-| `addExtraLocation(location)` | Inserts an already-created location into the current dimension cache. |
+| `addExtraLocation(location)` | Inserts an already-created location and schedules synchronization. |
 
 `getVisibleLocations()` is the current viewport set. `getCachedLocations()` includes locations outside the viewport in
 the current dimension. Treat both collections as manager-owned; mutating them directly couples code to cache internals.
@@ -209,9 +210,10 @@ public void onSearch(@NotNull String searchString) {
 }
 ```
 
-Search policy belongs to the consumer because Navigator does not know which fields are meaningful. The JourneyMap 6
-search widget currently has a known focus conflict when switching directly to Minecraft chat; see the compatibility
-roadmap.
+Search policy belongs to the consumer because Navigator does not know which fields are meaningful. Navigator sends
+query changes to inactive searchable layers too, so switching layers preserves and immediately applies the current
+filter. The JourneyMap 6 search widget currently has a known focus conflict when switching directly to Minecraft chat;
+see the compatibility roadmap.
 
 ## Interaction without waypoints
 
@@ -374,9 +376,9 @@ If the consumer supplies a listener, Navigator leaves it untouched. Set `replace
 overlays fully replace the universal step on the JourneyMap 6 fullscreen map. Minimap rendering is native-overlay only;
 JourneyMap 5 and Xaero continue using the universal render step.
 
-Native overlays are retained while their location remains visible. `forceRefresh()` recreates overlays for visible
-locations and removes overlays that left the refreshed visible set. Avoid calling it every tick unless domain data
-actually changed.
+Native overlays are retained while their location remains visible. JourneyMap display updates add and remove overlays
+as the viewport changes; `forceRefresh()` recreates overlays for visible locations after domain data changes. Avoid
+calling it every tick unless domain data actually changed.
 
 Because this path uses JourneyMap 6 classes in consumer code, isolate the factory behind a JM6 runtime check and keep
 those classes out of code that must load under JourneyMap 5.

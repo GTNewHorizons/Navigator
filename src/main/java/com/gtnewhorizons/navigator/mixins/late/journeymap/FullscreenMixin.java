@@ -114,7 +114,7 @@ public abstract class FullscreenMixin extends JmUI {
         navigator$searchBar.setTextConsumer(
             text -> NavigatorApi.getEnabledLayers(JourneyMap)
                 .forEach(layerManager -> {
-                    if (layerManager.isLayerActive() && layerManager.hasSearchField()) {
+                    if (layerManager.hasSearchField()) {
                         layerManager.onSearch(text);
                     }
                 }));

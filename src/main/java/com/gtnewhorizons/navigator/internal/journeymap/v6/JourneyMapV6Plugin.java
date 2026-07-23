@@ -3,6 +3,7 @@ package com.gtnewhorizons.navigator.internal.journeymap.v6;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
@@ -19,6 +20,7 @@ import org.lwjgl.input.Keyboard;
 
 import com.gtnewhorizons.navigator.Navigator;
 import com.gtnewhorizons.navigator.api.NavigatorApi;
+import com.gtnewhorizons.navigator.api.event.LayerRefreshEvent;
 import com.gtnewhorizons.navigator.api.model.SupportedMods;
 import com.gtnewhorizons.navigator.api.model.buttons.ButtonManager;
 import com.gtnewhorizons.navigator.api.model.layers.InteractableLayer;
@@ -66,12 +68,18 @@ public final class JourneyMapV6Plugin implements IClientPlugin {
     private static @Nullable SearchBar searchBar;
 
     private final Map<UniversalLayerRenderer, Map<ILocationProvider, List<Displayable>>> overlays = new IdentityHashMap<>();
-    private final Map<LayerManager, Long> overlayRefreshVersions = new IdentityHashMap<>();
     private final Map<MarkerOverlay, MapMarker> markerProperties = new IdentityHashMap<>();
+    private final Set<LayerManager> dirtyLayers = Collections
+        .synchronizedSet(Collections.newSetFromMap(new IdentityHashMap<>()));
     private @Nullable OverlayListener hoveredOverlay;
     private boolean actionKeyDown;
     private boolean fullscreenActive;
-    private long lastOverlayUpdate;
+    private @Nullable Context.UI overlayUi;
+    private int overlayDimension = Integer.MIN_VALUE;
+    private int overlayCenterX = Integer.MIN_VALUE;
+    private int overlayCenterZ = Integer.MIN_VALUE;
+    private int overlayWidth = -1;
+    private int overlayHeight = -1;
     private long lastRecache;
     private int oldCenterX = Integer.MIN_VALUE;
     private int oldCenterZ = Integer.MIN_VALUE;
@@ -97,6 +105,7 @@ public final class JourneyMapV6Plugin implements IClientPlugin {
         FMLCommonHandler.instance()
             .bus()
             .register(this);
+        dirtyLayers.addAll(NavigatorApi.getEnabledLayers(MOD));
     }
 
     public static @Nullable IClientAPI getApi() {
@@ -125,23 +134,26 @@ public final class JourneyMapV6Plugin implements IClientPlugin {
     }
 
     private void onDisplayUpdate(DisplayUpdateEvent event) {
-        if (event.uiState.ui != Context.UI.Fullscreen || event.uiState.active == fullscreenActive) return;
-
-        fullscreenActive = event.uiState.active;
-        lastMarkerZoom = Integer.MIN_VALUE;
-        for (LayerManager manager : NavigatorApi.getEnabledLayers(MOD)) {
-            if (fullscreenActive) {
-                manager.onGuiOpened(MOD);
-                manager.forceRefresh();
-            } else {
-                manager.onGuiClosed(MOD);
+        if (event.uiState.ui == Context.UI.Fullscreen && event.uiState.active != fullscreenActive) {
+            fullscreenActive = event.uiState.active;
+            lastMarkerZoom = Integer.MIN_VALUE;
+            for (LayerManager manager : NavigatorApi.getEnabledLayers(MOD)) {
+                if (fullscreenActive) {
+                    manager.onGuiOpened(MOD);
+                    manager.forceRefresh();
+                } else {
+                    manager.onGuiClosed(MOD);
+                }
+            }
+            if (!fullscreenActive) {
+                resetMarkerScales();
+                fullscreen = null;
+                searchBar = null;
             }
         }
-        if (!fullscreenActive) {
-            resetMarkerScales();
-            fullscreen = null;
-            searchBar = null;
-        }
+
+        UIState state = getActiveMapState();
+        if (state != null) syncVisibleOverlays(state);
     }
 
     private void onButtons(FullscreenDisplayEvent.AddonButtonDisplayEvent event) {
@@ -232,40 +244,26 @@ public final class JourneyMapV6Plugin implements IClientPlugin {
         handleMarkerActionKey();
         if (searchBar != null && searchBar.getVisible()) searchBar.updateCursorCounter();
 
-        // Navigator caches locations by viewport; poll until that cache can publish change events.
-        if (System.currentTimeMillis() - lastOverlayUpdate < 250L) return;
-
-        lastOverlayUpdate = System.currentTimeMillis();
         Minecraft minecraft = Minecraft.getMinecraft();
         if (minecraft.thePlayer == null || minecraft.theWorld == null) {
             removeAllOverlays();
+            dirtyLayers.addAll(NavigatorApi.getEnabledLayers(MOD));
             return;
         }
 
         UIState state = getActiveMapState();
-        for (LayerManager manager : NavigatorApi.getEnabledLayers(MOD)) {
-            LayerRenderer layer = manager.getLayerRenderer(MOD);
-            if (!(layer instanceof UniversalLayerRenderer renderer) || !renderer.hasJourneyMapV6Overlays()) {
-                continue;
-            }
-            if (!manager.isLayerActive()) {
-                removeOverlays(renderer);
-                continue;
-            }
-            if (state == null) continue;
-
-            long refreshVersion = manager.getRefreshVersion();
-            boolean refresh = overlayRefreshVersions.getOrDefault(manager, -1L) != refreshVersion;
-            int width = (int) Math.ceil(state.blockBounds.maxX - state.blockBounds.minX);
-            int height = (int) Math.ceil(state.blockBounds.maxZ - state.blockBounds.minZ);
-            if (state.ui == Context.UI.Fullscreen) {
-                manager.recacheFullscreenMap(state.mapCenter.getX(), state.mapCenter.getZ(), width, height);
-            } else {
-                manager.recacheMiniMap(state.mapCenter.getX(), state.mapCenter.getZ(), width, height);
-            }
-            syncOverlays(renderer, refresh);
-            overlayRefreshVersions.put(manager, refreshVersion);
+        if (state == null) return;
+        if (overlayViewportChanged(state)) {
+            syncVisibleOverlays(state);
+        } else {
+            for (LayerManager manager : drainDirtyLayers()) syncLayerOverlays(manager, state, true);
         }
+    }
+
+    @SubscribeEvent
+    public void onLayerRefresh(LayerRefreshEvent event) {
+        if (event.getLayerManager()
+            .isEnabled(MOD)) dirtyLayers.add(event.getLayerManager());
     }
 
     private @Nullable UIState getActiveMapState() {
@@ -278,6 +276,76 @@ public final class JourneyMapV6Plugin implements IClientPlugin {
 
     private boolean isUsable(@Nullable UIState state) {
         return state != null && state.active && state.blockBounds != null && state.mapCenter != null;
+    }
+
+    private void syncVisibleOverlays(UIState state) {
+        for (LayerManager manager : NavigatorApi.getEnabledLayers(MOD)) {
+            syncLayerOverlays(manager, state, consumeDirtyLayer(manager));
+        }
+        overlayUi = state.ui;
+        overlayDimension = state.dimension;
+        overlayCenterX = getOverlayCenterX(state);
+        overlayCenterZ = getOverlayCenterZ(state);
+        overlayWidth = (int) Math.ceil(state.blockBounds.maxX - state.blockBounds.minX);
+        overlayHeight = (int) Math.ceil(state.blockBounds.maxZ - state.blockBounds.minZ);
+    }
+
+    private boolean overlayViewportChanged(UIState state) {
+        return overlayUi != state.ui || overlayDimension != state.dimension
+            || overlayCenterX != getOverlayCenterX(state)
+            || overlayCenterZ != getOverlayCenterZ(state)
+            || overlayWidth != (int) Math.ceil(state.blockBounds.maxX - state.blockBounds.minX)
+            || overlayHeight != (int) Math.ceil(state.blockBounds.maxZ - state.blockBounds.minZ);
+    }
+
+    private void syncLayerOverlays(LayerManager manager, UIState state, boolean refresh) {
+        LayerRenderer layer = manager.getLayerRenderer(MOD);
+        if (!(layer instanceof UniversalLayerRenderer renderer) || !renderer.hasJourneyMapV6Overlays()) return;
+        if (!manager.isLayerActive()) {
+            removeOverlays(renderer);
+            return;
+        }
+
+        int width = (int) Math.ceil(state.blockBounds.maxX - state.blockBounds.minX);
+        int height = (int) Math.ceil(state.blockBounds.maxZ - state.blockBounds.minZ);
+        if (state.ui == Context.UI.Fullscreen) {
+            manager.recacheFullscreenMap(getOverlayCenterX(state), getOverlayCenterZ(state), width, height);
+        } else {
+            manager.recacheMiniMap(getOverlayCenterX(state), getOverlayCenterZ(state), width, height);
+        }
+        syncOverlays(renderer, refresh);
+    }
+
+    private int getOverlayCenterX(UIState state) {
+        if (state.ui == Context.UI.Fullscreen && fullscreen != null && fullscreen.getUiState().active) {
+            return (int) Math.round(fullscreen.getCenterBlockX(true));
+        }
+        Minecraft minecraft = Minecraft.getMinecraft();
+        return state.ui == Context.UI.Minimap && minecraft.thePlayer != null ? (int) minecraft.thePlayer.posX
+            : state.mapCenter.getX();
+    }
+
+    private int getOverlayCenterZ(UIState state) {
+        if (state.ui == Context.UI.Fullscreen && fullscreen != null && fullscreen.getUiState().active) {
+            return (int) Math.round(fullscreen.getCenterBlockZ(true));
+        }
+        Minecraft minecraft = Minecraft.getMinecraft();
+        return state.ui == Context.UI.Minimap && minecraft.thePlayer != null ? (int) minecraft.thePlayer.posZ
+            : state.mapCenter.getZ();
+    }
+
+    private boolean consumeDirtyLayer(LayerManager manager) {
+        synchronized (dirtyLayers) {
+            return dirtyLayers.remove(manager);
+        }
+    }
+
+    private List<LayerManager> drainDirtyLayers() {
+        synchronized (dirtyLayers) {
+            List<LayerManager> layers = new ArrayList<>(dirtyLayers);
+            dirtyLayers.clear();
+            return layers;
+        }
     }
 
     private void syncOverlays(UniversalLayerRenderer renderer, boolean refresh) {
@@ -323,14 +391,12 @@ public final class JourneyMapV6Plugin implements IClientPlugin {
             shown.put(location, overlays);
         }
 
-        if (refresh) {
-            shown.entrySet()
-                .removeIf(entry -> {
-                    if (visible.contains(entry.getKey())) return false;
-                    removeOverlays(entry.getValue());
-                    return true;
-                });
-        }
+        shown.entrySet()
+            .removeIf(entry -> {
+                if (visible.contains(entry.getKey())) return false;
+                removeOverlays(entry.getValue());
+                return true;
+            });
     }
 
     private @Nullable MarkerOverlay createMarker(UniversalLayerRenderer renderer, UniversalRenderStep<?> step) {
@@ -497,8 +563,13 @@ public final class JourneyMapV6Plugin implements IClientPlugin {
                 shown -> shown.values()
                     .forEach(this::removeOverlays));
         overlays.clear();
-        overlayRefreshVersions.clear();
         markerProperties.clear();
+        overlayUi = null;
+        overlayDimension = Integer.MIN_VALUE;
+        overlayCenterX = Integer.MIN_VALUE;
+        overlayCenterZ = Integer.MIN_VALUE;
+        overlayWidth = -1;
+        overlayHeight = -1;
         clearHoveredOverlay();
     }
 
@@ -677,7 +748,7 @@ public final class JourneyMapV6Plugin implements IClientPlugin {
             searchBar.setTextConsumer(
                 text -> NavigatorApi.getEnabledLayers(MOD)
                     .forEach(manager -> {
-                        if (manager.isLayerActive() && manager.hasSearchField()) {
+                        if (manager.hasSearchField()) {
                             manager.onSearch(text);
                             manager.forceRefresh();
                         }

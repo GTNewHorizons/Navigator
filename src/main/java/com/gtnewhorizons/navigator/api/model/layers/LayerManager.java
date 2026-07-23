@@ -14,11 +14,13 @@ import net.minecraft.client.Minecraft;
 
 import org.jetbrains.annotations.NotNull;
 
+import com.gtnewhorizons.navigator.api.event.LayerRefreshEvent;
 import com.gtnewhorizons.navigator.api.model.SupportedMods;
 import com.gtnewhorizons.navigator.api.model.buttons.ButtonManager;
 import com.gtnewhorizons.navigator.api.model.locations.ILocationProvider;
 import com.gtnewhorizons.navigator.api.util.Util;
 
+import cpw.mods.fml.common.FMLCommonHandler;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
@@ -50,7 +52,6 @@ public abstract class LayerManager {
     private boolean refreshDim = true;
     private boolean clearFull, clearCurrent;
     private boolean hasSearchField;
-    private long refreshVersion;
 
     /**
      * Creates a layer and its renderers for currently enabled map integrations.
@@ -59,7 +60,10 @@ public abstract class LayerManager {
      */
     public LayerManager(ButtonManager buttonManager) {
         this.buttonManager = buttonManager;
-        buttonManager.setLayerNotify(this::onLayerToggled);
+        buttonManager.setLayerNotify(toEnable -> {
+            onLayerToggled(toEnable);
+            forceRefresh();
+        });
         for (SupportedMods mod : SupportedMods.values()) {
             if (!mod.isEnabled()) continue;
 
@@ -205,17 +209,14 @@ public abstract class LayerManager {
     /**
      * Requests renderer/native-overlay synchronization after external data changes.
      * <p>
-     * The legacy flag is consumed by the next successful recache. Repeated calls increment the refresh version and
-     * should be avoided when nothing changed.
+     * The legacy flag is consumed by the next successful recache. A layer refresh event lets retained-overlay
+     * integrations synchronize without polling; integrations may coalesce repeated requests.
      */
     public void forceRefresh() {
         forceRefresh = true;
-        refreshVersion++;
-    }
-
-    /** @return monotonically increasing version incremented by {@link #forceRefresh()} */
-    public long getRefreshVersion() {
-        return refreshVersion;
+        FMLCommonHandler.instance()
+            .bus()
+            .post(new LayerRefreshEvent(this));
     }
 
     /**
@@ -311,9 +312,12 @@ public abstract class LayerManager {
 
         if (!removeQueue.isEmpty()) {
             for (ILocationProvider location : removeQueue) {
+                int dimension = location.getDimensionId();
+                long key = location.toLong();
                 layerRenderer.values()
-                    .forEach(layer -> layer.removeRenderStep(location.toLong()));
-                currentDimCache.remove(location.toLong());
+                    .forEach(layer -> layer.removeRenderStep(dimension, key));
+                Long2ObjectMap<ILocationProvider> cache = dimCachedLocations.get(dimension);
+                if (cache != null) cache.remove(key);
             }
             removeQueue.clear();
         }
@@ -400,6 +404,10 @@ public abstract class LayerManager {
      * @param location location to remove
      */
     public final void removeLocation(ILocationProvider location) {
+        if (location.getDimensionId() != currentDim) {
+            removeLocation(location.getDimensionId(), location.toLong());
+            return;
+        }
         removeQueue.add(location);
         forceRefresh();
     }
@@ -410,10 +418,7 @@ public abstract class LayerManager {
      * @param location stable location identity, normally from {@link ILocationProvider#toLong()}
      */
     public final void removeLocation(long location) {
-        if (currentDimCache == null) return;
-        ILocationProvider loc = currentDimCache.get(location);
-        if (loc == null) return;
-        removeLocation(loc);
+        removeLocation(currentDim, location);
     }
 
     /** Queues the location cached under a chunk coordinate for removal. */
@@ -422,12 +427,40 @@ public abstract class LayerManager {
     }
 
     /**
-     * Inserts an already-created location into the current dimension cache.
+     * Invalidates a stable location identity in one dimension and schedules synchronization.
+     * <p>
+     * Current-dimension removal is queued to keep interaction iteration safe. Other dimensions can be invalidated
+     * immediately because their render steps are not active.
+     */
+    public final void removeLocation(int dimension, long location) {
+        if (dimension == currentDim) {
+            ILocationProvider cached = currentDimCache == null ? null : currentDimCache.get(location);
+            if (cached != null) {
+                removeLocation(cached);
+                return;
+            }
+        } else {
+            Long2ObjectMap<ILocationProvider> cache = dimCachedLocations.get(dimension);
+            if (cache != null) cache.remove(location);
+            layerRenderer.values()
+                .forEach(renderer -> renderer.removeRenderStep(dimension, location));
+        }
+        forceRefresh();
+    }
+
+    /** Invalidates a location in one dimension by chunk coordinate. */
+    public final void removeLocation(int dimension, int chunkX, int chunkZ) {
+        removeLocation(dimension, Util.packChunkToLocation(chunkX, chunkZ));
+    }
+
+    /**
+     * Inserts an already-created location into the current dimension cache and schedules synchronization.
      *
      * @param location location whose {@link ILocationProvider#toLong()} is its cache key
      */
     public final void addExtraLocation(ILocationProvider location) {
-        currentDimCache.put(location.toLong(), location);
+        getCurrentDimCache().put(location.toLong(), location);
+        forceRefresh();
     }
 
     /** @return shared logical button */

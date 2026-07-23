@@ -42,12 +42,14 @@ public final class NavigatorApi {
     /**
      * Registers a layer manager with every applicable map integration.
      * <p>
-     * This method does not deduplicate registrations.
+     * This method does not deduplicate registrations. Registration schedules the layer's initial cache and render
+     * synchronization.
      *
      * @param layerManager The {@link LayerManager} to register.
      */
     public static void registerLayerManager(LayerManager layerManager) {
         layerManagers.add(layerManager);
+        layerManager.forceRefresh();
     }
 
     /**
