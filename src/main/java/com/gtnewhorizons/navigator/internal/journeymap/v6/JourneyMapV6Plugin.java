@@ -9,6 +9,7 @@ import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import javax.annotation.Nullable;
@@ -89,6 +90,7 @@ public final class JourneyMapV6Plugin implements IClientPlugin {
     private int searchScreenWidth = -1;
     private int searchScreenHeight = -1;
     private int lastMarkerZoom = Integer.MIN_VALUE;
+    private long lastDynamicLabelUpdate;
 
     @Override
     public String getModId() {
@@ -257,6 +259,11 @@ public final class JourneyMapV6Plugin implements IClientPlugin {
 
         UIState state = getActiveMapState();
         if (state == null) return;
+        long now = System.currentTimeMillis();
+        if (now - lastDynamicLabelUpdate >= 1000) {
+            updateDynamicMarkerLabels();
+            lastDynamicLabelUpdate = now;
+        }
         if (overlayViewportChanged(state)) {
             syncVisibleOverlays(state);
         } else {
@@ -491,6 +498,16 @@ public final class JourneyMapV6Plugin implements IClientPlugin {
 
     private void updateMarkerScales(UIState state) {
         markerProperties.forEach((overlay, marker) -> updateMarkerScale(overlay, marker, state));
+    }
+
+    private void updateDynamicMarkerLabels() {
+        markerProperties.forEach((overlay, marker) -> {
+            if (!marker.hasDynamicLabel()) return;
+            String label = marker.getLabel();
+            if (Objects.equals(label, overlay.getLabel())) return;
+            overlay.setLabel(label);
+            overlay.flagForRerender();
+        });
     }
 
     private void updateMarkerScale(MarkerOverlay overlay, MapMarker marker, UIState state) {

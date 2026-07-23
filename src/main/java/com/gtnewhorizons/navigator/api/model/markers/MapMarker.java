@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Supplier;
 
 import javax.annotation.Nullable;
 
@@ -19,6 +20,7 @@ import com.gtnewhorizons.navigator.api.model.steps.UniversalRenderStep;
  * Navigator creates and owns the native overlay, enables fullscreen and minimap contexts, centers image anchors, and
  * forwards interaction. JourneyMap 5 and Xaero continue using the renderer's universal render step.
  */
+@SuppressWarnings("unused")
 public final class MapMarker {
 
     private final @Nullable BufferedImage image;
@@ -30,6 +32,7 @@ public final class MapMarker {
     private double displayWidth;
     private double displayHeight;
     private @Nullable String label;
+    private @Nullable Supplier<String> labelSupplier;
     private @Nullable List<String> tooltip;
     private int labelColor = 0xFFFFFF;
     private float labelScale = 1.0F;
@@ -117,6 +120,18 @@ public final class MapMarker {
     /** @return this marker */
     public MapMarker setLabel(@Nullable String label) {
         this.label = label;
+        labelSupplier = null;
+        return this;
+    }
+
+    /**
+     * Supplies label text that JourneyMap 6 checks once per second without recreating the marker.
+     *
+     * @param labelSupplier dynamic label supplier
+     * @return this marker
+     */
+    public MapMarker setLabelSupplier(Supplier<String> labelSupplier) {
+        this.labelSupplier = Objects.requireNonNull(labelSupplier);
         return this;
     }
 
@@ -231,7 +246,12 @@ public final class MapMarker {
 
     /** @return marker label, or {@code null} */
     public @Nullable String getLabel() {
-        return label;
+        return labelSupplier == null ? label : labelSupplier.get();
+    }
+
+    /** @return whether this marker's label can change without rebuilding the marker */
+    public boolean hasDynamicLabel() {
+        return labelSupplier != null;
     }
 
     /** @return immutable tooltip lines, or {@code null} to use the render step tooltip */
