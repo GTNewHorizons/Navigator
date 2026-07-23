@@ -403,9 +403,9 @@ public abstract class LayerManager {
      *
      * @param location location to remove
      */
-    public final void removeLocation(ILocationProvider location) {
+    public final void invalidateLocation(ILocationProvider location) {
         if (location.getDimensionId() != currentDim) {
-            removeLocation(location.getDimensionId(), location.toLong());
+            invalidateLocation(location.getDimensionId(), location.toLong());
             return;
         }
         removeQueue.add(location);
@@ -417,13 +417,13 @@ public abstract class LayerManager {
      *
      * @param location stable location identity, normally from {@link ILocationProvider#toLong()}
      */
-    public final void removeLocation(long location) {
-        removeLocation(currentDim, location);
+    public final void invalidateLocation(long location) {
+        invalidateLocation(currentDim, location);
     }
 
-    /** Queues the location cached under a chunk coordinate for removal. */
-    public final void removeLocation(int chunkX, int chunkZ) {
-        removeLocation(Util.packChunkToLocation(chunkX, chunkZ));
+    /** Invalidates the location cached under a chunk coordinate. */
+    public final void invalidateLocation(int chunkX, int chunkZ) {
+        invalidateLocation(Util.packChunkToLocation(chunkX, chunkZ));
     }
 
     /**
@@ -432,11 +432,11 @@ public abstract class LayerManager {
      * Current-dimension removal is queued to keep interaction iteration safe. Other dimensions can be invalidated
      * immediately because their render steps are not active.
      */
-    public final void removeLocation(int dimension, long location) {
+    public final void invalidateLocation(int dimension, long location) {
         if (dimension == currentDim) {
             ILocationProvider cached = currentDimCache == null ? null : currentDimCache.get(location);
             if (cached != null) {
-                removeLocation(cached);
+                invalidateLocation(cached);
                 return;
             }
         } else {
@@ -449,8 +449,40 @@ public abstract class LayerManager {
     }
 
     /** Invalidates a location in one dimension by chunk coordinate. */
+    public final void invalidateLocation(int dimension, int chunkX, int chunkZ) {
+        invalidateLocation(dimension, Util.packChunkToLocation(chunkX, chunkZ));
+    }
+
+    /**
+     * @deprecated Use {@link #invalidateLocation(ILocationProvider)}; this only invalidates Navigator's cached copy.
+     */
+    @Deprecated
+    public final void removeLocation(ILocationProvider location) {
+        invalidateLocation(location);
+    }
+
+    /** @deprecated Use {@link #invalidateLocation(long)}. */
+    @Deprecated
+    public final void removeLocation(long location) {
+        invalidateLocation(location);
+    }
+
+    /** @deprecated Use {@link #invalidateLocation(int, int)}. */
+    @Deprecated
+    public final void removeLocation(int chunkX, int chunkZ) {
+        invalidateLocation(chunkX, chunkZ);
+    }
+
+    /** @deprecated Use {@link #invalidateLocation(int, long)}. */
+    @Deprecated
+    public final void removeLocation(int dimension, long location) {
+        invalidateLocation(dimension, location);
+    }
+
+    /** @deprecated Use {@link #invalidateLocation(int, int, int)}. */
+    @Deprecated
     public final void removeLocation(int dimension, int chunkX, int chunkZ) {
-        removeLocation(dimension, Util.packChunkToLocation(chunkX, chunkZ));
+        invalidateLocation(dimension, chunkX, chunkZ);
     }
 
     /**

@@ -180,10 +180,13 @@ Use the narrowest cache operation that matches the change:
 
 | Operation | Effect |
 | --- | --- |
-| `removeLocation(...)` | Invalidates one location and its render step, optionally in an explicit dimension. |
+| `invalidateLocation(...)` | Invalidates one cached location and its render step, optionally in an explicit dimension. |
 | `clearCurrentCache()` | Clears the current dimension on the next recache. |
 | `clearFullCache()` | Clears every dimension and every renderer cache. |
 | `addExtraLocation(location)` | Inserts an already-created location and schedules synchronization. |
+
+The older `removeLocation(...)` name remains as a deprecated compatibility alias. Neither method deletes data owned by
+the consumer; invalidation makes Navigator recreate the location from that source during the next recache.
 
 `getVisibleLocations()` is the current viewport set. `getCachedLocations()` includes locations outside the viewport in
 the current dimension. Treat both collections as manager-owned; mutating them directly couples code to cache internals.
