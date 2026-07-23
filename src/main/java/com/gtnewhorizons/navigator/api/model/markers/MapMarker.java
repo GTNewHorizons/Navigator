@@ -11,6 +11,8 @@ import javax.annotation.Nullable;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.util.ResourceLocation;
 
+import com.gtnewhorizons.navigator.api.model.steps.UniversalRenderStep;
+
 /**
  * Map-neutral description of a JourneyMap 6 native point marker.
  * <p>
@@ -35,6 +37,8 @@ public final class MapMarker {
     private int labelOffsetY;
     private @Nullable Integer labelMinZoom;
     private boolean labelOnMinimap = true;
+    private @Nullable double[] displayZoomScale;
+    private @Nullable double[] labelZoomScale;
 
     /**
      * Creates a marker from an in-memory image.
@@ -104,6 +108,12 @@ public final class MapMarker {
         return this;
     }
 
+    /** Scales the icon over normalized zoom steps on JourneyMap 6's fullscreen map. */
+    public MapMarker setDisplayZoomScale(double minScale, double maxScale, double minZoom, double maxZoom) {
+        displayZoomScale = zoomScale(minScale, maxScale, minZoom, maxZoom);
+        return this;
+    }
+
     /** @return this marker */
     public MapMarker setLabel(@Nullable String label) {
         this.label = label;
@@ -131,6 +141,12 @@ public final class MapMarker {
     /** @return this marker */
     public MapMarker setLabelScale(float labelScale) {
         this.labelScale = labelScale;
+        return this;
+    }
+
+    /** Scales the label over normalized zoom steps on JourneyMap 6's fullscreen map. */
+    public MapMarker setLabelZoomScale(double minScale, double maxScale, double minZoom, double maxZoom) {
+        labelZoomScale = zoomScale(minScale, maxScale, minZoom, maxZoom);
         return this;
     }
 
@@ -208,6 +224,11 @@ public final class MapMarker {
         return displayHeight;
     }
 
+    /** @return fullscreen icon multiplier for the supplied normalized zoom step */
+    public double getDisplayZoomScale(double zoomStep) {
+        return interpolate(displayZoomScale, zoomStep);
+    }
+
     /** @return marker label, or {@code null} */
     public @Nullable String getLabel() {
         return label;
@@ -228,6 +249,11 @@ public final class MapMarker {
         return labelScale;
     }
 
+    /** @return fullscreen label multiplier for the supplied normalized zoom step */
+    public double getLabelZoomScale(double zoomStep) {
+        return interpolate(labelZoomScale, zoomStep);
+    }
+
     /** @return label background opacity */
     public float getLabelBackgroundOpacity() {
         return labelBackgroundOpacity;
@@ -246,5 +272,16 @@ public final class MapMarker {
     /** @return whether label text is enabled on the minimap */
     public boolean isLabelOnMinimap() {
         return labelOnMinimap;
+    }
+
+    private static double[] zoomScale(double minScale, double maxScale, double minZoom, double maxZoom) {
+        if (minScale <= 0 || maxScale <= 0) throw new IllegalArgumentException("zoom scales must be positive");
+        if (maxZoom <= minZoom) throw new IllegalArgumentException("maxZoom must be greater than minZoom");
+        return new double[] { minScale, maxScale, minZoom, maxZoom };
+    }
+
+    private static double interpolate(@Nullable double[] scale, double zoomStep) {
+        return scale == null ? 1
+            : UniversalRenderStep.interpolateZoomScale(zoomStep, scale[0], scale[1], scale[2], scale[3]);
     }
 }

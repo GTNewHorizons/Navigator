@@ -67,6 +67,7 @@ public final class JourneyMapV6Plugin implements IClientPlugin {
 
     private final Map<UniversalLayerRenderer, Map<ILocationProvider, List<Displayable>>> overlays = new IdentityHashMap<>();
     private final Map<LayerManager, Long> overlayRefreshVersions = new IdentityHashMap<>();
+    private final Map<MarkerOverlay, MapMarker> markerProperties = new IdentityHashMap<>();
     private @Nullable OverlayListener hoveredOverlay;
     private boolean actionKeyDown;
     private boolean fullscreenActive;
@@ -79,6 +80,7 @@ public final class JourneyMapV6Plugin implements IClientPlugin {
     private long timeLastClick;
     private int searchScreenWidth = -1;
     private int searchScreenHeight = -1;
+    private int lastMarkerZoom = Integer.MIN_VALUE;
 
     @Override
     public String getModId() {
@@ -126,6 +128,7 @@ public final class JourneyMapV6Plugin implements IClientPlugin {
         if (event.uiState.ui != Context.UI.Fullscreen || event.uiState.active == fullscreenActive) return;
 
         fullscreenActive = event.uiState.active;
+        lastMarkerZoom = Integer.MIN_VALUE;
         for (LayerManager manager : NavigatorApi.getEnabledLayers(MOD)) {
             if (fullscreenActive) {
                 manager.onGuiOpened(MOD);
@@ -135,6 +138,7 @@ public final class JourneyMapV6Plugin implements IClientPlugin {
             }
         }
         if (!fullscreenActive) {
+            resetMarkerScales();
             fullscreen = null;
             searchBar = null;
         }
@@ -157,6 +161,10 @@ public final class JourneyMapV6Plugin implements IClientPlugin {
         fullscreen = event.getFullscreen();
         UIState state = fullscreen.getUiState();
         if (!state.active || state.blockBounds == null || state.displayBounds == null || state.blockSize <= 0) return;
+        if (state.zoom != lastMarkerZoom) {
+            updateMarkerScales(state);
+            lastMarkerZoom = state.zoom;
+        }
 
         int centerX = (int) Math.round(fullscreen.getCenterBlockX(true));
         int centerZ = (int) Math.round(fullscreen.getCenterBlockZ(true));
@@ -375,6 +383,10 @@ public final class JourneyMapV6Plugin implements IClientPlugin {
         if (!marker.isLabelOnMinimap()) overlay.getTextProperties()
             .setActiveUIs(Context.UI.Fullscreen);
 
+        markerProperties.put(overlay, marker);
+        if (fullscreen != null && fullscreen.getUiState().active)
+            updateMarkerScale(overlay, marker, fullscreen.getUiState());
+
         List<String> tooltip = marker.getTooltip();
         if (tooltip == null && step instanceof UniversalLocationInteractableStep<?>interactableStep) {
             tooltip = new ArrayList<>();
@@ -405,6 +417,41 @@ public final class JourneyMapV6Plugin implements IClientPlugin {
 
     private int toJourneyMapZoom(int zoomStep) {
         return (int) Math.max(UIState.FULLSCREEN_ZOOM_MIN, Math.min(UIState.ZOOM_IN_MAX, 512 * Math.pow(2, zoomStep)));
+    }
+
+    private void updateMarkerScales(UIState state) {
+        markerProperties.forEach((overlay, marker) -> updateMarkerScale(overlay, marker, state));
+    }
+
+    private void updateMarkerScale(MarkerOverlay overlay, MapMarker marker, UIState state) {
+        double zoomStep = Math.log(state.blockSize) / Math.log(2.0);
+        applyMarkerScale(overlay, marker, marker.getDisplayZoomScale(zoomStep), marker.getLabelZoomScale(zoomStep));
+    }
+
+    private void resetMarkerScales() {
+        markerProperties.forEach((overlay, marker) -> applyMarkerScale(overlay, marker, 1, 1));
+    }
+
+    private void applyMarkerScale(MarkerOverlay overlay, MapMarker marker, double displayScale, double labelScale) {
+        MapImage image = overlay.getIcon();
+        double width = marker.getDisplayWidth() * displayScale;
+        double height = marker.getDisplayHeight() * displayScale;
+        float textScale = (float) (marker.getLabelScale() * labelScale);
+        int labelOffset = (int) Math.round(marker.getLabelOffsetY() * displayScale);
+        if (image.getDisplayWidth() == width && image.getDisplayHeight() == height
+            && overlay.getTextProperties()
+                .getScale() == textScale
+            && overlay.getTextProperties()
+                .getOffsetY() == labelOffset)
+            return;
+
+        image.setDisplayWidth(width)
+            .setDisplayHeight(height)
+            .centerAnchors();
+        overlay.getTextProperties()
+            .setScale(textScale)
+            .setOffsetY(labelOffset);
+        overlay.flagForRerender();
     }
 
     private void showOverlays(Collection<Displayable> displayables) {
@@ -439,6 +486,7 @@ public final class JourneyMapV6Plugin implements IClientPlugin {
             if (displayable instanceof Overlay overlay && overlay.getOverlayListener() == hoveredOverlay) {
                 clearHoveredOverlay();
             }
+            if (displayable instanceof MarkerOverlay marker) markerProperties.remove(marker);
             api.remove(displayable);
         }
     }
@@ -450,6 +498,7 @@ public final class JourneyMapV6Plugin implements IClientPlugin {
                     .forEach(this::removeOverlays));
         overlays.clear();
         overlayRefreshVersions.clear();
+        markerProperties.clear();
         clearHoveredOverlay();
     }
 

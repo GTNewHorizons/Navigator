@@ -238,6 +238,31 @@ public abstract class UniversalRenderStep<T extends ILocationProvider> implement
         return isXaero ? getXaeroZoomAsSteps(zoom) : zoom;
     }
 
+    /**
+     * Interpolates a scale across a normalized zoom range, clamping outside it.
+     * <p>
+     * This is an additional on-screen size multiplier. Xaero steps using {@link #setMinScale(double)} already
+     * compensate for Xaero's raw zoom transform, so apply this multiplier there only when the element should visibly
+     * resize rather than merely retain its size.
+     *
+     * @param minScale scale at {@code minZoom}
+     * @param maxScale scale at {@code maxZoom}
+     * @param minZoom  normalized zoom step where scaling starts
+     * @param maxZoom  normalized zoom step where scaling ends; must be greater than {@code minZoom}
+     * @return scale for the active map's current zoom
+     */
+    public double getZoomScale(double minScale, double maxScale, double minZoom, double maxZoom) {
+        return interpolateZoomScale(getZoomStep(), minScale, maxScale, minZoom, maxZoom);
+    }
+
+    /** Interpolates a scale for a supplied normalized zoom step. */
+    public static double interpolateZoomScale(double zoomStep, double minScale, double maxScale, double minZoom,
+        double maxZoom) {
+        if (maxZoom <= minZoom) throw new IllegalArgumentException("maxZoom must be greater than minZoom");
+        double progress = (zoomStep - minZoom) / (maxZoom - minZoom);
+        return minScale + (maxScale - minScale) * Math.max(0, Math.min(1, progress));
+    }
+
     /** @return source location */
     @Override
     public T getLocation() {

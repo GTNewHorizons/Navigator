@@ -108,7 +108,8 @@ public final class MyRenderStep extends UniversalRenderStep<MyLocation> {
 
 `x` and `y` are map-space coordinates for the location. Use `getAdjustedWidth()` / `getAdjustedHeight()` when the
 size should remain consistent across integrations. `getZoomStep()` provides Navigator's normalized, discrete zoom
-step for visibility decisions.
+step for visibility decisions. `getZoomScale(...)` returns a clamped linear multiplier over a consumer-selected zoom
+range, allowing each layer to tune label or icon sizing without map-specific zoom calculations.
 
 ### Manager and renderer
 
@@ -314,7 +315,8 @@ Do not implement the waypoint interface merely to reuse double-click handling, a
 
 `MapMarker` is Navigator's map-neutral description of a native JourneyMap 6 `MarkerOverlay`. It supports a buffered
 image or Minecraft `ResourceLocation`, source regions within sprite sheets or the animated block atlas, independent
-texture/display sizes, label styling, tooltip text, a label zoom threshold, and fullscreen-only labels.
+texture/display sizes, label styling, tooltip text, a label zoom threshold, fullscreen-only labels, and independent
+fullscreen zoom scaling for its icon and label.
 
 On JourneyMap 6, universal render steps draw only on the fullscreen map. A layer appears on the minimap only through a
 `MapMarker` or raw native overlay.
@@ -324,7 +326,9 @@ UniversalInteractableRenderer renderer = new UniversalInteractableRenderer(manag
 renderer.withRenderStep(location -> new OreRenderStep((OreLocation) location));
 renderer.withMapMarker(location -> new MapMarker(ORE_ICON, 16, 16)
     .setDisplaySize(12, 12)
+    .setDisplayZoomScale(1, 2, 3, 5)
     .setLabel(((OreLocation) location).getName())
+    .setLabelZoomScale(1, 1.5, 0, 5)
     .setLabelMinZoom(3)
     .setLabelOnMinimap(false));
 return renderer;
@@ -339,6 +343,7 @@ Important lifecycle rules:
 - Marker clicks and action keys are forwarded to `UniversalInteractableRenderer`.
 - `setLabelMinZoom` uses Navigator's normalized zoom steps, not JourneyMap's internal zoom value.
 - `setLabelOnMinimap(false)` hides only the text; the icon remains visible in both contexts.
+- `setDisplayZoomScale` and `setLabelZoomScale` affect only fullscreen; the minimap retains the configured base size.
 - Use `new MapMarker(TextureMap.locationBlocksTexture, sprite)` to reuse a stitched `TextureAtlasSprite` directly
   without copying it or losing its animation.
 
@@ -390,6 +395,7 @@ those classes out of code that must load under JourneyMap 5.
 | `setMinScale(...)` | Xaero-only lower scaling bound. |
 | `isMinimap()` | Whether no GUI screen is currently open. |
 | `getZoomStep()` | Normalized zoom step suitable for visibility thresholds. |
+| `getZoomScale(...)` | Scale interpolated over a consumer-selected normalized zoom range. |
 
 Rendering runs inside a pushed OpenGL matrix with Navigator's basic blend state configured. A render step must still
 restore any additional GL state it changes.

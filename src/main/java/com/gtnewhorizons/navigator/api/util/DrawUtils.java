@@ -262,21 +262,18 @@ public class DrawUtils {
             GL11.glScaled(fontScale, fontScale, 0);
         }
 
-        double dTextX = textX - (double) (int) textX;
-        double dTextY = textY - (double) (int) textY;
         double textWidth = fontRenderer.getStringWidth(text);
-        double xOffsetL = centered ? -textWidth / 2.0 - 2 : -2;
+        double textLeft = centered ? textX - textWidth / 2.0 : textX;
+        int intTextX = (int) Math.floor(textLeft);
+        int intTextY = (int) Math.floor(textY);
+        double dTextX = textLeft - intTextX;
+        double dTextY = textY - intTextY;
+        drawRect(textLeft - 2, textY - 2, textWidth + 2, fontRenderer.FONT_HEIGHT + 2, bgColor, 180);
         GL11.glTranslated(dTextX, dTextY, 0.0);
-        drawRect(textX + xOffsetL, textY - 2, textWidth + 2, fontRenderer.FONT_HEIGHT + 2, bgColor, 180);
         if (fontShadow) {
-            fontRenderer.drawStringWithShadow(
-                text,
-                (centered ? (int) (textX - textWidth / 2.0) : (int) textX),
-                (int) textY,
-                fontColor);
+            fontRenderer.drawStringWithShadow(text, intTextX, intTextY, fontColor);
         } else {
-            fontRenderer
-                .drawString(text, (centered ? (int) (textX - textWidth / 2.0) : (int) textX), (int) textY, fontColor);
+            fontRenderer.drawString(text, intTextX, intTextY, fontColor);
         }
         GL11.glPopMatrix();
     }
