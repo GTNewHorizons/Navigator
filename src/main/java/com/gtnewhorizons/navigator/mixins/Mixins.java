@@ -32,7 +32,7 @@ public enum Mixins implements IMixins {
         .addRequiredMod(TargetedMod.JOURNEYMAP)
         .setPhase(Phase.LATE)
         .setApplyIf(() -> ModuleConfig.enableJourneyMapModule && Util.isJourneyMapV6Installed())
-        .addClientMixins("journeymap.v6.FullscreenMixin")),
+        .addClientMixins("journeymap.v6.FullscreenMixin", "journeymap.v6.MapChatMixin")),
     XAEROS_GUI(new MixinBuilder()
         .addRequiredMod(TargetedMod.XAEROWORLDMAP)
         .setPhase(Phase.LATE)

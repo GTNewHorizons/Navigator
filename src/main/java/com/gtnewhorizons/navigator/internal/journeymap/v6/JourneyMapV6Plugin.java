@@ -126,6 +126,10 @@ public final class JourneyMapV6Plugin implements IClientPlugin {
         return searchBar != null && searchBar.getVisible() && searchBar.isFocused();
     }
 
+    public static void onChatOpened() {
+        if (searchBar != null) searchBar.setFocused(false);
+    }
+
     public static boolean onSearchMouseClicked(int mouseX, int mouseY, int button) {
         if (searchBar == null || !searchBar.getVisible()) return false;
 
@@ -642,8 +646,8 @@ public final class JourneyMapV6Plugin implements IClientPlugin {
             marker.getPoint()
                 .getZ());
         MapImage icon = marker.getIcon();
-        double centerX = position.x + (int) state.blockSize / 2.0;
-        double centerY = position.y + (int) state.blockSize / 2.0;
+        double centerX = position.x + state.blockSize / 2.0;
+        double centerY = position.y + state.blockSize / 2.0;
         return mouseX >= centerX - icon.getAnchorX() && mouseX < centerX + icon.getDisplayWidth() - icon.getAnchorX()
             && mouseY >= centerY - icon.getAnchorY()
             && mouseY < centerY + icon.getDisplayHeight() - icon.getAnchorY();

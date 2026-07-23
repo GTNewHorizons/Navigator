@@ -30,6 +30,11 @@ public abstract class FullscreenMixin {
         }
     }
 
+    @Inject(method = "openChat", at = @At("HEAD"), remap = false)
+    private void navigator$releaseSearchFocus(String defaultText, CallbackInfo ci) {
+        JourneyMapV6Plugin.onChatOpened();
+    }
+
     @Inject(method = "isSearchFocused", at = @At("RETURN"), cancellable = true, remap = false)
     private void navigator$includeNavigatorSearch(CallbackInfoReturnable<Boolean> cir) {
         if (JourneyMapV6Plugin.isSearchFocused()) cir.setReturnValue(true);
