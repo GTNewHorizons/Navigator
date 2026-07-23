@@ -506,7 +506,7 @@ public final class JourneyMapV6Plugin implements IClientPlugin {
             String label = marker.getLabel();
             if (Objects.equals(label, overlay.getLabel())) return;
             overlay.setLabel(label);
-            overlay.flagForRerender();
+            showOverlays(Collections.singleton(overlay));
         });
     }
 
