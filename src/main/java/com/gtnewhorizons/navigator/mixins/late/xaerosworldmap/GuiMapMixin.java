@@ -6,6 +6,7 @@ import java.util.List;
 
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
+import net.minecraft.client.gui.GuiTextField;
 
 import org.spongepowered.asm.lib.Opcodes;
 import org.spongepowered.asm.mixin.Mixin;
@@ -78,6 +79,9 @@ public abstract class GuiMapMixin extends ScreenBase {
 
     @Shadow
     public abstract void addGuiButton(GuiButton b);
+
+    @Shadow
+    public abstract void setFocused(GuiTextField field);
 
     @Shadow
     private int screenScale;
@@ -245,17 +249,18 @@ public abstract class GuiMapMixin extends ScreenBase {
         }
     }
 
-    @Inject(method = "mouseClicked", at = @At(value = "HEAD"), cancellable = true)
+    @Inject(method = "mouseClicked", at = @At(value = "HEAD"), cancellable = true, remap = true)
     private void navigator$mouseClicked(int x, int y, int button, CallbackInfo ci) {
         if (navigator$searchBar.getVisible()) {
             navigator$searchBar.mouseClicked(x, y, button);
             if (navigator$searchBar.isHovered(x, y)) {
+                setFocused(navigator$searchBar);
                 ci.cancel();
             }
         }
     }
 
-    @Inject(method = "keyTyped", at = @At(value = "HEAD"), cancellable = true)
+    @Inject(method = "keyTyped", at = @At(value = "HEAD"), cancellable = true, remap = true)
     private void navigator$keyTyped(char par1, int par2, CallbackInfo ci) {
         for (LayerManager layerManager : NavigatorApi.getEnabledLayers(XaeroWorldMap)) {
             if (layerManager.isLayerActive() && layerManager.hasSearchField()
