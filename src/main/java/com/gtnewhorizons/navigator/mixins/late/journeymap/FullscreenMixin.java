@@ -82,6 +82,9 @@ public abstract class FullscreenMixin extends JmUI {
     ThemeButton buttonDay;
 
     @Shadow(remap = false)
+    ThemeToggle buttonTopo;
+
+    @Shadow(remap = false)
     MapChat chat;
 
     @Shadow(remap = false)
@@ -175,6 +178,7 @@ public abstract class FullscreenMixin extends JmUI {
         }
 
         buttonList.add(buttonCaves);
+        buttonList.add(buttonTopo);
         buttonList.add(buttonNight);
         buttonList.add(buttonDay);
         mapTypeToolbar = new ThemeToolbar(theme, buttonList);
