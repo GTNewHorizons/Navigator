@@ -215,8 +215,7 @@ public void onSearch(@NotNull String searchString) {
 
 Search policy belongs to the consumer because Navigator does not know which fields are meaningful. Navigator sends
 query changes to inactive searchable layers too, so switching layers preserves and immediately applies the current
-filter. The JourneyMap 6 search widget currently has a known focus conflict when switching directly to Minecraft chat;
-see the compatibility roadmap.
+filter. Navigator also releases map-search focus when JourneyMap 6 opens Minecraft chat.
 
 ## Interaction without waypoints
 

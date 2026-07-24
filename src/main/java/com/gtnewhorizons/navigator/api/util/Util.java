@@ -74,12 +74,12 @@ public class Util {
      * Converts a block coordinate to its containing chunk with correct negative-coordinate flooring.
      */
     public static int coordBlockToChunk(int blockCoord) {
-        return blockCoord < 0 ? -((-blockCoord - 1) >> 4) - 1 : blockCoord >> 4;
+        return blockCoord >> 4;
     }
 
     /** Converts a chunk coordinate to the block coordinate of its minimum edge. */
     public static int coordChunkToBlock(int chunkCoord) {
-        return chunkCoord < 0 ? -((-chunkCoord) << 4) : chunkCoord << 4;
+        return chunkCoord << 4;
     }
 
     /** Packs chunk X/Z into Navigator's location key format. */

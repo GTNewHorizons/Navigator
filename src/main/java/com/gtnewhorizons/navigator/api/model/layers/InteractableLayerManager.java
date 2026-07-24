@@ -120,6 +120,8 @@ public abstract class InteractableLayerManager extends LayerManager {
         if (location instanceof IWaypointAndLocationProvider waypointLoc) {
             if (hasActiveWaypoint()) {
                 waypointLoc.onWaypointUpdated(activeWaypoint);
+            } else if (waypointLoc.isActiveAsWaypoint()) {
+                waypointLoc.onWaypointCleared();
             }
             updateElement(waypointLoc);
         }

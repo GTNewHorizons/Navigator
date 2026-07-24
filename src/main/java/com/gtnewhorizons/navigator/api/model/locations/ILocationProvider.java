@@ -30,12 +30,12 @@ public interface ILocationProvider {
 
     /** @return chunk X containing {@link #getBlockX()} */
     default int getChunkX() {
-        return Util.coordBlockToChunk((int) getBlockX());
+        return Util.coordBlockToChunk((int) Math.floor(getBlockX()));
     }
 
     /** @return chunk Z containing {@link #getBlockZ()} */
     default int getChunkZ() {
-        return Util.coordBlockToChunk((int) getBlockZ());
+        return Util.coordBlockToChunk((int) Math.floor(getBlockZ()));
     }
 
 }
