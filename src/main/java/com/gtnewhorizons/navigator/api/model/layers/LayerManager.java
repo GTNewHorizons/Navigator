@@ -330,11 +330,12 @@ public abstract class LayerManager {
         onUpdatePre(chunkMinX, chunkMaxX, chunkMinZ, chunkMaxZ);
 
         visibleLocations.clear();
+        int elementMargin = getElementSize() << 4;
         Collection<? extends ILocationProvider> generatedLocations = generateVisibleLocations(
-            minBlockX,
-            minBlockZ,
-            maxBlockX,
-            maxBlockZ,
+            minBlockX - elementMargin,
+            minBlockZ - elementMargin,
+            maxBlockX + elementMargin,
+            maxBlockZ + elementMargin,
             currentDim);
         if (generatedLocations != null) {
             for (ILocationProvider generated : generatedLocations) {

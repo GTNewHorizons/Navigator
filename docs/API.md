@@ -139,8 +139,8 @@ public final class MyLayerManager extends LayerManager {
 `addLayerRenderer` is called once for each installed and enabled map integration. Return `null` for an integration the
 layer does not support. A universal renderer can be returned for every integration.
 
-For multiple independently interactive points in one chunk, override the collection hook instead of
-`generateLocation`:
+For a layer backed by an existing collection or map of known locations, override the collection hook instead of
+`generateLocation`. This also supports multiple independently interactive points in one chunk:
 
 ```java
 @Override
@@ -153,7 +153,9 @@ protected Collection<? extends ILocationProvider> generateVisibleLocations(
 Return an empty collection when the viewport contains nothing. The default `null` return keeps chunk discovery active.
 Every returned location must override `toLong()` when more than one element may occupy a chunk. Navigator retains the
 first object for each identity; update mutable cached fields through `updateElement` or invalidate the location when
-its source data changes.
+its source data changes. Do not probe a finite location collection from `generateLocation`: chunk discovery scales with
+viewport area, and highly zoomed-out maps can cover millions of chunks. Filter the collection by the supplied block
+bounds instead. Navigator expands those bounds by `getElementSize()` for elements extending beyond their origin.
 
 ## Cache and refresh lifecycle
 
