@@ -76,8 +76,8 @@ public class UniversalLayerRenderer extends LayerRenderer {
      * @param location source location
      * @return marker description, or {@code null}
      */
-    public MapMarker createMapMarker(ILocationProvider location) {
-        return markerCreator.apply(location);
+    public @Nullable MapMarker createMapMarker(ILocationProvider location) {
+        return markerCreator == null ? null : markerCreator.apply(location);
     }
 
     /**
@@ -114,8 +114,8 @@ public class UniversalLayerRenderer extends LayerRenderer {
      * @param location source location
      * @return raw JourneyMap 6 displayable candidates, or {@code null}
      */
-    public Collection<?> createJourneyMapV6Overlays(ILocationProvider location) {
-        return journeyMapV6OverlayCreator.apply(location);
+    public @Nullable Collection<?> createJourneyMapV6Overlays(ILocationProvider location) {
+        return journeyMapV6OverlayCreator == null ? null : journeyMapV6OverlayCreator.apply(location);
     }
 
     /** @return whether native JM6 displayables replace universal fullscreen rendering */

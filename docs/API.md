@@ -424,6 +424,19 @@ a universal step:
 Do not load a map-specific implementation when its map mod is absent. Select it in `addLayerRenderer` or
 `addWaypointManager` using the supplied `SupportedMods` value.
 
+### Migrating existing JourneyMap consumers
+
+`SupportedMods.JourneyMap` now represents either JourneyMap 5 or JourneyMap 6. Existing consumers that return
+`JMLayerRenderer` or `JMInteractableLayerRenderer` must do so only when `Util.isJourneyMapV5Installed()` is true;
+those legacy classes cannot load under JourneyMap 6. Prefer a universal renderer for both versions.
+
+Universal render steps no longer implement JourneyMap 5's `JMRenderStep`/`DrawStep` types. Code should render and
+interact through the universal APIs instead of casting a universal step to a JourneyMap class.
+
+`InteractableLayerManager#getVisibleLocations()` may now contain plain `ILocationProvider` elements because
+interaction no longer implies waypoint capability. Consumers that need waypoint locations should filter with
+`instanceof IWaypointAndLocationProvider`.
+
 ## JourneyMap version detection
 
 Use `JourneyMapVersion.get()` or the convenience methods in `Util`:

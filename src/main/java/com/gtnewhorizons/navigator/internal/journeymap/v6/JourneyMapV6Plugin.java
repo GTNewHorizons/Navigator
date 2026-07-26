@@ -114,8 +114,20 @@ public final class JourneyMapV6Plugin implements IClientPlugin {
         return api;
     }
 
-    public static void centerOn(int blockX, int blockZ) {
+    public static void centerOn(int blockX, int blockZ, int zoom) {
         if (fullscreen != null && fullscreen.getUiState().active) {
+            if (zoom >= 0) {
+                int targetZoom = toJourneyMapZoom(zoom);
+                int currentZoom;
+                while ((currentZoom = fullscreen.getUiState().zoom) < targetZoom) {
+                    fullscreen.zoomIn();
+                    if (fullscreen.getUiState().zoom == currentZoom) break;
+                }
+                while ((currentZoom = fullscreen.getUiState().zoom) > targetZoom) {
+                    fullscreen.zoomOut();
+                    if (fullscreen.getUiState().zoom == currentZoom) break;
+                }
+            }
             fullscreen.centerOn(blockX, blockZ);
         }
     }
@@ -492,7 +504,7 @@ public final class JourneyMapV6Plugin implements IClientPlugin {
         overlay.setOverlayListener(listener);
     }
 
-    private int toJourneyMapZoom(int zoomStep) {
+    private static int toJourneyMapZoom(int zoomStep) {
         return (int) Math.max(UIState.FULLSCREEN_ZOOM_MIN, Math.min(UIState.ZOOM_IN_MAX, 512 * Math.pow(2, zoomStep)));
     }
 
@@ -782,14 +794,21 @@ public final class JourneyMapV6Plugin implements IClientPlugin {
     private void onClick(FullscreenMapEvent.ClickEvent event) {
         if (event.getStage() != FullscreenMapEvent.Stage.PRE || event.getButton() != 0) return;
 
-        int mouseX = (int) event.getMouseX();
-        int mouseY = (int) event.getMouseY();
+        int framebufferMouseX = (int) event.getMouseX();
+        int framebufferMouseY = (int) event.getMouseY();
+        Minecraft minecraft = fullscreen.getMinecraft();
+        int guiScale = new ScaledResolution(minecraft, minecraft.displayWidth, minecraft.displayHeight)
+            .getScaleFactor();
+        int mouseX = framebufferMouseX / guiScale;
+        int mouseY = framebufferMouseY / guiScale;
         long now = System.currentTimeMillis();
         boolean doubleClick = now - timeLastClick < 200L;
         timeLastClick = now;
 
         BlockPos location = event.getLocation();
-        if (hoveredOverlay != null && !hoveredOverlay.contains(mouseX, mouseY)) clearHoveredOverlay();
+        if (hoveredOverlay != null && !hoveredOverlay.contains(framebufferMouseX, framebufferMouseY)) {
+            clearHoveredOverlay();
+        }
         if (hoveredOverlay != null && hoveredOverlay.renderer
             .onRenderStepClick(hoveredOverlay.step, doubleClick, mouseX, mouseY, location.getX(), location.getZ())) {
             event.cancel();
