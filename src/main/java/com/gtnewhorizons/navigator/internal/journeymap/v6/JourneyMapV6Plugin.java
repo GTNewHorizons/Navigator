@@ -797,6 +797,7 @@ public final class JourneyMapV6Plugin implements IClientPlugin {
         int framebufferMouseX = (int) event.getMouseX();
         int framebufferMouseY = (int) event.getMouseY();
         Minecraft minecraft = fullscreen.getMinecraft();
+        if (minecraft == null) return;
         int guiScale = new ScaledResolution(minecraft, minecraft.displayWidth, minecraft.displayHeight)
             .getScaleFactor();
         int mouseX = framebufferMouseX / guiScale;
