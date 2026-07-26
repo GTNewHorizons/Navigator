@@ -53,7 +53,8 @@ public class SearchBar extends FormattedTextField {
 
     public void setTextConsumer(Consumer<String> textConsumer) {
         this.textConsumer = textConsumer;
-        if (textConsumer != null) textConsumer.accept(getText());
+        oldText = getText();
+        if (textConsumer != null) textConsumer.accept(oldText);
     }
 
     public boolean isHovered(int mouseX, int mouseY) {

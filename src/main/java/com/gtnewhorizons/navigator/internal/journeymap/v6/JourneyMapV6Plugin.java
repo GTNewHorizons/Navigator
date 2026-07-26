@@ -116,7 +116,7 @@ public final class JourneyMapV6Plugin implements IClientPlugin {
 
     public static void centerOn(int blockX, int blockZ, int zoom) {
         if (fullscreen != null && fullscreen.getUiState().active) {
-            if (zoom >= 0) {
+            if (zoom != -1) {
                 int targetZoom = toJourneyMapZoom(zoom);
                 int currentZoom;
                 while ((currentZoom = fullscreen.getUiState().zoom) < targetZoom) {
