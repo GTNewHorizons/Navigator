@@ -158,6 +158,7 @@ public final class JourneyMapV6Plugin implements IClientPlugin {
             for (LayerManager manager : NavigatorApi.getEnabledLayers(MOD)) {
                 if (fullscreenActive) {
                     manager.onGuiOpened(MOD);
+                    if (manager.hasSearchField()) manager.onSearch(SearchBar.getRestoredText());
                     manager.forceRefresh();
                 } else {
                     manager.onGuiClosed(MOD);
@@ -762,6 +763,7 @@ public final class JourneyMapV6Plugin implements IClientPlugin {
     }
 
     private void drawSearchBar(FullscreenRenderEvent event) {
+        if (!fullscreenActive) return;
         boolean visible = NavigatorApi.getEnabledLayers(MOD)
             .stream()
             .anyMatch(manager -> manager.isLayerActive() && manager.hasSearchField());
@@ -785,7 +787,8 @@ public final class JourneyMapV6Plugin implements IClientPlugin {
                             manager.onSearch(text);
                             manager.forceRefresh();
                         }
-                    }));
+                    }),
+                false);
         }
         searchBar.setVisible(true);
         searchBar.drawTextBox();

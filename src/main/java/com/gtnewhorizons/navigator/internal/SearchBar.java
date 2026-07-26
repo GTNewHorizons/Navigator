@@ -5,9 +5,12 @@ import java.util.function.Consumer;
 import net.minecraft.client.Minecraft;
 
 import com.gtnewhorizons.navigator.api.util.Util;
+import com.gtnewhorizons.navigator.config.GeneralConfig;
 import com.gtnewhorizons.navigator.internal.nei.NEISearchFormatter;
 
 public class SearchBar extends FormattedTextField {
+
+    private static String lastText = "";
 
     private Consumer<String> textConsumer;
 
@@ -16,6 +19,12 @@ public class SearchBar extends FormattedTextField {
     public SearchBar(int x, int y, int width, int height) {
         super(Minecraft.getMinecraft().fontRenderer, x, y, width, height);
         setFormatter(resolveFormatter());
+        if (GeneralConfig.rememberSearchText) setText(getRestoredText());
+        else lastText = "";
+    }
+
+    public static String getRestoredText() {
+        return GeneralConfig.rememberSearchText ? lastText : "";
     }
 
     private static TextFormatter resolveFormatter() {
@@ -45,6 +54,7 @@ public class SearchBar extends FormattedTextField {
 
         if (!getText().equals(oldText)) {
             oldText = getText();
+            lastText = oldText;
             if (textConsumer != null) {
                 textConsumer.accept(getText());
             }
@@ -52,9 +62,14 @@ public class SearchBar extends FormattedTextField {
     }
 
     public void setTextConsumer(Consumer<String> textConsumer) {
+        setTextConsumer(textConsumer, true);
+    }
+
+    public void setTextConsumer(Consumer<String> textConsumer, boolean notify) {
         this.textConsumer = textConsumer;
         oldText = getText();
-        if (textConsumer != null) textConsumer.accept(oldText);
+        lastText = oldText;
+        if (notify && textConsumer != null) textConsumer.accept(oldText);
     }
 
     public boolean isHovered(int mouseX, int mouseY) {
