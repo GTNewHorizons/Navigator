@@ -567,8 +567,19 @@ public final class JourneyMapV6Plugin implements IClientPlugin {
     private void handleMarkerActionKey() {
         int keyCode = NavigatorApi.ACTION_KEY.getKeyCode();
         boolean down = keyCode >= 0 && keyCode < 256 && Keyboard.isKeyDown(keyCode);
-        if (down && !actionKeyDown && hoveredOverlay != null) {
-            hoveredOverlay.renderer.onRenderStepKeyPressed(hoveredOverlay.step, keyCode);
+        if (down && !actionKeyDown
+            && fullscreen != null
+            && fullscreen.getScreen() == Minecraft.getMinecraft().currentScreen) {
+            if (hoveredOverlay != null) {
+                hoveredOverlay.renderer.onRenderStepKeyPressed(hoveredOverlay.step, keyCode);
+            } else {
+                for (LayerRenderer renderer : NavigatorApi.getActiveRenderersFor(MOD)) {
+                    if (renderer instanceof UniversalLayerRenderer universal && universal.hasJourneyMapV6Overlays()) {
+                        continue;
+                    }
+                    if (renderer instanceof InteractableLayer interactable && interactable.onKeyPressed(keyCode)) break;
+                }
+            }
         }
         actionKeyDown = down;
     }
