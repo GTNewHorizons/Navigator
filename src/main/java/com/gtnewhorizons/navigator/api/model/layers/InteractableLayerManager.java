@@ -1,6 +1,5 @@
 package com.gtnewhorizons.navigator.api.model.layers;
 
-import java.util.Collection;
 import java.util.EnumMap;
 import java.util.Map;
 
@@ -13,12 +12,21 @@ import com.gtnewhorizons.navigator.api.model.locations.IWaypointAndLocationProvi
 import com.gtnewhorizons.navigator.api.model.waypoints.Waypoint;
 import com.gtnewhorizons.navigator.api.model.waypoints.WaypointManager;
 
+/**
+ * Layer manager that supports clickable render steps and an optional active waypoint.
+ * <p>
+ * Plain {@link ILocationProvider} elements may be interactive. Waypoint synchronization is only applied to elements
+ * that implement {@link IWaypointAndLocationProvider}.
+ */
 public abstract class InteractableLayerManager extends LayerManager {
 
     protected final Map<SupportedMods, WaypointManager> waypointManagers = new EnumMap<>(SupportedMods.class);
 
     protected Waypoint activeWaypoint = null;
 
+    /**
+     * @param buttonManager shared logical button controlling this layer
+     */
     public InteractableLayerManager(ButtonManager buttonManager) {
         super(buttonManager);
         for (SupportedMods mod : SupportedMods.values()) {
@@ -32,6 +40,8 @@ public abstract class InteractableLayerManager extends LayerManager {
     }
 
     /**
+     * Creates an interactable or normal renderer for an installed integration.
+     *
      * @param manager This layer manager
      * @param mod     The mod to add the layer renderer for
      * @return The {@link LayerRenderer} implementation for the mod or null if none
@@ -39,6 +49,8 @@ public abstract class InteractableLayerManager extends LayerManager {
     protected abstract @Nullable LayerRenderer addLayerRenderer(InteractableLayerManager manager, SupportedMods mod);
 
     /**
+     * Optionally creates the bridge used to publish Navigator's active waypoint to a map mod.
+     *
      * @param manager This layer manager
      * @param mod     The mod to add the waypoint manager for
      * @return The {@link WaypointManager} implementation for the mod or null if none
@@ -48,9 +60,9 @@ public abstract class InteractableLayerManager extends LayerManager {
     }
 
     /**
-     * Update the information contained in the {@link IWaypointAndLocationProvider}
+     * Updates a cached waypoint-capable location.
      * <p>
-     * If this information is updated outside of this method {@link #forceRefresh()} should be called
+     * Plain locations bypass this overload. If information changes outside this method, call {@link #forceRefresh()}.
      *
      * @param location The location to update
      */
@@ -62,24 +74,43 @@ public abstract class InteractableLayerManager extends LayerManager {
         return addLayerRenderer(this, mod);
     }
 
+    /**
+     * Sets the active waypoint, updates visible waypoint-capable locations, and synchronizes map waypoint managers.
+     *
+     * @param waypoint new active waypoint
+     */
     public void setActiveWaypoint(Waypoint waypoint) {
         activeWaypoint = waypoint;
-        getVisibleLocations().forEach(element -> element.onWaypointUpdated(waypoint));
+        getVisibleLocations().forEach(element -> {
+            if (element instanceof IWaypointAndLocationProvider waypointLoc) {
+                waypointLoc.onWaypointUpdated(waypoint);
+            }
+        });
         waypointManagers.values()
             .forEach(translator -> translator.updateActiveWaypoint(waypoint));
     }
 
+    /** Clears the active waypoint and notifies visible waypoint-capable locations and map managers. */
     public void clearActiveWaypoint() {
         activeWaypoint = null;
-        getVisibleLocations().forEach(IWaypointAndLocationProvider::onWaypointCleared);
+        getVisibleLocations().forEach(element -> {
+            if (element instanceof IWaypointAndLocationProvider waypointLoc) {
+                waypointLoc.onWaypointCleared();
+            }
+        });
         waypointManagers.values()
             .forEach(WaypointManager::clearActiveWaypoint);
     }
 
+    /** @return whether this manager currently has an active waypoint */
     public boolean hasActiveWaypoint() {
         return activeWaypoint != null;
     }
 
+    /**
+     * @param map map integration
+     * @return its waypoint manager, or {@code null}
+     */
     public @Nullable WaypointManager getWaypointManager(SupportedMods map) {
         return waypointManagers.get(map);
     }
@@ -89,14 +120,11 @@ public abstract class InteractableLayerManager extends LayerManager {
         if (location instanceof IWaypointAndLocationProvider waypointLoc) {
             if (hasActiveWaypoint()) {
                 waypointLoc.onWaypointUpdated(activeWaypoint);
+            } else if (waypointLoc.isActiveAsWaypoint()) {
+                waypointLoc.onWaypointCleared();
             }
             updateElement(waypointLoc);
         }
     }
 
-    @Override
-    @SuppressWarnings("unchecked")
-    public Collection<IWaypointAndLocationProvider> getVisibleLocations() {
-        return (Collection<IWaypointAndLocationProvider>) super.getVisibleLocations();
-    }
 }

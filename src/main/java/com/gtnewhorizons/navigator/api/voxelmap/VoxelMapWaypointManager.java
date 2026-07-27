@@ -9,10 +9,16 @@ import com.thevoxelbox.voxelmap.interfaces.AbstractVoxelMap;
 import com.thevoxelbox.voxelmap.interfaces.IWaypointManager;
 import com.thevoxelbox.voxelmap.util.Waypoint;
 
+/**
+ * Optional VoxelMap waypoint helpers.
+ * <p>
+ * Navigator does not provide VoxelMap layer rendering. Calls are safe no-ops when VoxelMap is absent.
+ */
 public class VoxelMapWaypointManager {
 
     private static Method getCurrentSubworldDescriptor;
 
+    /** Adds an already-created VoxelMap waypoint when VoxelMap is installed. */
     public static void addVoxelMapWaypoint(Waypoint waypoint) {
         if (!Util.isVoxelMapInstalled()) return;
         IWaypointManager waypointManager = AbstractVoxelMap.getInstance()
@@ -20,6 +26,7 @@ public class VoxelMapWaypointManager {
         waypointManager.addWaypoint(waypoint);
     }
 
+    /** Creates and adds a VoxelMap waypoint when VoxelMap is installed. */
     public static void addVoxelMapWaypoint(String name, int x, int y, int z, boolean enabled, float red, float green,
         float blue, String icon, TreeSet<Integer> dimension) {
         if (!Util.isVoxelMapInstalled()) return;
@@ -40,6 +47,11 @@ public class VoxelMapWaypointManager {
                 dimension));
     }
 
+    /**
+     * Invokes VoxelMap's obfuscated current-subworld method.
+     *
+     * @return current subworld descriptor, or an empty string if reflection failed
+     */
     public static String getCurrentSubworldDescriptor(IWaypointManager obj, boolean arg) {
         try {
             return (String) getCurrentSubworldDescriptor.invoke(obj, arg);

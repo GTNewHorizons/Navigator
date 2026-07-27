@@ -9,6 +9,7 @@ import com.gtnewhorizons.navigator.api.model.layers.LayerManager;
 import com.gtnewhorizons.navigator.api.model.layers.LayerRenderer;
 import com.gtnewhorizons.navigator.api.xaero.rendersteps.XaeroRenderStep;
 
+/** Xaero World Map-specific renderer. Prefer {@code UniversalLayerRenderer} for new layers. */
 public abstract class XaeroLayerRenderer extends LayerRenderer {
 
     public XaeroLayerRenderer(@Nonnull LayerManager manager) {

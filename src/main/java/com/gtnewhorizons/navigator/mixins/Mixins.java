@@ -28,6 +28,11 @@ public enum Mixins implements IMixins {
             "journeymap.RenderWaypointBeaconMixin",
             "journeymap.WaypointManagerMixin",
             "journeymap.TextureCacheMixin")),
+    JOURNEYMAP_V6(new MixinBuilder()
+        .addRequiredMod(TargetedMod.JOURNEYMAP)
+        .setPhase(Phase.LATE)
+        .setApplyIf(() -> ModuleConfig.enableJourneyMapModule && Util.isJourneyMapV6Installed())
+        .addClientMixins("journeymap.v6.FullscreenMixin", "journeymap.v6.MapChatMixin")),
     XAEROS_GUI(new MixinBuilder()
         .addRequiredMod(TargetedMod.XAEROWORLDMAP)
         .setPhase(Phase.LATE)

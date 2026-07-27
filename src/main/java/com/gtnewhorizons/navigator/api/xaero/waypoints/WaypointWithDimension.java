@@ -2,6 +2,7 @@ package com.gtnewhorizons.navigator.api.xaero.waypoints;
 
 import xaero.common.minimap.waypoints.Waypoint;
 
+/** Xaero waypoint that disables itself whenever the player is outside its owning dimension. */
 public class WaypointWithDimension extends Waypoint {
 
     private final int dimID;
@@ -13,10 +14,12 @@ public class WaypointWithDimension extends Waypoint {
         this.currentDim = dimID;
     }
 
+    /** Updates the dimension used by {@link #isDisabled()}. */
     public void notifyDimension(int newDimID) {
         currentDim = newDimID;
     }
 
+    /** @return dimension containing this waypoint */
     public int getDimID() {
         return dimID;
     }

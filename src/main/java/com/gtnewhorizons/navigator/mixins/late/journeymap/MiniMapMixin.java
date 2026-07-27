@@ -15,8 +15,8 @@ import com.gtnewhorizons.navigator.api.NavigatorApi;
 import com.gtnewhorizons.navigator.api.model.layers.LayerManager;
 import com.gtnewhorizons.navigator.api.model.layers.LayerRenderer;
 import com.gtnewhorizons.navigator.api.model.steps.RenderStep;
+import com.gtnewhorizons.navigator.internal.journeymap.v5.JourneyMapV5Renderer;
 
-import journeymap.client.render.draw.DrawStep;
 import journeymap.client.render.map.GridRenderer;
 import journeymap.client.ui.minimap.DisplayVars;
 import journeymap.client.ui.minimap.MiniMap;
@@ -57,15 +57,14 @@ public abstract class MiniMapMixin {
 
         for (LayerRenderer layerRenderer : NavigatorApi.getActiveRenderersByPriority(JourneyMap)) {
             for (RenderStep renderStep : layerRenderer.getRenderSteps()) {
-                if (renderStep instanceof DrawStep drawStep) {
-                    drawStep.draw(
-                        0.0D,
-                        0.0D,
-                        gridRenderer,
-                        ((DisplayVarsAccessor) dv).getDrawScale(),
-                        ((DisplayVarsAccessor) dv).getFontScale(),
-                        rotation);
-                }
+                JourneyMapV5Renderer.draw(
+                    renderStep,
+                    0.0D,
+                    0.0D,
+                    gridRenderer,
+                    ((DisplayVarsAccessor) dv).getDrawScale(),
+                    ((DisplayVarsAccessor) dv).getFontScale(),
+                    rotation);
             }
         }
     }

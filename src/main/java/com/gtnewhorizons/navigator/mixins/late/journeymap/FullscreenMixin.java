@@ -24,6 +24,7 @@ import com.gtnewhorizons.navigator.api.model.layers.LayerManager;
 import com.gtnewhorizons.navigator.api.model.layers.LayerRenderer;
 import com.gtnewhorizons.navigator.api.model.layers.UniversalLayerRenderer;
 import com.gtnewhorizons.navigator.internal.SearchBar;
+import com.gtnewhorizons.navigator.internal.journeymap.v5.JourneyMapV5Renderer;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
@@ -31,7 +32,6 @@ import com.llamalad7.mixinextras.sugar.ref.LocalRef;
 
 import journeymap.client.io.ThemeFileHandler;
 import journeymap.client.model.BlockCoordIntPair;
-import journeymap.client.render.draw.DrawStep;
 import journeymap.client.render.map.GridRenderer;
 import journeymap.client.ui.component.ButtonList;
 import journeymap.client.ui.component.JmUI;
@@ -114,7 +114,7 @@ public abstract class FullscreenMixin extends JmUI {
         navigator$searchBar.setTextConsumer(
             text -> NavigatorApi.getEnabledLayers(JourneyMap)
                 .forEach(layerManager -> {
-                    if (layerManager.isLayerActive() && layerManager.hasSearchField()) {
+                    if (layerManager.hasSearchField()) {
                         layerManager.onSearch(text);
                     }
                 }));
@@ -125,7 +125,6 @@ public abstract class FullscreenMixin extends JmUI {
         at = @At(value = "INVOKE", target = "Ljourneymap/client/model/MapState;getDrawWaypointSteps()Ljava/util/List;"),
         remap = false,
         require = 1)
-    @SuppressWarnings("unchecked")
     private void navigator$onBeforeDrawJourneyMapWaypoints(CallbackInfo ci, @Local(ordinal = 0) int xOffset,
         @Local(ordinal = 1) int yOffset, @Local float drawScale) {
         final int fontScale = getMapFontScale();
@@ -142,8 +141,10 @@ public abstract class FullscreenMixin extends JmUI {
 
         for (LayerRenderer layer : NavigatorApi.getActiveRenderersByPriority(JourneyMap)) {
             if (layer instanceof JMLayerRenderer || layer instanceof UniversalLayerRenderer) {
-                List<? extends DrawStep> steps = (List<? extends DrawStep>) layer.getRenderSteps();
-                gridRenderer.draw(steps, xOffset, yOffset, drawScale, fontScale, 0.0);
+                layer.getRenderSteps()
+                    .forEach(
+                        step -> JourneyMapV5Renderer
+                            .draw(step, xOffset, yOffset, gridRenderer, drawScale, fontScale, 0.0));
             }
         }
 

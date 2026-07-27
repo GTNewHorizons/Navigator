@@ -10,6 +10,7 @@ import com.gtnewhorizons.navigator.api.model.waypoints.WaypointManager;
 
 import xaero.common.minimap.waypoints.WaypointsManager;
 
+/** Publishes one Navigator-owned waypoint into Xaero's custom waypoint collection. */
 public class XaeroWaypointManager extends WaypointManager {
 
     public static int lastId;
@@ -17,11 +18,18 @@ public class XaeroWaypointManager extends WaypointManager {
     private WaypointWithDimension xWaypoint;
     private String symbol = "";
 
+    /**
+     * Creates a manager using the first character of the waypoint label as its Xaero symbol.
+     */
     public XaeroWaypointManager(InteractableLayerManager layerManager) {
         super(layerManager, SupportedMods.XaeroMiniMap);
         waypointId = lastId++;
     }
 
+    /**
+     * @param layerManager owning layer
+     * @param symbol       fixed Xaero symbol; an empty value uses the label's first character
+     */
     public XaeroWaypointManager(InteractableLayerManager layerManager, String symbol) {
         this(layerManager);
         this.symbol = symbol;
@@ -38,6 +46,7 @@ public class XaeroWaypointManager extends WaypointManager {
         return xWaypoint != null;
     }
 
+    /** @return current Xaero waypoint including its dimension, or {@code null} */
     public WaypointWithDimension getXWaypoint() {
         return xWaypoint;
     }
