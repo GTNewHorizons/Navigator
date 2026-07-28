@@ -10,6 +10,9 @@ import com.gtnewhorizons.navigator.config.ModuleConfig;
 public enum Mixins implements IMixins {
 
     // spotless:off
+    TEXTURE_ATLAS_SPRITE_ACCESSOR(new MixinBuilder("Access texture atlas sprite padding state")
+        .setPhase(Phase.EARLY)
+        .addClientMixins("minecraft.TextureAtlasSpriteAccessor")),
     ENABLE_STENCIL(new MixinBuilder("Force enables stencil buffer")
         .addRequiredMod(TargetedMod.XAEROMINIMAP)
         .addRequiredMod(TargetedMod.XAEROWORLDMAP)
