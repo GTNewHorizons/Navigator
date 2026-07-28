@@ -13,6 +13,7 @@ import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.util.ResourceLocation;
 
 import com.gtnewhorizons.navigator.api.model.steps.UniversalRenderStep;
+import com.gtnewhorizons.navigator.mixins.early.minecraft.TextureAtlasSpriteAccessor;
 
 /**
  * Map-neutral description of a JourneyMap 6 native point marker.
@@ -22,6 +23,8 @@ import com.gtnewhorizons.navigator.api.model.steps.UniversalRenderStep;
  */
 @SuppressWarnings("unused")
 public final class MapMarker {
+
+    private static final int ANISOTROPIC_PADDING = 8;
 
     private final @Nullable BufferedImage image;
     private final @Nullable ResourceLocation imageLocation;
@@ -72,12 +75,18 @@ public final class MapMarker {
 
     /**
      * Creates a marker from a sprite already stitched into a Minecraft texture atlas.
+     * Forge's anisotropic-filtering border is excluded from the source region.
      *
      * @param atlasLocation texture atlas resource
      * @param sprite        stitched sprite; animated atlas updates remain visible
      */
     public MapMarker(ResourceLocation atlasLocation, TextureAtlasSprite sprite) {
-        this(atlasLocation, sprite.getOriginX(), sprite.getOriginY(), sprite.getIconWidth(), sprite.getIconHeight());
+        this(
+            atlasLocation,
+            sprite.getOriginX() + spritePadding(sprite),
+            sprite.getOriginY() + spritePadding(sprite),
+            sprite.getIconWidth() - 2 * spritePadding(sprite),
+            sprite.getIconHeight() - 2 * spritePadding(sprite));
     }
 
     /**
@@ -298,6 +307,10 @@ public final class MapMarker {
         if (minScale <= 0 || maxScale <= 0) throw new IllegalArgumentException("zoom scales must be positive");
         if (maxZoom <= minZoom) throw new IllegalArgumentException("maxZoom must be greater than minZoom");
         return new double[] { minScale, maxScale, minZoom, maxZoom };
+    }
+
+    private static int spritePadding(TextureAtlasSprite sprite) {
+        return ((TextureAtlasSpriteAccessor) sprite).navigator$usesAnisotropicFiltering() ? ANISOTROPIC_PADDING : 0;
     }
 
     private static double interpolate(@Nullable double[] scale, double zoomStep) {
