@@ -13,6 +13,7 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
@@ -64,6 +65,8 @@ public abstract class FullscreenMixin extends JmUI {
 
     @Unique
     private long navigator$lastRecache = 0;
+    @Unique
+    private int navigator$vanillaMapTypeToolbarWidth = 0;
 
     @Final
     @Shadow(remap = false)
@@ -162,6 +165,7 @@ public abstract class FullscreenMixin extends JmUI {
     private void navigator$OnCreateMapTypeToolbar(Fullscreen owner, ThemeToolbar value) {
         final Theme theme = ThemeFileHandler.getCurrentTheme();
         final ButtonList buttonList = new ButtonList();
+        navigator$vanillaMapTypeToolbarWidth = value.getWidth();
 
         for (ButtonManager btnManager : NavigatorApi.getEnabledButtons(JourneyMap)) {
             String icon = btnManager.getIcon(JourneyMap, theme.name)
@@ -183,6 +187,18 @@ public abstract class FullscreenMixin extends JmUI {
         buttonList.add(buttonNight);
         buttonList.add(buttonDay);
         mapTypeToolbar = new ThemeToolbar(theme, buttonList);
+    }
+
+    @ModifyArg(
+        method = "layoutToolbars",
+        at = @At(
+            value = "INVOKE",
+            target = "Ljourneymap/client/ui/theme/ThemeToolbar;layoutCenteredHorizontal(IIZI)Ljourneymap/client/ui/component/ButtonList;"),
+        index = 0,
+        remap = false,
+        require = 1)
+    private int navigator$centerAddedLayerButtons(int centerX) {
+        return centerX + (mapTypeToolbar.getWidth() - navigator$vanillaMapTypeToolbarWidth) / 2;
     }
 
     @Inject(
